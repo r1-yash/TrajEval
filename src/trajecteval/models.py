@@ -69,9 +69,8 @@ class Step:
 
     @classmethod
     def from_dict(cls, data: Any, position: int) -> Step:
-        """Parse one step. ``position`` is the 0-based list position, used
-        only for error messages -- a step's own ``index`` is the field value.
-        """
+        # position tell me which step this is in the list that had errors, so I can give a more helpful error message
+        #index is for the step number in the trajectory, starting from 1. It is used to identify the step in error messages and to ensure that the steps are in the correct order.
         where = f"step {position + 1}"
         data = _require_dict(data, where)
         _require_keys(data, _STEP_REQUIRED_KEYS, where)
@@ -102,8 +101,8 @@ class Step:
 
 @dataclass(frozen=True)
 class Discontinuity:
-    """A mismatch between one step's ``state_after`` and the next step's
-    ``state_before`` -- evidence the *recorder* that wrote the log is buggy.
+    """A mismatch between one step's state_after and the next step's
+    state_before -- evidence the *recorder* that wrote the log is buggy.
 
     Reported (never raised) so the trace still loads and the anomaly can be
     inspected and included in a report.
@@ -125,7 +124,7 @@ class Trajectory:
     """A complete episode: the ordered steps an agent took for one task."""
 
     task_id: str
-    steps: list[Step] = field(default_factory=list)
+    steps: list[Step] = field(default_factory=list) ##steps as list and metadata as dict 
     metadata: dict[str, Any] = field(default_factory=dict)
 
     # ------------------------------------------------------------------ load
@@ -134,8 +133,7 @@ class Trajectory:
     def from_dict(cls, data: Any) -> Trajectory:
         """Parse + validate a plain dict into a Trajectory.
 
-        Raises TrajectoryError only for structural problems; see module
-        docstring for the full contract.
+        Raises TrajectoryError only for structural problems
         """
         data = _require_dict(data, "trajectory")
 
@@ -155,11 +153,12 @@ class Trajectory:
                 f"'steps' must be a list, got {type(raw_steps).__name__}"
             )
 
+        # Validate each step and ensure the indices are gapless and duplicate-free and make it into a list of Step objects from steps.
         steps = [Step.from_dict(raw, position=i) for i, raw in enumerate(raw_steps)]
         cls._validate_indices(steps)
 
-        # Metadata: explicit metadata dict wins over swept-in top-level keys
-        # (setdefault semantics -- the sweep only fills keys not already there).
+        # get raw metadata from the data dict, if it exists. If it does not exist, use an empty dict. Then ensure that the raw metadata is a dict and raise an error if it is not.
+        # Finally, add any extra top-level keys from the data dict to the metadata dict, unless they are already present in the metadata dict.
         raw_metadata = data.get("metadata", {})
         metadata: dict[str, Any] = (
             dict(_require_dict(raw_metadata, "'metadata'")) if raw_metadata is not None else {}
