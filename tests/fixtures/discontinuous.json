@@ -1,0 +1,23 @@
+{
+  "task_id": "toy-discontinuous-001",
+  "steps": [
+    {
+      "index": 1,
+      "state_before": {"files": {"a.txt": "hello"}},
+      "action": {"name": "edit_file", "args": {"path": "a.txt", "new": "hi"}},
+      "state_after": {"files": {"a.txt": "hi"}}
+    },
+    {
+      "index": 2,
+      "state_before": {"files": {"a.txt": "DIFFERENT"}, "sneaky.txt": "?"},
+      "action": {"name": "read_file", "args": {"path": "b.txt"}},
+      "state_after": {"files": {"b.txt": "?"}}
+    },
+    {
+      "index": 3,
+      "state_before": {"files": {"b.txt": "?"}},
+      "action": {"name": "read_file", "args": {"path": "b.txt"}},
+      "state_after": {"files": {"b.txt": "?"}}
+    }
+  ]
+}
