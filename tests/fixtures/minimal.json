@@ -1,0 +1,19 @@
+{
+  "task_id": "toy-edit-001",
+  "metadata": {"agent": "toy-sandbox", "attempt": 1},
+  "source": "fixture",
+  "steps": [
+    {
+      "index": 1,
+      "state_before": {"files": {"a.txt": "hello"}},
+      "action": {"name": "read_file", "args": {"path": "a.txt"}},
+      "state_after": {"files": {"a.txt": "hello"}}
+    },
+    {
+      "index": 2,
+      "state_before": {"files": {"a.txt": "hello"}},
+      "action": {"name": "edit_file", "args": {"path": "a.txt", "old": "hello", "new": "hi"}},
+      "state_after": {"files": {"a.txt": "hi"}}
+    }
+  ]
+}
