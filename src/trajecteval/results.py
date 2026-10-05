@@ -27,9 +27,9 @@ def _require_non_empty_str(value: Any, where: str) -> str:
 class Evidence:
     """Typed proof attached to a result: what was found, and where.
 
-    ``step=None`` means the finding applies to the **whole trajectory**, not
+    step=None, means the finding applies to the whole trajectory, not
     any single step (e.g. "this episode has no actions at all"). None is a
-    meaningful value here, not missing data — and it must survive JSON
+    meaningful value here, not missing data or anything and it must survive JSON
     round-trips as null.
     """
 
@@ -66,4 +66,80 @@ class Evidence:
             step=data.get("step"),
             field=data.get("field"),
             value=data.get("value"),
+        )
+
+#if error then no evidence, if fail/warn then at least one evidence in this class
+# it also does not make sense to have a pass with evidence, so we also enforce that
+# and we also enforce that the evidence is a tuple of Evidence objects
+# and we also enforce that the dimension and reason are non-empty strings
+@dataclass(frozen=True)
+class GraderResult:
+    """One dimension's verdict for one trajectory — the shared report card."""
+
+    dimension: str                 # which axis: "final_state", "bounds", ...
+    verdict: Verdict
+    reason: str
+    evidence: tuple[Evidence, ...] = ()
+
+    def __post_init__(self) -> None:
+        _require_non_empty_str(self.dimension, "result 'dimension'")
+
+        # Coerce plain strings ("FAIL") into Verdict members; unknown values
+        # raise with our message instead of a bare enum ValueError.
+        if not isinstance(self.verdict, Verdict):
+            try:
+                object.__setattr__(self, "verdict", Verdict(self.verdict))
+            except ValueError:
+                raise ValueError(
+                    f"invalid verdict {self.verdict!r}; "
+                    f"expected one of {', '.join(v.value for v in Verdict)}"
+                ) from None
+
+        _require_non_empty_str(self.reason, "result 'reason'")
+
+        # Accept a list at construction (ergonomic), store a tuple (immutable).
+        if isinstance(self.evidence, list):
+            object.__setattr__(self, "evidence", tuple(self.evidence))
+        if not isinstance(self.evidence, tuple):
+            raise ValueError(
+                f"result 'evidence' must be a tuple of Evidence, "
+                f"got {type(self.evidence).__name__}"
+            )
+        for item in self.evidence:
+            if not isinstance(item, Evidence):
+                raise ValueError(
+                    f"result 'evidence' items must be Evidence, "
+                    f"got {type(item).__name__}"
+                )
+
+        # Verdict-specific rules: ERROR asserts nothing (so no proof);
+        # FAIL/WARN assert something (so proof is mandatory).
+        if self.verdict is Verdict.ERROR and self.evidence:
+            raise ValueError("ERROR results must carry no evidence (no judgment was made)")
+        if self.verdict in (Verdict.FAIL, Verdict.WARN) and not self.evidence:
+            raise ValueError(f"{self.verdict.value} results must cite at least one evidence item")
+
+    def to_dict(self) -> dict[str, Any]:
+        """JSON-friendly plain dict. Verdict becomes its plain string."""
+        return {
+            "dimension": self.dimension,
+            "verdict": self.verdict.value,
+            "reason": self.reason,
+            "evidence": [item.to_dict() for item in self.evidence],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> GraderResult:
+        if not isinstance(data, dict):
+            raise ValueError(f"result must be an object, got {type(data).__name__}")
+        for key in ("dimension", "verdict", "reason"):
+            if key not in data:
+                raise ValueError(f"result missing '{key}'")
+        return cls(
+            dimension=data["dimension"],
+            verdict=data["verdict"],   # __post_init__ coerces str -> Verdict
+            reason=data["reason"],
+            evidence=tuple(
+                Evidence.from_dict(item) for item in data.get("evidence", ())
+            ),
         )
