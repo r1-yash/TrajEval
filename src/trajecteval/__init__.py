@@ -2,5 +2,15 @@
 
 from trajecteval.errors import TrajectoryError
 from trajecteval.models import Action, Discontinuity, Step, Trajectory
+from trajecteval.results import Evidence, GraderResult, Verdict
 
-__all__ = ["Action", "Discontinuity", "Step", "Trajectory", "TrajectoryError"]
+__all__ = [
+    "Action",
+    "Discontinuity",
+    "Evidence",
+    "GraderResult",
+    "Step",
+    "Trajectory",
+    "TrajectoryError",
+    "Verdict",
+]

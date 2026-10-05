@@ -11,8 +11,8 @@ state of the world **before and after** each one — and grades that path on
 four separate questions, so a report tells you *why* a run was good or bad,
 not just whether it was.
 
-> **Status:** under construction. Step 1 (scaffold) and Step 2 (models) are
-> done. Everything else in this README is a **plan** — roadmap rows are
+> **Status:** under construction. Steps 1–3 (scaffold, models, result types)
+> are done. Everything else in this README is a **plan** — roadmap rows are
 > marked, and every usage example below says plainly whether it works yet.
 > Nothing here is built unless its roadmap row says so.
 
@@ -296,8 +296,8 @@ Conventions:
 |---|------|--------|
 | 1 | Project scaffold (`uv init`, src layout, first test) | ✅ done |
 | 2 | Models: `Step`, `Trajectory`, JSON loading | ✅ done |
-| 3 | Result types + grader contract (`Verdict`, `Evidence`, `GraderResult`, protocol) | ⏳ planned |
-| 4 | Task spec: data-file rules, load by task id | ⏳ planned |
+| 3 | Result types: `Verdict`, `Evidence`, `GraderResult` | ✅ done |
+| 4 | Task spec + grader contract: data-file rules, load by task id, `Grader` protocol | ⏳ planned |
 | 5 | Toy task one + four fixtures (clean, wasteful, critical, failed) | ⏳ planned |
 | 6 | Three deterministic graders (final state, bounds, critical) | ⏳ planned |
 | 7 | Report: `evaluate()` pipeline, JSON + readable text | ⏳ planned |
