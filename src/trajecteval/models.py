@@ -40,9 +40,9 @@ def _require_keys(obj: dict[str, Any], keys: tuple[str, ...], where: str) -> Non
 class Action:
     """What the agent did at one step.
 
-    ``args`` stays a plain dict on purpose: the file sandbox and Debuggernaut
-    have different argument shapes, and typing them here would couple this
-    universal structure to one environment's payload.
+    ``args`` stays a plain dict on purpose: different tasks have different
+    argument shapes, and typing them here would couple this universal
+    structure to one domain's payload.
     """
 
     name: str
@@ -52,7 +52,14 @@ class Action:
     def from_dict(cls, data: Any, where: str = "action") -> Action:
         data = _require_dict(data, where)
         _require_keys(data, _ACTION_REQUIRED_KEYS, where)
-        return cls(name=data["name"], args=data.get("args", {}))
+        # args, when present, must be a dict -- a stringified or numeric args
+        # blob is a structural problem (we could never grade against it later).
+        args = data.get("args", {})
+        if not isinstance(args, dict):
+            raise TrajectoryError(
+                f"{where}: 'args' must be an object, got {type(args).__name__}"
+            )
+        return cls(name=data["name"], args=args)
 
     def to_dict(self) -> dict[str, Any]:
         return {"name": self.name, "args": self.args}
@@ -76,7 +83,9 @@ class Step:
         _require_keys(data, _STEP_REQUIRED_KEYS, where)
 
         index = data["index"]
-        if not isinstance(index, int):
+        # bool is a subclass of int in Python (isinstance(True, int) is True),
+        # so reject it explicitly before the int check.
+        if isinstance(index, bool) or not isinstance(index, int):
             raise TrajectoryError(f"{where}: 'index' must be an int, got {type(index).__name__}")
 
         state_before = _require_dict(data["state_before"], f"{where}: 'state_before'")
@@ -119,12 +128,17 @@ class Discontinuity:
         )
 
 
-@dataclass
+# Frozen on purpose: validation happens once, at load time. After that nothing
+# may rebind task_id/steps/metadata -- graders must all see the same episode.
+# steps is a tuple (not a list) because frozen only stops *rebinding*; making
+# the container immutable too means the sequence itself can't be appended to.
+# (Freezing is shallow: nested state dicts remain mutable.)
+@dataclass(frozen=True)
 class Trajectory:
     """A complete episode: the ordered steps an agent took for one task."""
 
     task_id: str
-    steps: list[Step] = field(default_factory=list) ##steps as list and metadata as dict 
+    steps: tuple[Step, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
 
     # ------------------------------------------------------------------ load
@@ -168,7 +182,7 @@ class Trajectory:
                 continue
             metadata.setdefault(key, value)
 
-        return cls(task_id=task_id, steps=steps, metadata=metadata)
+        return cls(task_id=task_id, steps=tuple(steps), metadata=metadata)
 
     @classmethod
     def from_json_file(cls, path: str | Path) -> Trajectory:

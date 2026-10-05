@@ -1,6 +1,6 @@
 {
   "task_id": "toy-edit-001",
-  "metadata": {"agent": "toy-sandbox", "attempt": 1},
+  "metadata": {"agent": "toy-agent", "attempt": 1},
   "source": "fixture",
   "steps": [
     {

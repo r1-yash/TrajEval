@@ -2,449 +2,362 @@
 
 **Evaluate AI agents on *how* they work, not just whether they finished.**
 
-Most evaluators look at the final answer and ask: *did it pass?* TrajEval records the
-agent's entire episode — every action, in order, with the state before and after — and
-grades that **trajectory** on four separate axes, producing an inspectable per-trace
-report and a comparison table across traces. Not one scalar score: a breakdown of
-*why*.
+An AI agent completes a task by taking a series of actions: reading something,
+calling a tool, changing a value — one after another, until the task is done.
+Most evaluation setups look only at the end: did the final answer pass?
 
-```text
-                  ┌─────────────────── A trajectory (episode) ───────────────────┐
-                  │  step 1 ──▶ step 2 ──▶ step 3 ──▶ ... ──▶ final state       │
-                  │  (state before / action / state after, for every step)       │
-                  └──────────────────────────┬───────────────────────────────────┘
-                                             │
-                      ┌──────────────────────┼──────────────────────┐
-                      ▼                      ▼                      ▼
-               DETERMINISTIC            DETERMINISTIC          DETERMINISTIC
-                Final-state             Bounds/limits          Critical-mistake
-                  grader                   grader                 grader
-               "did it land            "did every step        "did it ever do
-                in the right            stay inside             the forbidden
-                  spot?"                 allowed space?"         thing?"
-                      │                      │                 (sticky: a later
-                      │                      │                  recovery does
-                      │                      │                  NOT erase it)
-                      └──────────┬───────────┴───────────┐
-                                 ▼                       ▼
-                          LLM TRAJECTORY JUDGE     per-dimension results
-                        "efficient & coherent?"    (verdict + WHY + evidence)
-                                 │                       │
-                                 └───────────┬───────────┘
-                                             ▼
-                                  ┌─── Report (1 trace) ───┐   ┌─ Comparison table ─┐
-                                  │ breakdown per dimension │──▶│ trace A vs B vs C  │
-                                  └─────────────────────────┘   └────────────────────┘
-```
+TrajEval records the whole episode instead. Every action, in order, with the
+state of the world **before and after** each one — and grades that path on
+four separate questions, so a report tells you *why* a run was good or bad,
+not just whether it was.
 
----
-
-## Table of contents
-
-- [Why TrajEval exists](#why-trajeval-exists)
-- [The four grading dimensions](#the-four-grading-dimensions)
-- [How it works](#how-it-works)
-- [Core design principles](#core-design-principles)
-- [Installation](#installation)
-- [Usage](#usage)
-- [The trajectory format](#the-trajectory-format)
-- [Project structure](#project-structure)
-- [The toy environment](#the-toy-environment)
-- [Real data: Debuggernaut](#real-data-debuggernaut)
-- [Development](#development)
-- [Roadmap](#roadmap)
-- [Design notes & FAQ](#design-notes--faq)
-
----
-
-## Why TrajEval exists
-
-An agent can **succeed badly** and **fail well**:
-
-- **Succeed badly:** it reached the right answer after deleting a file it shouldn't
-  have, retrying five times, and wandering through twelve pointless steps. A
-  pass/fail evaluator gives this a perfect score.
-- **Fail well:** it did everything cleanly but the final environment state was off by
-  one detail. A pass/fail evaluator gives this a zero and tells you nothing about
-  *what* went wrong.
-
-TrajEval separates these concerns. It tells you, per trace:
-
-1. Did it reach the correct **final state**? *(deterministic)*
-2. Did every action stay within **allowed bounds**? *(deterministic)*
-3. Did it commit any **critical mistake**, even if it later recovered? *(deterministic)*
-4. How **efficient and coherent** was the path? *(LLM-judged — "was this an unnecessary
-   detour" is hard to encode as a hard rule)*
-
-The output is an **inspectable report per trace**, plus a **comparison table across
-multiple traces** — a breakdown of *why*, not just a number.
-
----
+> **Status:** under construction. Step 1 (scaffold) and Step 2 (models) are
+> done. Everything else in this README is a **plan** — roadmap rows are
+> marked, and every usage example below says plainly whether it works yet.
+> Nothing here is built unless its roadmap row says so.
 
 ## The four grading dimensions
 
 | # | Dimension | Type | Question it answers |
 |---|-----------|------|---------------------|
 | 1 | **Final state** | Deterministic | Did the episode end in the correct state? |
-| 2 | **Bounds** | Deterministic | Did every action stay inside the allowed scope (files touched, tools called, values written)? |
-| 3 | **Critical mistakes** | Deterministic | Did the agent ever commit a forbidden action — *even if it recovered afterwards*? |
+| 2 | **Bounds** | Deterministic | Did every action stay inside the allowed scope — allowed action names, allowed argument values, and no actions outside the allowed set at all? |
+| 3 | **Critical mistakes** | Deterministic | Did the agent ever commit a forbidden action — *even if it later recovered*? |
 | 4 | **Trajectory quality** | LLM judge | Was the path efficient and coherent, or full of detours, thrash, and redundant actions? |
 
-Each dimension returns an independent result object — never blended into a single
-number by default:
+Dimensions 1–3 are code that always gives the same answer. Dimension 4 is
+fuzzy by nature — "was this step necessary?" resists hard rules — so an LLM
+judges it. The two never mix inside one module.
+
+### The critical-mistake rule
+
+Recovery does **not** erase mistakes:
+
+```text
+step 4:  agent does a forbidden action        ← CRITICAL MISTAKE (logged)
+step 9:  agent undoes it                      ← recovery (noted at most)
+step 12: episode ends, everything looks fine
+
+❌ Wrong:  critical dimension → PASS  ("it fixed it in the end")
+✅ TrajEval: critical dimension → FAIL ("it happened; here is the step")
+```
+
+The critical-mistake grader scans the **whole history**, so a mistake at step 4
+is still there at step 12.
+
+## Why TrajEval exists
+
+An agent can **succeed badly** and **fail well**:
+
+- **Succeed badly:** it reached the right result after a forbidden action it
+  later recovered from, and twelve pointless detours. A pass/fail checker gives
+  this a perfect score.
+- **Fail well:** it worked cleanly but the final state was off on one field. A
+  pass/fail checker gives this a zero and says nothing about what went wrong.
+
+TrajEval separates these concerns. Per trace you get: did it reach the correct
+final state, did it stay in bounds, did it commit a critical mistake, and how
+efficient was the path — each with a verdict, a **reason**, and **typed
+evidence citing step numbers**. The output is an inspectable report per trace,
+plus a comparison table across traces. Not one scalar number: a breakdown of *why*.
+
+## What a result looks like
 
 ```text
 GraderResult
-├── verdict      : PASS | FAIL | WARN | ERROR     (the "what")
-├── reason       : str                            (the "why", human-readable)
-├── evidence     : list[Evidence]                 (the "prove it": step numbers, values)
-└── dimension    : str                            (which axis produced this)
+├── verdict   : PASS | FAIL | WARN | ERROR
+├── reason    : str                       (the "why", human-readable)
+├── evidence  : list[Evidence]            (the "prove it": typed, cites step numbers)
+└── dimension : str                       (which of the four axes)
 ```
 
-### The critical-mistake rule (the one everybody gets wrong)
+**ERROR is not FAIL.** FAIL means the trajectory broke a rule. ERROR means the
+*grader itself* could not judge — a missing spec field, malformed input. The two
+are never conflated, because they need opposite responses from a human: fix the
+trajectory vs. fix the setup. A grader **returns** a result — including ERROR —
+rather than raising an exception.
 
-Recovery does **not** erase mistakes.
+## Task specs
+
+Graders know **how to check**, never **what to check**. All task-specific rules
+live in a plain JSON file per task:
 
 ```text
-step 4:  agent deletes config.prod.json      ← CRITICAL MISTAKE (logged)
-step 9:  agent restores config.prod.json     ← recovery (logged separately, at most)
-step 12: agent finishes, everything looks fine
-
-❌ Wrong:  critical-mistake dimension → PASS  ("it fixed it in the end")
-✅ TrajEval: critical-mistake dimension → FAIL ("it happened; here is the step")
+tasks/<task-id>.json
+├── expected final state        # which fields must equal what
+├── allowed actions             # action names + which argument values are permitted
+└── critical-error patterns     # the forbidden moves, listed
 ```
 
-A later fix is interesting information — TrajEval can report it as a *recovery note* —
-but the mistake dimension stays failed. This mirrors reality: in production, the
-delete already happened.
+- Graders receive `(spec, trajectory)` and work the same way for every task.
+- Tasks are loaded **by task id** — no hardcoded registry.
+- **Every rule in a spec is applied**, not just the first matching one. A
+  trajectory violating two rules reports both.
 
----
+This means adding a new task is writing one JSON file — no new grader code.
 
-## How it works
+## Design principles
 
-A **trajectory** (or *episode*) is an ordered list of steps. Each step records the
-state before, the action taken, and the state after:
+1. **Per-dimension, not scalar.** No mega-score as the primary output; any
+   aggregate is clearly secondary to the breakdown.
+2. **Deterministic graders and the LLM judge never mix modules.** Same result
+   type, separate implementations, judge injectable.
+3. **Mistakes are sticky.** Recovery never downgrades a critical mistake.
+4. **Evidence or it didn't happen.** Every verdict carries a reason and typed
+   evidence with step numbers.
+5. **ERROR ≠ FAIL.** A grader that can't judge says so; it never guesses.
+6. **Rules live in task specs, not grader code.** Graders stay domain-agnostic;
+   every rule in a spec list is applied.
+7. **Small and focused.** Single-environment, one task type at a time. No plugin
+   registries, no over-engineering until a real need appears.
+8. **Tested without the network.** Offline tests, fake judge, fixture
+   trajectories as ground truth.
+9. **Python/uv only.** Everything runs as `uv run ...`. No pip, no venv
+   activation, no Node/npm/TypeScript.
 
-```text
-Trajectory
- └── steps: [ Step, Step, Step, ... ]
-        Step
-        ├── index        : int          # 1-based position in the episode
-        ├── state_before : dict         # environment snapshot before the action
-        ├── action       : Action       # what the agent did (name + arguments)
-        └── state_after  : dict         # environment snapshot after the action
-```
+## Prior work
 
-Grading is a **pipeline**:
+TrajEval is inspired by
+[TraceEval](https://github.com/ayeangad/Trace-Eval), used as a **scope and
+quality reference** — a bar for how clearly an evaluator of this kind can be
+structured. TrajEval is built from scratch in Python; nothing is ported.
 
-```text
-Trajectory ──▶ [ grader 1 ──▶ GraderResult ]   deterministic, pure functions
-           ──▶ [ grader 2 ──▶ GraderResult ]
-           ──▶ [ grader 3 ──▶ GraderResult ]
-           ──▶ [ LLM judge ─▶ GraderResult ]   injectable; faked in tests
-           │
-           ▼
-      Report ──▶ JSON file (machine-readable) + rendered text (human-readable)
-           │
-           ▼ (across many traces)
-      Comparison table (one row per trace, one column per dimension)
-```
-
-Two facts make this architecture hold up:
-
-1. **Deterministic graders and the LLM judge implement the same interface but live in
-   separate modules.** One is code that always gives the same answer; the other is
-   probabilistic. A bug — or a hallucination — in one can never contaminate the other.
-   The judge is *injected*, so tests run against a fake with zero API calls.
-2. **Every result carries a reason, not just a boolean.** From the first grader onward,
-   results have fields for the verdict, the explanation, and the evidence (which step
-   numbers, what values). Reports are possible because the data was born rich.
-
----
-
-## Core design principles
-
-These are the rules the codebase is held to:
-
-1. **Per-dimension, not scalar.** No mega-score as the primary output. Any aggregate
-   is a convenience, clearly secondary to the breakdown.
-2. **Deterministic ≠ LLM.** Separate modules, shared interface, injectable judge.
-3. **Mistakes are sticky.** Recovery never downgrades a critical mistake to a pass.
-4. **Evidence or it didn't happen.** Every verdict points at concrete steps/values.
-5. **Small and focused.** Single environment, single task type. No plugin registries,
-   no over-engineering until a real need appears.
-6. **Tested without the network.** All tests run offline against fake judges and
-   fixture trajectories.
-7. **Python/uv only.** Everything runs as `uv run ...`. No pip, no venv activation,
-   no Node/npm/TypeScript anywhere.
-
----
+Differences in TrajEval's design (statements of fact, not judgments about
+either project): per-step state recorded before and after each action; a
+verdict vocabulary where ERROR (couldn't judge) is distinct from FAIL (broke a
+rule); typed evidence that cites step numbers; an injectable judge whose tests
+run fully offline; every rule in a task spec applied rather than only the first;
+and two different toy tasks run through one unchanged pipeline.
 
 ## Installation
 
-Requires [uv](https://docs.astral.sh/uv/) and Python 3.10+ (developed on 3.13).
+Requires [uv](https://docs.astral.sh/uv/) and **Python 3.14+**.
 
 ```bash
-# clone the repo
 git clone <repo-url> TrajEval
 cd TrajEval
-
-# install all dependencies (creates .venv + resolves uv.lock)
-uv sync
-
-# run the test suite
-uv run pytest
+uv sync            # installs dependencies + the package itself (editable)
+uv run pytest      # run the test suite
 ```
 
-Adding new dependencies is always:
+Adding dependencies is always:
 
 ```bash
-uv add <package>          # runtime dependency
-uv add --dev <package>    # development/test dependency (e.g. pytest)
+uv add <package>           # runtime dependency
+uv add --dev <package>     # development/test dependency
 ```
-
----
 
 ## Usage
 
-> **Status:** under construction — steps 1–12 of the build plan. Examples below show
-> the target CLI surface; sections marked ⏳ are not implemented yet.
+> **Not implemented yet.** The CLI does not exist until Step 10. This section
+> shows the target interface; each example will be marked if it starts working.
 
-### Evaluate one trajectory ⏳
-
-```bash
-uv run traject eval traces/attempt-042.json
-```
-
-### Evaluate a directory of trajectories, with an LLM judge ⏳
+**Evaluate one trajectory** *(not implemented yet — Step 10)*
 
 ```bash
-export TRAJECT_JUDGE_API_KEY=sk-...
-uv run traject eval traces/ --judge llm --out reports/
+uv run traject eval tests/fixtures/<task-one>/clean.json
 ```
 
-### Compare traces side by side ⏳
+**Compare traces** *(not implemented yet — Step 10)*
 
 ```bash
 uv run traject compare reports/*.json
 ```
 
 ```text
-┌───────────────┬──────────────┬────────┬──────────────┬────────────────┐
-│ trace         │ final state  │ bounds │ critical err │ trajectory qual│
-├───────────────┼──────────────┼────────┼──────────────┼────────────────┤
-│ attempt-042   │ PASS         │ PASS   │ FAIL (step 4)│ WARN (3 detours)│
-│ attempt-043   │ PASS         │ FAIL   │ PASS         │ PASS           │
-│ attempt-044   │ FAIL         │ PASS   │ PASS         │ PASS           │
-└───────────────┴──────────────┴────────┴──────────────┴────────────────┘
+trace               final state   bounds   critical err   trajectory qual
+<task-one>/clean         PASS       PASS       PASS            PASS
+<task-one>/critical      PASS       PASS       FAIL (step 4)   PASS
 ```
 
-### As a library ⏳
+**As a library** *(not implemented yet — Step 7)*
 
 ```python
 from trajecteval import Trajectory, evaluate
 
-traj = Trajectory.from_json_file("traces/attempt-042.json")
-report = evaluate(traj)
-
+traj = Trajectory.from_json_file("trace.json")
+report = evaluate(traj, spec=load_task_spec("<task-id>"))
 for result in report.results:
-    print(f"{result.dimension:20} {result.verdict:6}  {result.reason}")
+    print(result.dimension, result.verdict, result.reason)
 ```
-
----
 
 ## The trajectory format
 
-Trajectories are plain JSON — no database, no special tooling. One episode per file:
+One episode per JSON file — plain data, no database:
 
 ```json
 {
-  "task_id": "fix-null-check-42",
-  "metadata": {"agent": "debuggernaut", "attempt": 42},
+  "task_id": "<task-id>",
+  "metadata": {"agent": "example", "attempt": 1},
   "steps": [
     {
       "index": 1,
-      "state_before": {"files": {"src/parser.py": "def parse(x): ..."}},
-      "action": {"name": "read_file", "args": {"path": "src/parser.py"}},
-      "state_after": {"files": {"src/parser.py": "def parse(x): ..."}}
+      "state_before": {"balance": 100, "cart": []},
+      "action": {"name": "add_to_cart", "args": {"item": "A1", "qty": 1}},
+      "state_after": {"balance": 100, "cart": ["A1"]}
     },
     {
       "index": 2,
-      "state_before": {"files": {"src/parser.py": "def parse(x): ..."}},
-      "action": {"name": "edit_file", "args": {"path": "src/parser.py", "old": "x[0]", "new": "x[0] if x else None"}},
-      "state_after": {"files": {"src/parser.py": "def parse(x): ... x[0] if x else None ..."}}
+      "state_before": {"balance": 100, "cart": ["A1"]},
+      "action": {"name": "checkout", "args": {"coupon": "NONE"}},
+      "state_after": {"balance": 90, "cart": []}
     }
   ]
 }
 ```
 
-**Loading rules** (guaranteed by the dataclass layer):
+Loading rules (implemented in Step 2):
 
-- `index` values are sequential; a gap or duplicate raises a clear error.
-- `state_after[i]` and `state_before[i+1]` should agree — a mismatch is *itself*
-  reportable evidence that something is off about the recorder.
-- Unknown top-level keys are preserved in `metadata`, never silently dropped.
-
----
+- Step indices must be sequential — gaps or duplicates are rejected with an
+  error that names the step.
+- Only structural problems **raise** at load time (missing `task_id`, missing
+  step keys, missing action name, bad index sequence). Every such message names
+  the step involved.
+- A state discontinuity between one step's `state_after` and the next step's
+  `state_before` does **not** prevent loading — it is *reported* by
+  `find_discontinuities()` so it can appear in the report.
+- Unknown top-level keys are preserved in `metadata`. On a collision, the
+  explicit `metadata` entry wins.
 
 ## Project structure
 
 ```text
 TrajEval/
 ├── pyproject.toml               # project metadata + dependencies (uv owns this)
-├── uv.lock                      # exact dependency versions (reproducible installs)
-├── README.md                    # this file
+├── uv.lock                      # pinned versions (reproducible installs)
+├── README.md
+├── tasks/                       # one JSON spec per task — the only place rules live
+│   └── <task-one>.json
 ├── src/
 │   └── trajecteval/
 │       ├── __init__.py          # public API surface
-│       ├── models.py            # Step, Action, Trajectory dataclasses + JSON I/O
-│       ├── results.py           # GraderResult, Verdict, Evidence — shared vocabulary
-│       ├── graders/             # deterministic graders (one file per dimension)
-│       │   ├── __init__.py
-│       │   ├── base.py          # Grader protocol (the shared interface)
+│       ├── errors.py            # TrajectoryError (structural load errors only)
+│       ├── models.py            # Step, Action, Trajectory, Discontinuity + JSON I/O
+│       ├── results.py           # Verdict, Evidence, GraderResult — shared vocabulary
+│       ├── task_spec.py         # TaskSpec + load-by-id (no registry)
+│       ├── graders/             # deterministic graders — one file per dimension
+│       │   ├── base.py          # Grader protocol: grade(spec, trajectory)
 │       │   ├── final_state.py
 │       │   ├── bounds.py
 │       │   └── critical.py
-│       ├── judge/               # LLM trajectory judge (separate on purpose)
-│       │   ├── __init__.py
-│       │   ├── base.py          # Judge protocol
-│       │   ├── fake.py          # offline fake used in tests
-│       │   └── llm.py           # real client (provider decided at Step 8)
-│       ├── report.py            # per-trace report assembly + rendering
-│       └── compare.py           # cross-trace comparison table
+│       ├── report.py            # evaluate() pipeline + JSON + readable text
+│       ├── compare.py           # cross-trace comparison table
+│       ├── judge/
+│       │   ├── base.py          # judge protocol + structured output types
+│       │   ├── fake.py          # offline fake — every test uses this
+│       │   └── llm.py           # real client (later)
+│       ├── cli.py               # uv run traject ...
+│       ├── environment.py       # simulated environment (later)
+│       ├── recorder.py          # thin recorder wrapping the environment (later)
+│       └── adapters/
+│           └── debuggernaut.py  # optional, only if real logs exist (later)
 ├── tests/
+│   ├── fixtures/
+│   │   ├── <task-one>/          # four trajectories: clean, wasteful, critical, failed
+│   │   └── <task-two>/          # smaller, differently shaped
 │   ├── test_smoke.py
-│   ├── fixtures/                # toy trajectories as JSON files
 │   └── ...                      # one test file per module
-└── examples/
-    └── sandbox/                 # toy file-operation environment + demo traces
+└── examples/                    # LLM-agent demo (later)
 ```
 
-**Why `src/` layout?** It prevents a classic trap: Python silently importing your
-local working directory instead of the installed package, so tests pass on your
-machine and break everywhere else. With `src/`, you only ever test what is properly
-installed — uv does that installation in editable mode automatically.
+**Why `src/` layout?** It prevents a classic trap: Python silently importing
+your working directory instead of the installed package, so tests pass on your
+machine and break elsewhere. With `src/`, you only ever test what is properly
+installed — uv does that installation automatically.
 
----
+## Toy tasks
 
-## The toy environment
-
-Before touching real data, TrajEval is built and tested against a **file-operation
-sandbox**: a small temp-directory world where the "agent" reads, edits, creates, and
-deletes files. This gives us:
-
-- **Obvious violations** to grade: editing a file outside the allowed set, touching
-  `secrets/`, writing to a read-only path.
-- **Obvious critical mistakes**: deleting a file, then "recovering" by recreating it.
-- **Obvious detours** for the LLM judge: reading the same file six times, undoing and
-  redoing the same edit.
-- **Ground truth we control**: we author the fixtures, so we know exactly which
-  dimension should pass or fail before running the grader.
-
-The sandbox mirrors what Debuggernaut actually does (editing source files to fix
-bugs), so every lesson transfers directly to the real data.
-
----
-
-## Real data: Debuggernaut
-
-Once the core is working, TrajEval is pointed at **attempt logs from
-[Debuggernaut]**, an autonomous bug-fixing agent, as real trajectory data.
-
-Debuggernaut's logs are not in TrajEval's format — they are in *Debuggernaut's*
-format. The adapter lives in one place (an *anti-corruption layer*), and its whole
-job is:
-
-```text
-Debuggernaut attempt log  ──▶  adapter  ──▶  Trajectory  ──▶  same pipeline as toys
-      (their format)                       (our format)      (zero special cases)
-```
-
-Because the toy sandbox uses the same shape, the graders never learn whether the
-input came from a fixture or production.
-
-[Debuggernaut]: <repo-url>
-
----
+Two toy tasks will carry the tests. **Both names/shapes are TBD** — candidates
+are on the table and neither is file-based. Task one gets four fixtures (clean,
+wasteful, critical mistake, failed). Task two is smaller and shaped differently,
+and exists to prove the graders work unchanged on a new domain.
 
 ## Development
 
 Every command goes through `uv`:
 
 ```bash
-uv run pytest                     # full test suite
-uv run pytest tests/test_models.py -v   # one file, verbose
-uv run pytest -k sticky           # run tests whose name contains "sticky"
-uv run pytest --cov               # coverage (needs: uv add --dev pytest-cov)
+uv run pytest                          # full suite (offline, always)
+uv run pytest tests/test_models.py -v  # one file
+uv run pytest -k discontinu            # by name
 ```
 
-**Conventions:**
+Conventions:
 
 - One module = one responsibility; one test file per module.
-- Every new grader must ship with: a passing fixture, a failing fixture, and an
-  edge-case fixture (e.g. empty trajectory).
-- No test may require network access or an API key — the LLM judge is faked.
-
----
+- **No test may require network access or an API key** — the judge is faked.
+- Hand-made fixtures are the ground truth; a recorder can generate traces, but
+  tests never depend on one until Step 12, and never on an LLM until (optional)
+  Step 13.
 
 ## Roadmap
 
 | # | Step | Status |
 |---|------|--------|
-| 1 | Project scaffold: `uv init`, src layout, first test | ✅ done |
-| 2 | Core domain models: `Step`, `Trajectory`, JSON loading | ⏳ |
-| 3 | Grader protocol + shared `GraderResult` types | ⏳ |
-| 4 | Final-state grader (deterministic) | ⏳ |
-| 5 | Bounds grader (deterministic) | ⏳ |
-| 6 | Critical-mistake grader — sticky errors | ⏳ |
-| 7 | Per-trace report assembly (JSON + readable rendering) | ⏳ |
-| 8 | LLM trajectory judge: fake first, real client later | ⏳ |
-| 9 | Comparison table across traces | ⏳ |
-| 10 | File-operation sandbox toy env + fixture trajectories | ⏳ |
-| 11 | Debuggernaut adapter (real attempt logs → `Trajectory`) | ⏳ |
-| 12 | CLI entry point (`uv run traject ...`) | ⏳ |
-
----
+| 1 | Project scaffold (`uv init`, src layout, first test) | ✅ done |
+| 2 | Models: `Step`, `Trajectory`, JSON loading | ✅ done |
+| 3 | Result types + grader contract (`Verdict`, `Evidence`, `GraderResult`, protocol) | ⏳ planned |
+| 4 | Task spec: data-file rules, load by task id | ⏳ planned |
+| 5 | Toy task one + four fixtures (clean, wasteful, critical, failed) | ⏳ planned |
+| 6 | Three deterministic graders (final state, bounds, critical) | ⏳ planned |
+| 7 | Report: `evaluate()` pipeline, JSON + readable text | ⏳ planned |
+| 8 | Comparison table across traces | ⏳ planned |
+| 9 | LLM judge: contract + fake, fully offline | ⏳ planned |
+| 10 | CLI (`uv run traject ...`) | ⏳ planned |
+| 11 | Toy task two — same graders, new domain, unchanged code | ⏳ planned |
+| 12 | Recorder + simulated environment (generate traces by running actions) | ⏳ planned |
+| 13 | LLM-agent demo (agent → recorder → report; needs an API key) | ⏳ planned |
+| 14 | Debuggernaut adapter — **optional**, only if real logs exist | ⏳ planned (optional) |
 
 ## Design notes & FAQ
 
 **Why not one overall score?**
-Because a single number destroys information. Two traces can score 0.8 for completely
-different reasons — one had a critical mistake it recovered from, the other was just
-slow. The report must let a human see that difference in under five seconds. If you
-want a scalar, average the columns yourself and accept what you lose.
+Because a single number destroys information. Two traces can average to 0.8 for
+completely different reasons — one had a critical mistake it recovered from, the
+other was just slow. The report must let a human see that difference quickly. If
+you want a scalar, average the columns yourself and accept what you lose.
 
 **Why is only one dimension LLM-judged?**
-Efficiency and coherence are genuinely fuzzy: "was this step necessary?" resists
-hard rules without becoming brittle. Everything else is a fact about the recorded
-states and actions — code checks facts better than a language model does. Using an
-LLM where rules suffice would add cost, nondeterminism, and hallucination risk for
-zero benefit.
+Efficiency and coherence are genuinely fuzzy; "was this necessary?" resists hard
+rules. Everything else is a fact about recorded states and actions — code checks
+facts better than a language model does. Using an LLM where rules suffice adds
+cost, nondeterminism, and hallucination risk for no benefit.
 
-**Why dataclasses instead of Pydantic?**
-The project needs to parse its own well-defined JSON format, not validate arbitrary
-user input at an API boundary. Stdlib dataclasses keep the core dependency-free and
-the mental model small. (This was a deliberate beginner-friendly choice — revisiting
-it later if validation needs grow is fine and normal.)
+**Why do rules live in task spec files?**
+Because otherwise every new task means editing grader code, and grader code is
+exactly what should stay boring and domain-agnostic. A spec file is reviewable,
+diffable, and testable as data. It also forces rules to be explicit: if
+something is graded, it's written down in the spec — not buried in a branch.
+
+**Why two toy tasks?**
+One task proves a grader works; two tasks prove the grader isn't secretly about
+task one. Task two runs through the exact same graders with only the spec and
+fixtures changed.
 
 **Why is the LLM judge injectable?**
-So tests never touch the network. `evaluate(traj, judge=FakeJudge())` runs offline
-and deterministically in CI; swapping in the real client is a one-line change at the
-call site. It also keeps the API key entirely out of core logic.
+So tests never touch the network. `evaluate(..., judge=FakeJudge())` runs
+offline and deterministically; the real client is a one-line swap at the call
+site, and API keys stay out of core logic.
 
-**Why *not* port the TypeScript reference project (TraceEval)?**
-TraceEval is used as a **quality and scope bar** — the level of architectural
-clarity, the separation of deterministic graders from an LLM judge, per-dimension
-reporting, and the *size* of the project (small, single-environment, not overbuilt).
-TrajEval is designed and built from first principles in Python; nothing is translated
-line-by-line.
+**Why dataclasses instead of Pydantic?**
+The project parses its own well-defined JSON format rather than validating
+arbitrary external input at an API boundary. Stdlib dataclasses keep the core
+dependency-free and the mental model small. Revisiting later if needs grow is
+normal.
+
+**Why is TraceEval referenced but not ported?**
+TraceEval is a scope and quality reference — a bar for architectural clarity and
+project focus. TrajEval is designed from first principles in Python; design
+decisions are justified on their own terms (see Prior work).
+
+**Where does Debuggernaut fit?**
+Nowhere required. It's an optional final adapter (Step 14), included only if
+real attempt logs exist. Everything through Step 13 runs on simulated tasks.
 
 **What does a report look like?**
-Two artifacts per trace: a `.json` file (full structure, machine-readable — verdicts,
-reasons, evidence) and a human-readable rendering of the same data. The comparison
-table is just many reports, aligned side by side.
-
----
+Two artifacts per trace: a `.json` file with verdicts, reasons, and evidence,
+plus a human-readable rendering of the same data. The comparison table aligns
+many reports side by side.
 
 ## License
 
