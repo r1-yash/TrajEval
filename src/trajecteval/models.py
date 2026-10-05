@@ -172,7 +172,7 @@ class Trajectory:
 
     @classmethod
     def from_json_file(cls, path: str | Path) -> Trajectory:
-        """Load and validate a trajectory from a JSON file."""
+        """Open a JSON file → read it → convert the JSON into a Python dictionary → validate it → create and return a Trajectory object"""
         path = Path(path)
         try:
             text = path.read_text(encoding="utf-8")
@@ -202,12 +202,7 @@ class Trajectory:
     # ----------------------------------------------------------------- query
 
     def find_discontinuities(self) -> list[Discontinuity]:
-        """Return every step pair where state_after disagrees with the next
-        state_before. Never raises -- a mismatched trace still loads so it
-        can be inspected and reported.
-
-        An empty trajectory (zero steps) has no pairs, hence no mismatches.
-        """
+        """the state after of a step should be equa to state before of the next step, if not then dicontinuity is there."""
         mismatches: list[Discontinuity] = []
         for current, following in zip(self.steps, self.steps[1:]):
             if current.state_after == following.state_before:
@@ -232,7 +227,7 @@ class Trajectory:
     # ----------------------------------------------------------------- save
 
     def to_dict(self) -> dict[str, Any]:
-        """Round-trippable dict: passes straight back through from_dict."""
+        """return the valiadted raw json data to now a structured format json"""
         out: dict[str, Any] = {"task_id": self.task_id}
         if self.metadata:
             out["metadata"] = self.metadata
