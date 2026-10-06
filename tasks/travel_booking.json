@@ -7,7 +7,7 @@
   "allowed_actions": {
     "search_flights": {},
     "book_flight": { "cabin": ["economy"] },
-    "pay": { "method": ["card"] }
+    "pay": { "method": ["card", "points"] }
   },
   "critical_error_patterns": [
     { "action": "book_flight", "args": { "cabin": "first" } },

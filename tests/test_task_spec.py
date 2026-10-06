@@ -18,7 +18,9 @@ def test_load_travel_booking_by_id():
     assert spec.allowed_actions == {
         "search_flights": {},
         "book_flight": {"cabin": ["economy"]},
-        "pay": {"method": ["card"]},
+        # points is deliberately bounds-legal: its only failing dimension is
+        # critical (dimension isolation for the Step 5 fixtures)
+        "pay": {"method": ["card", "points"]},
     }
     assert [p.action for p in spec.critical_error_patterns] == ["book_flight", "pay"]
     assert spec.metadata["budget"] == 1200
