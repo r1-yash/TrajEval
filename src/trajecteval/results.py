@@ -22,9 +22,9 @@ class Verdict(StrEnum):
 class Dimension(StrEnum):
     """Closed set of grading axes — the four dimensions of TrajEval.
 
-    The comparison table keys its columns by these, so a typo like "bound" or "bounds"
-    must fail at the grader's birth instead of silently creating a fifth
-    column later. Same closed-set logic as Verdict."""
+    The comparison table keys its columns by these, so an input like "bound"
+    or "FinalState" must fail at the grader's birth instead of silently
+    creating a fifth column later. Same closed-set logic as Verdict."""
 
     FINAL_STATE = "final_state"
     BOUNDS = "bounds"
