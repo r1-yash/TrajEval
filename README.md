@@ -57,8 +57,9 @@ An agent can **succeed badly** and **fail well**:
 
 TrajEval separates these concerns. Per trace you get: did it reach the correct
 final state, did it stay in bounds, did it commit a critical mistake, and how
-efficient was the path — each with a verdict, a **reason**, and **typed
-evidence citing step numbers**. The output is an inspectable report per trace,
+efficient was the path — each with a verdict and a **reason**, plus **typed
+evidence citing step numbers** whenever there's something to point at (required
+on FAIL/WARN). The output is an inspectable report per trace,
 plus a comparison table across traces. Not one scalar number: a breakdown of *why*.
 
 ## What a result looks like
@@ -242,7 +243,7 @@ TrajEval/
 │       ├── __init__.py          # public API surface
 │       ├── errors.py            # TrajectoryError (structural load errors only)
 │       ├── models.py            # Step, Action, Trajectory, Discontinuity + JSON I/O
-│       ├── results.py           # Verdict, Evidence, GraderResult — shared vocabulary
+│       ├── results.py           # Verdict, Dimension, Evidence, GraderResult
 │       ├── task_spec.py         # TaskSpec + load-by-id (no registry)
 │       ├── graders/             # deterministic graders — one file per dimension
 │       │   ├── base.py          # Grader protocol: grade(spec, trajectory)
@@ -269,6 +270,10 @@ TrajEval/
 └── examples/                    # LLM-agent demo (later)
 ```
 
+**This is the target layout, not the current tree.** Today only
+`pyproject.toml`, `README.md`, `src/trajecteval/{__init__,errors,models,results}.py`
+and `tests/` exist — the roadmap's status column says what's built.
+
 **Why `src/` layout?** It prevents a classic trap: Python silently importing
 your working directory instead of the installed package, so tests pass on your
 machine and break elsewhere. With `src/`, you only ever test what is properly
@@ -276,10 +281,11 @@ installed — uv does that installation automatically.
 
 ## Toy tasks
 
-Two toy tasks will carry the tests. **Both names/shapes are TBD** — candidates
-are on the table and neither is file-based. Task one gets four fixtures (clean,
-wasteful, critical mistake, failed). Task two is smaller and shaped differently,
-and exists to prove the graders work unchanged on a new domain.
+Two toy tasks carry the tests: **task one is travel booking, task two is
+support-ticket triage** (both confirmed). Neither is file-based. Task one gets
+four fixtures (clean, wasteful, critical mistake, failed). Task two is smaller
+and shaped differently, and exists to prove the graders work unchanged on a
+new domain.
 
 ## Development
 
@@ -305,7 +311,7 @@ Conventions:
 |---|------|--------|
 | 1 | Project scaffold (`uv init`, src layout, first test) | ✅ done |
 | 2 | Models: `Step`, `Trajectory`, JSON loading | ✅ done |
-| 3 | Result types: `Verdict`, `Evidence`, `GraderResult` | ✅ done |
+| 3 | Result types: `Verdict`, `Dimension`, `Evidence`, `GraderResult` | ✅ done |
 | 4 | Task spec + grader contract: data-file rules, load by task id, `Grader` protocol | ⏳ planned |
 | 5 | Toy task one + four fixtures (clean, wasteful, critical, failed) | ⏳ planned |
 | 6 | Three deterministic graders (final state, bounds, critical) | ⏳ planned |
