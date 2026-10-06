@@ -233,6 +233,27 @@ def test_result_item_must_be_object():
         )
 
 
+def test_value_must_be_json_native():
+    with pytest.raises(ValueError, match="'value' must be JSON-native, got tuple"):
+        Evidence(kind="x", value=(1, 2))
+    with pytest.raises(ValueError, match=r"'value'\[...\] must be JSON-native"):
+        Evidence(kind="x", value=[1, ("nested", 2)])  # tuple nested in a list
+    with pytest.raises(ValueError, match="keys must be strings"):
+        Evidence(kind="x", value={1: "int key comes back as '1'"})
+    with pytest.raises(ValueError, match="non-finite float"):
+        Evidence(kind="x", value=float("nan"))
+    with pytest.raises(ValueError, match="non-finite float"):
+        Evidence(kind="x", value=float("inf"))
+
+
+def test_json_native_values_accepted():
+    ok = Evidence(
+        kind="x", step=2, field_name="f",
+        value={"a": [1, 2.5, True, None, "s"], "b": {}},
+    )
+    assert ok.value == {"a": [1, 2.5, True, None, "s"], "b": {}}
+
+
 def test_evidence_item_must_be_evidence():
     with pytest.raises(ValueError, match="items must be Evidence"):
         GraderResult(dimension="bounds", verdict=Verdict.FAIL, reason="x",

@@ -42,6 +42,9 @@ these are bugs in grader *code*, not bad trajectory files):
   happen"); PASS and ERROR may carry any number.
 * each evidence item is an ``Evidence`` with a non-empty ``kind`` and, when
   present, a 1-based ``step``.
+* ``Evidence.value`` is JSON-native (str/int/float/bool/None/list/dict with
+  string keys, finite floats) so JSON reports round-trip losslessly —
+  enforced recursively at construction.
 
 ``dimension`` is a closed enum (not a free string) because the comparison
 table keys columns by it — a typo like "bound" would otherwise silently
@@ -52,6 +55,7 @@ dimensions are consumed by the report and comparison table.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
@@ -87,6 +91,37 @@ def _require_non_empty_str(value: Any, where: str) -> str:
     return value
 
 
+def _require_json_native(value: Any, where: str) -> None:
+    """Reject values that would not survive a JSON round trip unchanged.
+
+    Tuples come back as lists, int dict keys come back as strings, and
+    NaN/Infinity are not valid JSON -- each would silently break the
+    ``from_dict(to_dict(x)) == x`` guarantee the Step 7 report relies on.
+    """
+    if value is None or isinstance(value, (bool, str)):
+        return
+    if isinstance(value, int):  # bool is a subclass of int; handled above
+        return
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError(f"{where} must be JSON-native, got non-finite float {value!r}")
+        return
+    if isinstance(value, list):
+        for item in value:
+            _require_json_native(item, f"{where}[...]")
+        return
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise ValueError(
+                    f"{where} keys must be strings (JSON coerces them), "
+                    f"got {type(key).__name__} key {key!r}"
+                )
+            _require_json_native(item, f"{where}[{key!r}]")
+        return
+    raise ValueError(f"{where} must be JSON-native, got {type(value).__name__}")
+
+
 @dataclass(frozen=True)
 class Evidence:
     """Typed **facts cited by** a result: what was observed, and where.
@@ -117,6 +152,7 @@ class Evidence:
                 )
         if self.field_name is not None:
             _require_non_empty_str(self.field_name, "evidence 'field_name'")
+        _require_json_native(self.value, "evidence 'value'")
 
     def to_dict(self) -> dict[str, Any]:
         return {
