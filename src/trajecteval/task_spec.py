@@ -23,12 +23,20 @@ from typing import Any
 from trajecteval.errors import SpecError
 from trajecteval.models import Step
 
+# The rule sections -- the three things a spec can be missing. ``_KNOWN_KEYS``
+# below derives from this, and graders validate section names against it
+# (a typo'd section must raise ValueError, not crash getattr or silently
+# judge nothing).
+RULE_SECTIONS = (
+    "expected_final_state",
+    "allowed_actions",
+    "critical_error_patterns",
+)
+
 # The full key vocabulary. Anything else at the top level of a spec file is a
 # typo -- rejected at load, not silently ignored. "metadata" is the extension
 # valve for annotations that are not rules.
-_KNOWN_KEYS = frozenset(
-    {"task_id", "expected_final_state", "allowed_actions", "critical_error_patterns", "metadata"}
-)
+_KNOWN_KEYS = frozenset((*RULE_SECTIONS, "task_id", "metadata"))
 
 # A task id is a file name stem, never a path: no separators, no "..".
 # Lowercase keeps ids stable across operating systems.

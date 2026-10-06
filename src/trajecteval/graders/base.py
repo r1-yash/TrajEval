@@ -12,7 +12,7 @@ from typing import Protocol, runtime_checkable
 
 from trajecteval.models import Trajectory
 from trajecteval.results import Dimension, Evidence, GraderResult, Verdict
-from trajecteval.task_spec import TaskSpec
+from trajecteval.task_spec import RULE_SECTIONS, TaskSpec
 
 
 @runtime_checkable
@@ -79,6 +79,14 @@ def missing_section_result(
     *empty* section is present and judged normally; only an absent one is an
     ERROR.
     """
+    # Validate before getattr: a typo'd section would raise a bare
+    # AttributeError, and a real-but-wrong attribute like "task_id" would
+    # silently report "present". A bad section name is a grader-code bug,
+    # so ValueError (the grader lane), not SpecError (the data lane).
+    if section not in RULE_SECTIONS:
+        raise ValueError(
+            f"invalid section {section!r}; expected one of {', '.join(RULE_SECTIONS)}"
+        )
     if getattr(spec, section) is not None:
         return None
     return GraderResult(

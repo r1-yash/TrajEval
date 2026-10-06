@@ -116,6 +116,31 @@ def test_mismatch_check_comes_before_section_check():
     assert result.evidence[0].kind == "task_id_mismatch"
 
 
+def test_missing_section_rejects_unknown_section_names():
+    spec = TaskSpec(task_id="t")
+    # "allowed_action" is a typo; "task_id" is the dangerous one -- a real,
+    # non-None attribute that would silently report "present".
+    for bad in ("allowed_action", "task_id", "__class__"):
+        with pytest.raises(ValueError, match="invalid section"):
+            missing_section_result(spec, Dimension.BOUNDS, bad)
+
+
+def test_missing_section_rejects_non_string_section():
+    spec = TaskSpec(task_id="t")
+    with pytest.raises(ValueError, match="invalid section None"):
+        missing_section_result(spec, Dimension.BOUNDS, None)
+
+
+def test_missing_section_accepts_all_three_rule_sections():
+    spec = TaskSpec(task_id="t")
+    for section, dimension in (
+        ("expected_final_state", Dimension.FINAL_STATE),
+        ("allowed_actions", Dimension.BOUNDS),
+        ("critical_error_patterns", Dimension.CRITICAL),
+    ):
+        assert missing_section_result(spec, dimension, section) is not None
+
+
 def test_missing_section_returns_none_when_present():
     spec = TaskSpec(task_id="t", allowed_actions={})
     assert missing_section_result(spec, Dimension.BOUNDS, "allowed_actions") is None
