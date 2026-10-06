@@ -130,6 +130,8 @@ class Evidence:
     def from_dict(cls, data: dict[str, Any]) -> Evidence:
         if not isinstance(data, dict):
             raise ValueError(f"evidence must be an object, got {type(data).__name__}")
+        if "kind" not in data:
+            raise ValueError("evidence missing 'kind'")
         return cls(
             kind=data["kind"],
             step=data.get("step"),
@@ -215,11 +217,16 @@ class GraderResult:
         for key in ("dimension", "verdict", "reason"):
             if key not in data:
                 raise ValueError(f"result missing '{key}'")
+        raw_evidence = data.get("evidence", [])
+        # Check the container before iterating: a dict would silently iterate
+        # its keys, an int would raise a bare TypeError.
+        if not isinstance(raw_evidence, list):
+            raise ValueError(
+                f"result 'evidence' must be a list, got {type(raw_evidence).__name__}"
+            )
         return cls(
             dimension=data["dimension"],     # __post_init__ coerces str -> Dimension
             verdict=data["verdict"],   # __post_init__ coerces str -> Verdict
             reason=data["reason"],
-            evidence=tuple(
-                Evidence.from_dict(item) for item in data.get("evidence", ())
-            ),
+            evidence=tuple(Evidence.from_dict(item) for item in raw_evidence),
         )

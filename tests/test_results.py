@@ -211,6 +211,28 @@ def test_evidence_step_must_be_one_based():
         Evidence(kind="x", step=True)  # bool must not sneak in as an int
 
 
+def test_result_evidence_must_be_a_list():
+    base = {"dimension": "bounds", "verdict": "PASS", "reason": "x"}
+    with pytest.raises(ValueError, match="result 'evidence' must be a list, got dict"):
+        GraderResult.from_dict({**base, "evidence": {"kind": "oops"}})
+    with pytest.raises(ValueError, match="result 'evidence' must be a list, got int"):
+        GraderResult.from_dict({**base, "evidence": 5})
+
+
+def test_evidence_from_dict_missing_kind_raises_valueerror():
+    # Not a bare KeyError: same clear-message style as GraderResult.from_dict.
+    with pytest.raises(ValueError, match="evidence missing 'kind'"):
+        Evidence.from_dict({"step": 1})
+
+
+def test_result_item_must_be_object():
+    with pytest.raises(ValueError, match="evidence must be an object, got str"):
+        GraderResult.from_dict(
+            {"dimension": "bounds", "verdict": "FAIL", "reason": "x",
+             "evidence": ["not-an-object"]}
+        )
+
+
 def test_evidence_item_must_be_evidence():
     with pytest.raises(ValueError, match="items must be Evidence"):
         GraderResult(dimension="bounds", verdict=Verdict.FAIL, reason="x",
