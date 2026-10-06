@@ -24,19 +24,36 @@ TRAJ = Trajectory(task_id="travel_booking")
 class _StubBoundsGrader:
     """Stands in for the Step 6 bounds grader: section first, then judge."""
 
+    dimension = Dimension.BOUNDS
+
     def grade(self, spec: TaskSpec, trajectory: Trajectory) -> GraderResult:
-        blocked = missing_section_result(spec, Dimension.BOUNDS, "allowed_actions")
+        blocked = missing_section_result(spec, self.dimension, "allowed_actions")
         if blocked is not None:
             return blocked
         return GraderResult(
-            dimension=Dimension.BOUNDS,
+            dimension=self.dimension,
             verdict=Verdict.PASS,
             reason="stub: section present, nothing else checked yet",
         )
 
 
+class _NoDimensionGrader:
+    """Has grade() but no dimension -- must NOT qualify as a Grader."""
+
+    def grade(self, spec: TaskSpec, trajectory: Trajectory) -> GraderResult:
+        raise AssertionError("never called")
+
+
+def test_grader_protocol_requires_dimension():
+    # The report layer reads grader.dimension *without* calling grade (it
+    # needs the column even when grade crashes), so dimension is required.
+    assert isinstance(_StubBoundsGrader(), Grader)
+    assert _StubBoundsGrader().dimension is Dimension.BOUNDS
+    assert not isinstance(_NoDimensionGrader(), Grader)
+
+
 def test_protocol_accepts_any_grade_object():
-    # runtime_checkable isinstance checks the *shape* (a grade attribute);
+    # runtime_checkable isinstance checks the *shape* (attributes present);
     # the argument types are the type checker's job, not isinstance's.
     assert isinstance(_StubBoundsGrader(), Grader)
     assert not isinstance(object(), Grader)
