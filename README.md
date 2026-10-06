@@ -95,17 +95,41 @@ rule was broken, that is FAIL, never WARN.
 ## Task specs
 
 Graders know **how to check**, never **what to check**. All task-specific rules
-live in a plain JSON file per task:
+live in a plain JSON file per task. This is `tasks/travel_booking.json`,
+trimmed:
 
-```text
-tasks/<task-id>.json
-├── expected final state        # which fields must equal what
-├── allowed actions             # action names + which argument values are permitted
-└── critical-error patterns     # the forbidden moves, listed
+```json
+{
+  "task_id": "travel_booking",
+  "expected_final_state": { "status": "confirmed", "passengers": 1 },
+  "allowed_actions": {
+    "search_flights": {},
+    "book_flight": { "cabin": ["economy"] },
+    "pay": { "method": ["card"] }
+  },
+  "critical_error_patterns": [
+    { "action": "book_flight", "args": { "cabin": "first" } },
+    { "action": "pay", "args": { "method": "points" } }
+  ]
+}
 ```
 
+- **`expected_final_state`** — the listed fields must equal the listed values
+  in the final state. Unlisted fields are not judged.
+- **`allowed_actions`** — action name → per-argument lists of permitted values.
+  `{}` means any arguments; an unlisted action is out of bounds.
+- **`critical_error_patterns`** — exact moves that count as critical mistakes:
+  the action name plus, if given, arguments that must all match exactly. Omit
+  `args` to flag any call of that action.
+
 - Graders receive `(spec, trajectory)` and work the same way for every task.
-- Tasks are loaded **by task id** — no hardcoded registry.
+- Tasks are loaded **by task id** — `load_spec("travel_booking")` reads
+  `tasks/travel_booking.json`; no hardcoded registry. An id is a file name,
+  never a path.
+- **Absent ≠ empty.** A missing section means a grader that needs it *cannot
+  judge*: it returns ERROR with evidence naming the section (`step: null` —
+  spec-side, never an accusation against the trajectory). An empty `{}` / `[]`
+  is a deliberate "nothing to check" and is judged normally.
 - **Every rule in a spec is applied**, not just the first matching one. A
   trajectory violating two rules reports both.
 
@@ -229,11 +253,11 @@ TrajEval/
 ├── uv.lock                      # pinned versions (reproducible installs)
 ├── README.md
 ├── tasks/                       # one JSON spec per task — the only place rules live
-│   └── <task-one>.json
+│   └── travel_booking.json      # task one (fixtures arrive in Step 5)
 ├── src/
 │   └── trajecteval/
 │       ├── __init__.py          # public API surface
-│       ├── errors.py            # TrajectoryError (structural load errors only)
+│       ├── errors.py            # TrajEvalError base + TrajectoryError / SpecError
 │       ├── models.py            # Step, Action, Trajectory, Discontinuity + JSON I/O
 │       ├── results.py           # Verdict, Dimension, Evidence, GraderResult
 │       ├── task_spec.py         # TaskSpec + load-by-id (no registry)
@@ -263,8 +287,10 @@ TrajEval/
 ```
 
 **This is the target layout, not the current tree.** Today only
-`pyproject.toml`, `README.md`, `src/trajecteval/{__init__,errors,models,results}.py`
-and `tests/` exist — the roadmap's status column says what's built.
+`pyproject.toml`, `README.md`, `tasks/travel_booking.json`,
+`src/trajecteval/{__init__,errors,models,results,task_spec}.py`,
+`src/trajecteval/graders/` and `tests/` exist — the roadmap's status column
+says what's built.
 
 **Why `src/` layout?** It prevents a classic trap: Python silently importing
 your working directory instead of the installed package, so tests pass on your
@@ -304,8 +330,8 @@ Conventions:
 | 1 | Project scaffold (`uv init`, src layout, first test) | ✅ done |
 | 2 | Models: `Step`, `Trajectory`, JSON loading | ✅ done |
 | 3 | Result types: `Verdict`, `Dimension`, `Evidence`, `GraderResult` | ✅ done |
-| 4 | Task spec + grader contract: data-file rules, load by task id, `Grader` protocol | ⏳ planned |
-| 5 | Toy task one + four fixtures (clean, wasteful, critical, failed) | ⏳ planned |
+| 4 | Task spec + grader contract: data-file rules, load by task id, `Grader` protocol | ✅ done |
+| 5 | Four fixtures for task one: clean, wasteful, critical, failed | ⏳ planned |
 | 6 | Three deterministic graders (final state, bounds, critical) | ⏳ planned |
 | 7 | Report: `evaluate()` pipeline, JSON + readable text | ⏳ planned |
 | 8 | Comparison table across traces | ⏳ planned |
