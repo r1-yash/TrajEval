@@ -86,6 +86,12 @@ because they need opposite responses from a human: fix the
 trajectory vs. fix the setup. A grader **returns** a result — including ERROR —
 rather than raising an exception.
 
+**WARN is not FAIL either.** WARN means *no rule was broken, but something
+noteworthy happened* — e.g. an empty trajectory: bounds checked nothing, so a
+clean PASS would oversell it. WARN must cite the noteworthy thing as evidence.
+Deterministic graders may emit WARN, not only the LLM judge — but if an actual
+rule was broken, that is FAIL, never WARN.
+
 ## Task specs
 
 Graders know **how to check**, never **what to check**. All task-specific rules
