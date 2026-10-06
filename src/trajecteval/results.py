@@ -48,7 +48,9 @@ class Evidence:
 
     kind: str                      # open label, e.g. "price_exceeds_limit"
     step: int | None = None        # 1-based step index, or None = whole episode
-    field: str | None = None       # the specific field involved, if any
+    # Named field_name (not 'field') so it never collides with
+    # dataclasses.field if that import is ever added to this module.
+    field_name: str | None = None  # the specific field involved, if any
     value: Any = None              # the specific value involved, if any
 
     def __post_init__(self) -> None:
@@ -59,14 +61,14 @@ class Evidence:
                 raise ValueError(
                     f"evidence 'step' must be a 1-based int or None, got {self.step!r}"
                 )
-        if self.field is not None:
-            _require_non_empty_str(self.field, "evidence 'field'")
+        if self.field_name is not None:
+            _require_non_empty_str(self.field_name, "evidence 'field_name'")
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "kind": self.kind,
             "step": self.step,
-            "field": self.field,
+            "field_name": self.field_name,
             "value": self.value,
         }
 
@@ -77,7 +79,7 @@ class Evidence:
         return cls(
             kind=data["kind"],
             step=data.get("step"),
-            field=data.get("field"),
+            field_name=data.get("field_name"),
             value=data.get("value"),
         )
 

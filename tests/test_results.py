@@ -12,7 +12,7 @@ from trajecteval.results import Dimension, Evidence, GraderResult, Verdict
 PRICE_EVIDENCE = Evidence(
     kind="price_exceeds_limit",
     step=7,
-    field="itinerary.total_price",
+    field_name="itinerary.total_price",
     value=1400,
 )
 
@@ -95,7 +95,7 @@ def test_to_dict_dimension_is_plain_string():
 
 def test_evidence_with_step():
     assert PRICE_EVIDENCE.step == 7
-    assert PRICE_EVIDENCE.field == "itinerary.total_price"
+    assert PRICE_EVIDENCE.field_name == "itinerary.total_price"
     assert PRICE_EVIDENCE.value == 1400
 
 
@@ -178,7 +178,7 @@ def test_error_may_carry_diagnostic_evidence():
         dimension="final_state", verdict=Verdict.ERROR,
         reason="spec field 'expected_final_state' is malformed",
         evidence=[Evidence(kind="spec_field_malformed",
-                           field="expected_final_state", value="not-a-dict")],
+                           field_name="expected_final_state", value="not-a-dict")],
     )
     assert result.verdict is Verdict.ERROR
     assert result.evidence[0].kind == "spec_field_malformed"
