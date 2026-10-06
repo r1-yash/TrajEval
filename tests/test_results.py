@@ -21,7 +21,7 @@ PRICE_EVIDENCE = Evidence(
 
 
 def test_every_verdict_constructs():
-    # PASS and ERROR take no evidence; FAIL and WARN require one.
+    # Evidence: optional for PASS/ERROR, required for FAIL/WARN.
     ok = GraderResult(dimension="final_state", verdict=Verdict.PASS, reason="state matches spec")
     err = GraderResult(dimension="bounds", verdict=Verdict.ERROR, reason="spec field missing")
     fail = GraderResult(
@@ -170,12 +170,18 @@ def test_fail_and_warn_require_evidence():
         GraderResult(dimension="bounds", verdict=Verdict.WARN, reason="x")
 
 
-def test_error_must_not_carry_evidence():
-    with pytest.raises(ValueError, match="ERROR results must carry no evidence"):
-        GraderResult(
-            dimension="bounds", verdict=Verdict.ERROR, reason="could not judge",
-            evidence=(PRICE_EVIDENCE,),
-        )
+def test_error_may_carry_diagnostic_evidence():
+    # ERROR evidence points at *why judging was blocked* (here: a malformed
+    # spec field, step=None) -- the most useful thing an ERROR can say.
+    # It is not a judgment about the trajectory, so ERROR stays != FAIL.
+    result = GraderResult(
+        dimension="final_state", verdict=Verdict.ERROR,
+        reason="spec field 'expected_final_state' is malformed",
+        evidence=[Evidence(kind="spec_field_malformed",
+                           field="expected_final_state", value="not-a-dict")],
+    )
+    assert result.verdict is Verdict.ERROR
+    assert result.evidence[0].kind == "spec_field_malformed"
 
 
 # ------------------------------------------------------- 10. evidence details

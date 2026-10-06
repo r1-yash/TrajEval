@@ -81,10 +81,13 @@ class Evidence:
             value=data.get("value"),
         )
 
-#if error then no evidence, if fail/warn then at least one evidence in this class
-# it also does not make sense to have a pass with evidence, so we also enforce that
-# and we also enforce that the evidence is a tuple of Evidence objects
-# and we also enforce that the dimension and reason are non-empty strings
+# Invariants enforced in __post_init__ (see module docs for the reasoning):
+#   FAIL/WARN: at least one evidence item (assert something -> must show it)
+#   ERROR:     any number -- evidence cites *why judging was blocked*
+#              (typically a malformed spec field, step=None), never an
+#              accusation against the trajectory (that's FAIL's job)
+#   plus: evidence stored as a tuple of Evidence; dimension/verdict coerced
+#   into their closed enums; dimension and reason non-empty strings
 @dataclass(frozen=True)
 class GraderResult:
     """One dimension's verdict for one trajectory — the shared report card."""
@@ -135,10 +138,8 @@ class GraderResult:
                     f"got {type(item).__name__}"
                 )
 
-        # Verdict-specific rules: ERROR asserts nothing (so no proof);
-        # FAIL/WARN assert something (so proof is mandatory).
-        if self.verdict is Verdict.ERROR and self.evidence:
-            raise ValueError("ERROR results must carry no evidence (no judgment was made)")
+        # Verdict-specific rules: FAIL/WARN assert something (proof mandatory);
+        # ERROR may cite the evidence that blocked judging, but never accuses.
         if self.verdict in (Verdict.FAIL, Verdict.WARN) and not self.evidence:
             raise ValueError(f"{self.verdict.value} results must cite at least one evidence item")
 
