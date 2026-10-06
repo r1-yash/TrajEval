@@ -22,7 +22,7 @@ class Verdict(StrEnum):
 class Dimension(StrEnum):
     """Closed set of grading axes — the four dimensions of TrajEval.
 
-    The comparison table keys its columns by these, so a typo like "bound"
+    The comparison table keys its columns by these, so a typo like "bound" or "bounds"
     must fail at the grader's birth instead of silently creating a fifth
     column later. Same closed-set logic as Verdict."""
 
@@ -82,12 +82,10 @@ class Evidence:
     ``GraderResult.verdict`` says how to read it.
     """
 
-    kind: str                      # open label, e.g. "price_exceeds_limit"
-    step: int | None = None        # 1-based step index, or None = whole episode
-    # Named field_name (not 'field') so it never collides with
-    # dataclasses.field if that import is ever added to this module.
-    field_name: str | None = None  # the specific field involved, if any
-    value: Any = None              # the specific value involved, if any
+    kind: str                      
+    step: int | None = None        
+    field_name: str | None = None 
+    value: Any = None              
 
     def __post_init__(self) -> None:
         _require_non_empty_str(self.kind, "evidence 'kind'")
@@ -122,13 +120,13 @@ class Evidence:
             value=data.get("value"),
         )
 
-# Invariants enforced in __post_init__ (see module docs for the reasoning):
 #   FAIL/WARN: at least one evidence item (assert something -> must show it)
 #   ERROR:     any number -- evidence cites *why judging was blocked*
 #              (typically a malformed spec field, step=None), never an
 #              accusation against the trajectory (that's FAIL's job)
 #   plus: evidence stored as a tuple of Evidence; dimension/verdict coerced
-#   into their closed enums; dimension and reason non-empty strings
+
+#this class basically represents the result of grading a trajectory along a specific dimension, including the verdict, reason, and any supporting evidence.
 @dataclass(frozen=True)
 class GraderResult:
     """One dimension's verdict for one trajectory — the shared report card."""
@@ -208,8 +206,8 @@ class GraderResult:
                 f"result 'evidence' must be a list, got {type(raw_evidence).__name__}"
             )
         return cls(
-            dimension=data["dimension"],     # __post_init__ coerces str -> Dimension
-            verdict=data["verdict"],   # __post_init__ coerces str -> Verdict
+            dimension=data["dimension"],    
+            verdict=data["verdict"],   
             reason=data["reason"],
             evidence=tuple(Evidence.from_dict(item) for item in raw_evidence),
         )
