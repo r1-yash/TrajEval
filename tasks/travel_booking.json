@@ -1,0 +1,20 @@
+{
+  "task_id": "travel_booking",
+  "expected_final_state": {
+    "status": "confirmed",
+    "passengers": 1
+  },
+  "allowed_actions": {
+    "search_flights": {},
+    "book_flight": { "cabin": ["economy"] },
+    "pay": { "method": ["card"] }
+  },
+  "critical_error_patterns": [
+    { "action": "book_flight", "args": { "cabin": "first" } },
+    { "action": "pay", "args": { "method": "points" } }
+  ],
+  "metadata": {
+    "domain": "travel booking",
+    "budget": 1200
+  }
+}
