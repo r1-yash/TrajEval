@@ -125,20 +125,6 @@ This means adding a new task is writing one JSON file — no new grader code.
 9. **Python/uv only.** Everything runs as `uv run ...`. No pip, no venv
    activation, no Node/npm/TypeScript.
 
-## Prior work
-
-TrajEval is inspired by
-[TraceEval](https://github.com/ayeangad/Trace-Eval), used as a **scope and
-quality reference** — a bar for how clearly an evaluator of this kind can be
-structured. TrajEval is built from scratch in Python; nothing is ported.
-
-Differences in TrajEval's design (statements of fact, not judgments about
-either project): per-step state recorded before and after each action; a
-verdict vocabulary where ERROR (couldn't judge) is distinct from FAIL (broke a
-rule); typed evidence that cites step numbers; an injectable judge whose tests
-run fully offline; every rule in a task spec applied rather than only the first;
-and two different toy tasks run through one unchanged pipeline.
-
 ## Installation
 
 Requires [uv](https://docs.astral.sh/uv/) and **Python 3.14+**.
@@ -359,11 +345,6 @@ The project parses its own well-defined JSON format rather than validating
 arbitrary external input at an API boundary. Stdlib dataclasses keep the core
 dependency-free and the mental model small. Revisiting later if needs grow is
 normal.
-
-**Why is TraceEval referenced but not ported?**
-TraceEval is a scope and quality reference — a bar for architectural clarity and
-project focus. TrajEval is designed from first principles in Python; design
-decisions are justified on their own terms (see Prior work).
 
 **Where does Debuggernaut fit?**
 Nowhere required. It's an optional final adapter (Step 14), included only if
