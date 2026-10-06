@@ -17,6 +17,19 @@ class Verdict(StrEnum):
     ERROR = "ERROR"
 
 
+class Dimension(StrEnum):
+    """Closed set of grading axes — the four dimensions of TrajEval.
+
+    The comparison table keys its columns by these, so a typo like "bound"
+    must fail at the grader's birth instead of silently creating a fifth
+    column later. Same closed-set logic as Verdict."""
+
+    FINAL_STATE = "final_state"
+    BOUNDS = "bounds"
+    CRITICAL = "critical"
+    TRAJECTORY_QUALITY = "trajectory_quality"
+
+
 def _require_non_empty_str(value: Any, where: str) -> str:
     if not isinstance(value, str) or not value:
         raise ValueError(f"{where} must be a non-empty string, got {value!r}")
@@ -76,13 +89,23 @@ class Evidence:
 class GraderResult:
     """One dimension's verdict for one trajectory — the shared report card."""
 
-    dimension: str                 # which axis: "final_state", "bounds", ...
+    dimension: Dimension       # closed set: final_state | bounds | critical | trajectory_quality
     verdict: Verdict
     reason: str
     evidence: tuple[Evidence, ...] = ()
 
     def __post_init__(self) -> None:
         _require_non_empty_str(self.dimension, "result 'dimension'")
+        # Coerce plain strings ("bounds") into Dimension members; a typo like
+        # "bound" raises with our message instead of becoming a new column.
+        if not isinstance(self.dimension, Dimension):
+            try:
+                object.__setattr__(self, "dimension", Dimension(self.dimension))
+            except ValueError:
+                raise ValueError(
+                    f"invalid dimension {self.dimension!r}; "
+                    f"expected one of {', '.join(d.value for d in Dimension)}"
+                ) from None
 
         # Coerce plain strings ("FAIL") into Verdict members; unknown values
         # raise with our message instead of a bare enum ValueError.
@@ -120,9 +143,9 @@ class GraderResult:
             raise ValueError(f"{self.verdict.value} results must cite at least one evidence item")
 
     def to_dict(self) -> dict[str, Any]:
-        """JSON-friendly plain dict. Verdict becomes its plain string."""
+        """JSON-friendly plain dict. Verdict and dimension become plain strings."""
         return {
-            "dimension": self.dimension,
+            "dimension": self.dimension.value,
             "verdict": self.verdict.value,
             "reason": self.reason,
             "evidence": [item.to_dict() for item in self.evidence],
@@ -136,7 +159,7 @@ class GraderResult:
             if key not in data:
                 raise ValueError(f"result missing '{key}'")
         return cls(
-            dimension=data["dimension"],
+            dimension=data["dimension"],     # __post_init__ coerces str -> Dimension
             verdict=data["verdict"],   # __post_init__ coerces str -> Verdict
             reason=data["reason"],
             evidence=tuple(

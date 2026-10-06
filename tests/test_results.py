@@ -7,7 +7,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from trajecteval.results import Evidence, GraderResult, Verdict
+from trajecteval.results import Dimension, Evidence, GraderResult, Verdict
 
 PRICE_EVIDENCE = Evidence(
     kind="price_exceeds_limit",
@@ -72,6 +72,22 @@ def test_empty_reason_rejected_for_every_verdict():
 def test_empty_dimension_rejected():
     with pytest.raises(ValueError, match="result 'dimension' must be a non-empty string"):
         GraderResult(dimension="", verdict=Verdict.PASS, reason="x")
+
+
+def test_bad_dimension_rejected():
+    # "bound" must fail here, not become a fifth column in the comparison table.
+    with pytest.raises(ValueError, match="invalid dimension 'bound'"):
+        GraderResult(dimension="bound", verdict=Verdict.PASS, reason="x")
+
+
+def test_plain_string_dimension_coerces_to_member():
+    result = GraderResult(dimension="bounds", verdict=Verdict.PASS, reason="x")
+    assert result.dimension is Dimension.BOUNDS
+
+
+def test_to_dict_dimension_is_plain_string():
+    result = GraderResult(dimension="bounds", verdict=Verdict.PASS, reason="x")
+    assert result.to_dict()["dimension"] == "bounds"
 
 
 # --------------------------------------------------- 4. evidence step or none
