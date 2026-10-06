@@ -4,6 +4,16 @@ A grader is any object with a ``dimension`` (the comparison-table column it
 owns) and a ``grade(spec, trajectory) -> GraderResult`` method -- a hiring
 contract, not a base class. Whoever it is, it fills out the same report card,
 which is why Step 7 can loop over graders with zero special cases.
+
+A grader returns an ERROR result; it does not raise. Judging problems
+(missing section, wrong task pairing) are reported as ERROR verdicts with
+diagnostic evidence. An exception escaping ``grade()`` is a *bug in the
+grader*: Step 7's ``evaluate()`` will wrap every call and convert it into an
+ERROR result attributed to ``grader.dimension``, so one broken grader
+degrades its own column instead of crashing the run. The wrapper itself
+lands in Step 7; until then, the two ERROR causes are distinguishable by
+evidence kind (``missing_spec_field`` / ``task_id_mismatch`` vs. whatever
+kind the wrapper settles on for crashes -- open question for Step 7).
 """
 
 from __future__ import annotations
