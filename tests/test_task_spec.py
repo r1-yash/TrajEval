@@ -1,5 +1,6 @@
 """Tests for task specs: load-by-id, the pinned schema, and the two-door errors."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -37,6 +38,18 @@ def test_to_dict_omits_absent_sections():
     data = TaskSpec(task_id="bare").to_dict()
     assert set(data) == {"task_id", "metadata"}
     assert TaskSpec.from_dict(data) == TaskSpec(task_id="bare")
+
+
+def test_load_spec_rejects_id_mismatch(tmp_path: Path):
+    # A copied/renamed file: tasks/foo.json declares task_id "bar". Loading
+    # it silently would hand callers a spec whose id disagrees with the one
+    # they asked for -- and with every trajectory pairing built from it.
+    (tmp_path / "foo.json").write_text(json.dumps({"task_id": "bar"}), encoding="utf-8")
+    with pytest.raises(SpecError) as exc_info:
+        load_spec("foo", tasks_dir=tmp_path)
+    message = str(exc_info.value)
+    assert "'bar'" in message  # the id the file declares
+    assert "'foo'" in message  # the id it was loaded as
 
 
 def test_missing_file_raises_spec_error(tmp_path: Path):

@@ -211,7 +211,10 @@ def load_spec(task_id: str, tasks_dir: str | Path | None = None) -> TaskSpec:
 
     ``tasks_dir`` defaults to a ``tasks`` folder in the current directory.
     File problems (missing file, invalid JSON) and schema problems both raise
-    ``SpecError`` -- "the rulebook you pointed me at is broken".
+    ``SpecError`` -- "the rulebook you pointed me at is broken". The file's
+    own ``task_id`` must equal the requested id: a mismatch means the file
+    was copied or renamed, and the spec that loads is not the spec you asked
+    for, so it raises naming both ids.
     """
     _require_task_id(task_id)
     directory = Path(tasks_dir) if tasks_dir is not None else Path.cwd() / "tasks"
@@ -225,4 +228,10 @@ def load_spec(task_id: str, tasks_dir: str | Path | None = None) -> TaskSpec:
         data = json.loads(text)
     except json.JSONDecodeError as exc:
         raise SpecError(f"{path} is not valid JSON: {exc}") from exc
-    return TaskSpec.from_dict(data)
+    spec = TaskSpec.from_dict(data)
+    if spec.task_id != task_id:
+        raise SpecError(
+            f"task id mismatch: {path} declares task_id {spec.task_id!r} "
+            f"but was loaded as {task_id!r}"
+        )
+    return spec
