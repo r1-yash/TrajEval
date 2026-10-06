@@ -221,6 +221,44 @@ def test_json_null_metadata_normalizes_to_empty():
     )
 
 
+def test_pattern_description_round_trips():
+    pattern = CriticalPattern(
+        action="pay", args={"method": "points"}, description="pay with the card"
+    )
+    assert pattern.to_dict()["description"] == "pay with the card"
+    assert CriticalPattern.from_dict(pattern.to_dict()) == pattern
+
+
+def test_pattern_description_is_optional_and_null_is_omitted():
+    # travel_booking.json ships without descriptions (strings TBD by hand):
+    # absent and explicit null both land on None, to_dict omits the key.
+    pattern = CriticalPattern(action="pay")
+    assert pattern.description is None
+    assert "description" not in pattern.to_dict()
+    assert CriticalPattern.from_dict({"action": "pay"}).description is None
+    assert CriticalPattern.from_dict(
+        {"action": "pay", "description": None}
+    ).description is None
+
+
+def test_pattern_description_must_be_non_empty_when_present():
+    with pytest.raises(SpecError, match="critical pattern 'description'"):
+        CriticalPattern(action="pay", description="")
+
+
+def test_pattern_description_does_not_affect_matching():
+    # Narrative only: nothing parses it, matches() ignores it.
+    without = CriticalPattern(action="book_flight", args={"cabin": "first"})
+    with_desc = CriticalPattern(
+        action="book_flight", args={"cabin": "first"}, description="over budget"
+    )
+    assert with_desc.matches(_book_step(cabin="first"))
+    assert not with_desc.matches(_book_step(cabin="economy"))
+    assert with_desc.matches(_book_step(cabin="first")) == without.matches(
+        _book_step(cabin="first")
+    )
+
+
 def _book_step(cabin: str | None = "economy") -> Step:
     args = {"cabin": cabin} if cabin is not None else {}
     return Step(

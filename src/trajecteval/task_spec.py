@@ -93,14 +93,22 @@ class CriticalPattern:
     the step's arguments with an equal value. An absent pattern's ``args``
     matches any call of the action; an absent *argument* never matches (not
     making a move is not making the forbidden move).
+
+    ``description`` narrates *why* the move is forbidden, for the reason
+    line of a failing critical result. It is narrative only: ``matches()``
+    ignores it, nothing parses it, and it is optional (structural fallback:
+    action plus matched args).
     """
 
     action: str
     args: dict[str, Any] = field(default_factory=dict)
+    description: str | None = None
 
     def __post_init__(self) -> None:
         _require_non_empty_str(self.action, "critical pattern 'action'")
         _require_object(self.args, "critical pattern 'args'")
+        if self.description is not None:
+            _require_non_empty_str(self.description, "critical pattern 'description'")
 
     def matches(self, step: Step) -> bool:
         if step.action.name != self.action:
@@ -111,19 +119,22 @@ class CriticalPattern:
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {"action": self.action, "args": dict(self.args)}
+        data: dict[str, Any] = {"action": self.action, "args": dict(self.args)}
+        if self.description is not None:
+            data["description"] = self.description
+        return data
 
     @classmethod
     def from_dict(cls, data: Any, where: str = "critical pattern") -> CriticalPattern:
         data = _require_object(data, where)
         if "action" not in data:
             raise SpecError(f"{where}: missing required field 'action'")
-        unknown = sorted(set(data) - {"action", "args"})
+        unknown = sorted(set(data) - {"action", "args", "description"})
         if unknown:
             raise SpecError(f"{where}: unknown key(s) {', '.join(repr(k) for k in unknown)}")
         args = data.get("args", {})
         _require_object(args, f"{where} 'args'")
-        return cls(action=data["action"], args=args)
+        return cls(action=data["action"], args=args, description=data.get("description"))
 
 
 @dataclass(frozen=True)
