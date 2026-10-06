@@ -33,16 +33,51 @@ class Grader(Protocol):
         ...  # pragma: no cover - protocol body, never executed
 
 
+def task_id_mismatch_result(
+    spec: TaskSpec, dimension: Dimension, trajectory: Trajectory
+) -> GraderResult | None:
+    """ERROR result when spec and trajectory are for different tasks; None otherwise.
+
+    Every grader calls this **first**, before ``missing_section_result``: if
+    the pairing is wrong, the spec's sections are irrelevant. A mismatch is a
+    *pairing* problem, not a verdict on either file -- so the evidence is a
+    diagnostic naming both ids (``step=None``, spec-side), never an
+    accusation against the trajectory, whose own task_id may be perfectly
+    fine.
+    """
+    if spec.task_id == trajectory.task_id:
+        return None
+    return GraderResult(
+        dimension=dimension,
+        verdict=Verdict.ERROR,
+        reason=(
+            f"spec is for task {spec.task_id!r} but trajectory is for "
+            f"{trajectory.task_id!r}; wrong pairing -- "
+            f"cannot judge the {dimension.value} dimension"
+        ),
+        evidence=(
+            Evidence(
+                kind="task_id_mismatch",
+                step=None,
+                field_name="task_id",
+                value={"spec": spec.task_id, "trajectory": trajectory.task_id},
+            ),
+        ),
+    )
+
+
 def missing_section_result(
     spec: TaskSpec, dimension: Dimension, section: str
 ) -> GraderResult | None:
     """ERROR result when the spec lacks ``section``; None when it is present.
 
-    Every grader calls this before checking anything: if the rulebook is
-    missing the page this grader needs, it cannot judge -- so it says which
-    section is missing (ERROR verdict, diagnostic evidence pointing at the
-    spec, ``step=None``) instead of crashing or guessing. An *empty* section
-    is present and judged normally; only an absent one is an ERROR.
+    Call order in a grader: ``task_id_mismatch_result`` first, then this --
+    pairing, then sections. Every grader calls this before checking anything:
+    if the rulebook is missing the page this grader needs, it cannot judge --
+    so it says which section is missing (ERROR verdict, diagnostic evidence
+    pointing at the spec, ``step=None``) instead of crashing or guessing. An
+    *empty* section is present and judged normally; only an absent one is an
+    ERROR.
     """
     if getattr(spec, section) is not None:
         return None

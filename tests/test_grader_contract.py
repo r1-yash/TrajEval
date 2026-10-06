@@ -16,9 +16,11 @@ from trajecteval import (
     Trajectory,
     Verdict,
     missing_section_result,
+    task_id_mismatch_result,
 )
 
 TRAJ = Trajectory(task_id="travel_booking")
+OTHER_TRAJ = Trajectory(task_id="airbnb_booking")
 
 
 class _StubBoundsGrader:
@@ -66,6 +68,52 @@ def test_stub_grader_fills_out_the_report_card():
     )
     assert isinstance(result, GraderResult)
     assert result.verdict is Verdict.PASS
+
+
+def test_task_id_match_returns_none():
+    spec = TaskSpec(task_id="travel_booking")
+    assert task_id_mismatch_result(spec, Dimension.BOUNDS, TRAJ) is None
+
+
+def test_task_id_mismatch_is_diagnostic_error():
+    # Wrong pairing: ERROR, reason names BOTH ids, evidence points at the
+    # spec side (step=None) -- a diagnostic, never an accusation against
+    # the trajectory, which may be perfectly fine on its own.
+    spec = TaskSpec(task_id="travel_booking")
+    result = task_id_mismatch_result(spec, Dimension.BOUNDS, OTHER_TRAJ)
+    assert result is not None
+    assert result.verdict is Verdict.ERROR
+    assert "'travel_booking'" in result.reason
+    assert "'airbnb_booking'" in result.reason
+    assert result.dimension is Dimension.BOUNDS  # attributed to the CALLER's column
+    evidence = result.evidence[0]
+    assert evidence.kind == "task_id_mismatch"
+    assert evidence.step is None
+    assert evidence.field_name == "task_id"
+    assert evidence.value == {"spec": "travel_booking", "trajectory": "airbnb_booking"}
+
+
+def test_mismatch_check_comes_before_section_check():
+    # Documented call order, made executable: a wrong pairing must not be
+    # masked by an unrelated missing section (spec here has no
+    # allowed_actions AND is paired with the wrong trajectory).
+    class _OrderedGrader:
+        dimension = Dimension.BOUNDS
+
+        def grade(self, spec: TaskSpec, trajectory: Trajectory) -> GraderResult:
+            return (
+                task_id_mismatch_result(spec, self.dimension, trajectory)
+                or missing_section_result(spec, self.dimension, "allowed_actions")
+                or GraderResult(
+                    dimension=self.dimension,
+                    verdict=Verdict.PASS,
+                    reason="stub: paired and complete",
+                )
+            )
+
+    result = _OrderedGrader().grade(TaskSpec(task_id="travel_booking"), OTHER_TRAJ)
+    assert result.verdict is Verdict.ERROR
+    assert result.evidence[0].kind == "task_id_mismatch"
 
 
 def test_missing_section_returns_none_when_present():
