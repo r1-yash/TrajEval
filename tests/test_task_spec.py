@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from trajecteval import Action, CriticalPattern, SpecError, Step, TaskSpec, load_spec
+from trajecteval import Action, CriticalPattern, RULE_SECTIONS, SpecError, Step, TaskSpec, load_spec
 
 REPO = Path(__file__).resolve().parents[1]
 TASKS = REPO / "tasks"
@@ -153,6 +153,72 @@ def test_absent_sections_are_none_empty_sections_stay_empty():
 def test_pattern_list_is_coerced_to_tuple():
     spec = TaskSpec(task_id="t", critical_error_patterns=[CriticalPattern(action="pay")])
     assert isinstance(spec.critical_error_patterns, tuple)
+
+
+def test_action_allowed_distinguishes_listed_empty_and_missing():
+    spec = TaskSpec(task_id="t", allowed_actions={"search": {}})
+    assert spec.action_allowed("search")          # listed with {} -> allowed
+    assert not spec.action_allowed("book_flight")  # unlisted -> out of bounds
+
+
+def test_empty_permit_map_constrains_no_arguments():
+    spec = TaskSpec(task_id="t", allowed_actions={"search": {}})
+    assert spec.argument_violations("search", {"q": "cheap flights", "limit": 5}) == ()
+
+
+def test_empty_permit_list_forbids_any_supplied_value():
+    spec = TaskSpec(task_id="t", allowed_actions={"pay": {"method": []}})
+    assert spec.argument_violations("pay", {"method": "cash"}) == (("method", "cash"),)
+    assert spec.argument_violations("pay", {"amount": 100}) == ()  # nothing supplied
+
+
+def test_argument_outside_permit_map_is_unconstrained():
+    spec = TaskSpec(task_id="t", allowed_actions={"pay": {"method": ["card"]}})
+    assert spec.argument_violations("pay", {"method": "card", "memo": "team offsite"}) == ()
+
+
+def test_listed_but_absent_argument_is_not_a_violation():
+    # Permits police what happened; they can never require an argument --
+    # completeness is expected_final_state's job.
+    spec = TaskSpec(task_id="t", allowed_actions={"pay": {"method": ["card"]}})
+    assert spec.argument_violations("pay", {}) == ()
+
+
+def test_argument_violations_reports_each_forbidden_argument():
+    spec = TaskSpec(
+        task_id="t",
+        allowed_actions={"pay": {"method": ["card"], "currency": ["USD"]}},
+    )
+    assert spec.argument_violations(
+        "pay", {"method": "cash", "currency": "BTC", "memo": "hi"}
+    ) == (("method", "cash"), ("currency", "BTC"))  # memo: unconstrained
+
+
+def test_action_predicates_require_section_checked_first():
+    spec = TaskSpec(task_id="t")  # section absent -- "can't judge", not "forbidden"
+    with pytest.raises(ValueError, match="missing_section_result"):
+        spec.action_allowed("search")
+    with pytest.raises(ValueError, match="missing_section_result"):
+        spec.argument_violations("search", {})
+
+
+def test_argument_violations_requires_a_listed_action():
+    spec = TaskSpec(task_id="t", allowed_actions={"pay": {}})
+    with pytest.raises(ValueError, match="action_allowed"):
+        spec.argument_violations("search", {"q": "x"})
+
+
+def test_json_null_section_equals_omitted():
+    for section in RULE_SECTIONS:
+        assert TaskSpec.from_dict({"task_id": "t", section: None}) == TaskSpec.from_dict(
+            {"task_id": "t"}
+        )
+
+
+def test_json_null_metadata_normalizes_to_empty():
+    assert TaskSpec.from_dict({"task_id": "t", "metadata": None}) == TaskSpec.from_dict(
+        {"task_id": "t"}
+    )
 
 
 def _book_step(cabin: str | None = "economy") -> Step:

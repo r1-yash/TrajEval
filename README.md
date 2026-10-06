@@ -117,7 +117,12 @@ trimmed:
 - **`expected_final_state`** — the listed fields must equal the listed values
   in the final state. Unlisted fields are not judged.
 - **`allowed_actions`** — action name → per-argument lists of permitted values.
-  `{}` means any arguments; an unlisted action is out of bounds.
+  `{}` means the action is allowed with any arguments; an unlisted action is
+  out of bounds. Permits police only arguments the agent *supplied*: an
+  argument absent from the permit map is unconstrained, a listed-but-absent
+  argument is never a violation (permits cannot *require* an argument —
+  completeness is `expected_final_state`'s job), and an empty permit list
+  permits nothing.
 - **`critical_error_patterns`** — exact moves that count as critical mistakes:
   the action name plus, if given, arguments that must all match exactly. Omit
   `args` to flag any call of that action.
@@ -130,6 +135,8 @@ trimmed:
   judge*: it returns ERROR with evidence naming the section (`step: null` —
   spec-side, never an accusation against the trajectory). An empty `{}` / `[]`
   is a deliberate "nothing to check" and is judged normally.
+- **`null` means omitted**, everywhere in a spec — a `null` section behaves
+  exactly like an absent one; `null` `metadata` becomes `{}`.
 - **Every rule in a spec is applied**, not just the first matching one. A
   trajectory violating two rules reports both.
 

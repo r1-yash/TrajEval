@@ -11,6 +11,24 @@ Absent vs. empty is meaningful: a section set to ``None`` (omitted) means a
 grader that needs it *cannot judge* and must return an ERROR result naming
 the section; an empty ``{}`` / ``()`` means the section exists but lists
 nothing to check.
+
+Permission semantics -- the contract ``action_allowed`` /
+``argument_violations`` execute, and the one Step 6's bounds grader must
+implement:
+
+- action listed with ``{}`` -- allowed with any arguments; nothing to check
+- action listed with permit lists -- allowed, and every *supplied* argument
+  named in the map must be one of the listed values
+- empty permit list (``[]``) -- nothing permitted: any supplied value violates
+- argument not in the action's permit map -- unconstrained; permits police
+  declared constraints only and can never *require* an argument (a
+  listed-but-absent argument is not a violation -- completeness is
+  ``expected_final_state``'s job)
+- action not listed at all -- out of bounds
+
+JSON ``null`` and an omitted key mean the same thing everywhere in a spec:
+absent. A ``null`` section is ``None``; a ``null`` ``metadata`` normalizes
+to ``{}``.
 """
 
 from __future__ import annotations
@@ -162,6 +180,60 @@ class TaskSpec:
         if not isinstance(self.metadata, dict):
             raise SpecError(f"spec 'metadata': expected an object, got {type(self.metadata).__name__}")
 
+    def action_allowed(self, action: str) -> bool:
+        """Whether ``allowed_actions`` lists this action at all.
+
+        ``{}`` (listed, no permits) means allowed with any arguments; not
+        listed means out of bounds. Requires the section to be present:
+        absence is "cannot judge" (the grader's ``missing_section_result``
+        step), not "not allowed".
+        """
+        if self.allowed_actions is None:
+            raise ValueError(
+                f"allowed_actions section is absent for task {self.task_id!r}; "
+                "call missing_section_result(...) first"
+            )
+        return action in self.allowed_actions
+
+    def argument_violations(
+        self, action: str, args: dict[str, Any]
+    ) -> tuple[tuple[str, Any], ...]:
+        """Each *supplied* argument its permit list forbids: ``((arg, value), ...)``.
+
+        Pins the permission semantics documented at the top of this module:
+
+        - only supplied arguments are policed -- a listed-but-absent
+          argument never violates (permits cannot require an argument)
+        - an argument outside the action's permit map is unconstrained
+        - an empty permit list forbids every supplied value
+        - an empty permit map forbids nothing
+
+        Preconditions (violating them is grader-code bug, ValueError):
+        ``allowed_actions`` present (call ``missing_section_result`` first)
+        and ``action`` listed (check ``action_allowed`` first) -- an unlisted
+        action has no permit map, and reporting "no violations" for it would
+        let an out-of-bounds action slip through.
+        """
+        if self.allowed_actions is None:
+            raise ValueError(
+                f"allowed_actions section is absent for task {self.task_id!r}; "
+                "call missing_section_result(...) first"
+            )
+        if action not in self.allowed_actions:
+            raise ValueError(
+                f"action {action!r} is not listed in allowed_actions; "
+                "check action_allowed(...) first"
+            )
+        permits = self.allowed_actions[action]
+        violations: list[tuple[str, Any]] = []
+        for arg, value in args.items():
+            allowed_values = permits.get(arg)
+            if allowed_values is None:  # arg not in the permit map -> unconstrained
+                continue
+            if value not in allowed_values:
+                violations.append((arg, value))
+        return tuple(violations)
+
     def to_dict(self) -> dict[str, Any]:
         """Round-trippable plain dict; absent sections stay absent (omitted)."""
         data: dict[str, Any] = {"task_id": self.task_id}
@@ -202,7 +274,8 @@ class TaskSpec:
                 for position, item in enumerate(raw)
             )
 
-        metadata = data.get("metadata", {})
+        raw_metadata = data.get("metadata")  # absent and explicit null both mean omitted
+        metadata = {} if raw_metadata is None else raw_metadata
         _require_object(metadata, "spec 'metadata'")
 
         return cls(
