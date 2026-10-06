@@ -67,13 +67,21 @@ plus a comparison table across traces. Not one scalar number: a breakdown of *wh
 GraderResult
 ├── verdict   : PASS | FAIL | WARN | ERROR
 ├── reason    : str                       (the "why", human-readable)
-├── evidence  : list[Evidence]            (the "prove it": typed, cites step numbers)
-└── dimension : str                       (which of the four axes)
+├── evidence  : list[Evidence]            (facts cited: neutral, cites step numbers)
+└── dimension : Dimension                 (closed set: final_state | bounds |
+                                            critical | trajectory_quality)
 ```
 
+Evidence is **neutral** — facts a result points at, not "proof of a
+problem." The verdict carries the interpretation: a FAIL's smoking gun and
+a PASS's recovery note look identical at the evidence level, and the report
+renders them the same way.
+
 **ERROR is not FAIL.** FAIL means the trajectory broke a rule. ERROR means the
-*grader itself* could not judge — a missing spec field, malformed input. The two
-are never conflated, because they need opposite responses from a human: fix the
+*grader itself* could not judge — a missing spec field, malformed input. An
+ERROR may cite evidence pointing at *what blocked it* (e.g. the broken spec
+field) — a diagnostic, never an accusation. The two are never conflated,
+because they need opposite responses from a human: fix the
 trajectory vs. fix the setup. A grader **returns** a result — including ERROR —
 rather than raising an exception.
 
@@ -103,8 +111,9 @@ This means adding a new task is writing one JSON file — no new grader code.
 2. **Deterministic graders and the LLM judge never mix modules.** Same result
    type, separate implementations, judge injectable.
 3. **Mistakes are sticky.** Recovery never downgrades a critical mistake.
-4. **Evidence or it didn't happen.** Every verdict carries a reason and typed
-   evidence with step numbers.
+4. **Evidence or it didn't happen.** Every verdict carries a reason; FAIL and
+   WARN additionally cite typed evidence with step numbers. Evidence is
+   neutral — the verdict, not the evidence, says whether it's good or bad.
 5. **ERROR ≠ FAIL.** A grader that can't judge says so; it never guesses.
 6. **Rules live in task specs, not grader code.** Graders stay domain-agnostic;
    every rule in a spec list is applied.

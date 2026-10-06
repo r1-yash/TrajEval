@@ -170,6 +170,18 @@ def test_fail_and_warn_require_evidence():
         GraderResult(dimension="bounds", verdict=Verdict.WARN, reason="x")
 
 
+def test_pass_may_carry_recovery_evidence():
+    # The README promises recovery notes; a PASS is where they live
+    # ("no rule broken, but step 9 undid a near-miss" is citable).
+    result = GraderResult(
+        dimension="critical", verdict=Verdict.PASS,
+        reason="no critical mistakes; the step 9 undo counts as a recovery note",
+        evidence=[Evidence(kind="recovery_note", step=9)],
+    )
+    assert result.verdict is Verdict.PASS
+    assert result.evidence[0].kind == "recovery_note"
+
+
 def test_error_may_carry_diagnostic_evidence():
     # ERROR evidence points at *why judging was blocked* (here: a malformed
     # spec field, step=None) -- the most useful thing an ERROR can say.

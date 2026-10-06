@@ -1,3 +1,54 @@
+"""Shared result vocabulary: what every grader and the judge report back.
+
+One report card, filled out the same way by everyone. Step 7's report
+renderer loops over ``GraderResult`` objects and prints verdict + reason +
+evidence **without any per-grader special cases** — that genericity is the
+whole reason this module exists and why it was built before any grader.
+
+Verdict semantics
+-----------------
+PASS    a rule was satisfied. May cite evidence — e.g. a *recovery note*
+        ("step 9 undid a near-miss"), which the sticky-mistake rule
+        promises to surface.
+FAIL    a rule was broken. Must cite evidence.
+WARN    **no rule was broken, but something noteworthy happened** (e.g. an
+        empty trajectory: bounds checked nothing, so a clean PASS would
+        oversell it). Must cite the noteworthy thing as evidence.
+        Deterministic graders MAY emit WARN, not only the LLM judge — but if
+        an actual rule was broken, that is FAIL, never WARN.
+ERROR   the grader itself could not judge (missing spec field, malformed
+        input). May cite evidence pointing at *why judging was blocked*
+        (typically a malformed spec field, step=None) — a diagnostic, never
+        an accusation against the trajectory. ERROR is never conflated with
+        FAIL: distinct ``Verdict`` members, unequal as values, and calling
+        for opposite responses (fix the setup vs. fix the trajectory).
+
+Evidence is neutral
+-------------------
+Evidence is **facts a result cites, not proof of a problem**. The verdict
+carries the interpretation; the evidence just points at what was observed.
+Step 7's renderer must therefore present evidence uniformly
+(``step · kind · field_name=value``) and must never assemble a "problems"
+list from evidence presence alone — a PASS's recovery note and a FAIL's
+smoking gun look identical at the evidence level, and that is the point.
+
+Construction invariants (enforced in __post_init__, raised as ValueError —
+these are bugs in grader *code*, not bad trajectory files):
+
+* ``dimension`` (a closed ``Dimension`` member) and ``reason`` are
+  non-empty — Step 7 prints a reason line for every result, so a blank one
+  is a grader that didn't explain what it checked.
+* FAIL and WARN carry at least one evidence item ("evidence or it didn't
+  happen"); PASS and ERROR may carry any number.
+* each evidence item is an ``Evidence`` with a non-empty ``kind`` and, when
+  present, a 1-based ``step``.
+
+``dimension`` is a closed enum (not a free string) because the comparison
+table keys columns by it — a typo like "bound" would otherwise silently
+become a fifth column. Evidence ``kind``, by contrast, is an *open* string:
+kinds are owned by the producers (each grader's findings), verdicts and
+dimensions are consumed by the report and comparison table.
+"""
 
 from __future__ import annotations
 
@@ -38,12 +89,15 @@ def _require_non_empty_str(value: Any, where: str) -> str:
 
 @dataclass(frozen=True)
 class Evidence:
-    """Typed proof attached to a result: what was found, and where.
+    """Typed **facts cited by** a result: what was observed, and where.
 
-    step=None, means the finding applies to the whole trajectory, not
+    ``step=None`` means the finding applies to the **whole trajectory**, not
     any single step (e.g. "this episode has no actions at all"). None is a
-    meaningful value here, not missing data or anything and it must survive JSON
+    meaningful value here, not missing data — and it must survive JSON
     round-trips as null.
+
+    Evidence is neutral: it does not assert pass or fail. The surrounding
+    ``GraderResult.verdict`` says how to read it.
     """
 
     kind: str                      # open label, e.g. "price_exceeds_limit"
