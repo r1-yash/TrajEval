@@ -11,10 +11,11 @@ state of the world **before and after** each one — and grades that path on
 four separate questions, so a report tells you *why* a run was good or bad,
 not just whether it was.
 
-> **Status:** under construction. Steps 1–3 (scaffold, models, result types)
-> are done. Everything else in this README is a **plan** — roadmap rows are
-> marked, and every usage example below says plainly whether it works yet.
-> Nothing here is built unless its roadmap row says so.
+> **Status:** under construction. Steps 1–5 (scaffold, models, result types,
+> task specs + grader contract, fixtures) are done. Everything else in this
+> README is a **plan** — roadmap rows are marked, and every usage example
+> below says plainly whether it works yet. Nothing here is built unless its
+> roadmap row says so.
 
 ## The four grading dimensions
 
@@ -262,7 +263,7 @@ TrajEval/
 ├── uv.lock                      # pinned versions (reproducible installs)
 ├── README.md
 ├── tasks/                       # one JSON spec per task — the only place rules live
-│   └── travel_booking.json      # task one (fixtures arrive in Step 5)
+│   └── travel_booking.json      # task one spec (fixtures live in tests/fixtures/travel_booking/)
 ├── src/
 │   └── trajecteval/
 │       ├── __init__.py          # public API surface
@@ -288,8 +289,19 @@ TrajEval/
 │           └── debuggernaut.py  # optional, only if real logs exist (later)
 ├── tests/
 │   ├── fixtures/
-│   │   ├── <task-one>/          # four trajectories: clean, wasteful, critical, failed
-│   │   └── <task-two>/          # smaller, differently shaped
+│   │   ├── minimal.json         # loader fixture (Step 2)
+│   │   ├── discontinuous.json   # discontinuity fixture (Step 2)
+│   │   ├── travel_booking/      # task one: seven trajectories
+│   │   │   ├── clean.json
+│   │   │   ├── wasteful.json
+│   │   │   ├── critical_recovered.json
+│   │   │   ├── first_class_overlap.json
+│   │   │   ├── failed.json
+│   │   │   ├── unlisted_action.json
+│   │   │   ├── empty.json
+│   │   │   └── expected_verdicts.json   # verdict per fixture per dimension
+│   │   └── <task-two>/          # smaller, differently shaped (later)
+│   ├── test_fixtures.py         # fixtures load, are continuous, match the table
 │   ├── test_smoke.py
 │   └── ...                      # one test file per module
 └── examples/                    # LLM-agent demo (later)
@@ -298,7 +310,8 @@ TrajEval/
 **This is the target layout, not the current tree.** Today only
 `pyproject.toml`, `README.md`, `tasks/travel_booking.json`,
 `src/trajecteval/{__init__,errors,models,results,task_spec}.py`,
-`src/trajecteval/graders/` and `tests/` exist — the roadmap's status column
+`src/trajecteval/graders/`, `tests/` and
+`tests/fixtures/travel_booking/` exist — the roadmap's status column
 says what's built.
 
 **Why `src/` layout?** It prevents a classic trap: Python silently importing
@@ -310,9 +323,10 @@ installed — uv does that installation automatically.
 
 Two toy tasks carry the tests: **task one is travel booking, task two is
 support-ticket triage** (both confirmed). Neither is file-based. Task one gets
-four fixtures (clean, wasteful, critical mistake, failed). Task two is smaller
-and shaped differently, and exists to prove the graders work unchanged on a
-new domain.
+seven fixtures with an expected-verdict table beside them: clean, wasteful,
+critical_recovered, first_class_overlap, failed, unlisted_action, empty.
+Task two is smaller and shaped differently, and exists to prove the graders
+work unchanged on a new domain.
 
 ## Development
 
@@ -340,9 +354,9 @@ Conventions:
 | 2 | Models: `Step`, `Trajectory`, JSON loading | ✅ done |
 | 3 | Result types: `Verdict`, `Dimension`, `Evidence`, `GraderResult` | ✅ done |
 | 4 | Task spec + grader contract: data-file rules, load by task id, `Grader` protocol | ✅ done |
-| 5 | Four fixtures for task one: clean, wasteful, critical, failed | ⏳ planned |
+| 5 | Fixtures for task one — seven trajectories (clean, wasteful, critical_recovered, first_class_overlap, failed, unlisted_action, empty) + the machine-readable expected-verdict table | ✅ done |
 | 6 | Three deterministic graders (final state, bounds, critical) | ⏳ planned |
-| 7 | Report: `evaluate()` pipeline, JSON + readable text | ⏳ planned |
+| 7 | Report: `evaluate()` runs the three deterministic dimensions first, then renders JSON + readable text; the LLM judge is an optional addition once Step 9 exists | ⏳ planned |
 | 8 | Comparison table across traces | ⏳ planned |
 | 9 | LLM judge: contract + fake, fully offline | ⏳ planned |
 | 10 | CLI (`uv run traject ...`) | ⏳ planned |
