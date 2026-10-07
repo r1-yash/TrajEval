@@ -122,7 +122,9 @@ trimmed:
   argument absent from the permit map is unconstrained, a listed-but-absent
   argument is never a violation (permits cannot *require* an argument —
   completeness is `expected_final_state`'s job), and an empty permit list
-  permits nothing.
+  permits nothing. Values match **by kind**: a boolean never matches a
+  number (`true` ≠ `1`), while other JSON values match by value
+  (`1` matches `1.0`).
 - **`critical_error_patterns`** — exact moves that count as critical mistakes:
   the action name plus, if given, arguments that must all match exactly. Omit
   `args` to flag any call of that action.

@@ -5,7 +5,16 @@ from pathlib import Path
 
 import pytest
 
-from trajecteval import Action, CriticalPattern, RULE_SECTIONS, SpecError, Step, TaskSpec, load_spec
+from trajecteval import (
+    Action,
+    CriticalPattern,
+    RULE_SECTIONS,
+    SpecError,
+    Step,
+    TaskSpec,
+    load_spec,
+)
+from trajecteval.task_spec import json_equal
 
 REPO = Path(__file__).resolve().parents[1]
 TASKS = REPO / "tasks"
@@ -303,3 +312,78 @@ def test_pattern_without_args_matches_any_call():
         state_after={},
     )
     assert pattern.matches(cancel)
+
+
+# --------------------------------------------------------------------------
+# json_equal -- the one comparison rule every matcher uses
+# --------------------------------------------------------------------------
+
+
+def test_json_equal_boolean_never_matches_number():
+    # Python says True == 1; TrajEval says a boolean is its own kind of
+    # value, so a boolean flag can never satisfy a numeric rule.
+    assert json_equal(True, True)
+    assert not json_equal(True, 1)
+    assert not json_equal(1, True)
+    assert not json_equal(False, 0)
+    assert not json_equal(0, False)
+
+
+def test_json_equal_numbers_match_across_int_and_float():
+    # JSON has one number type: 1 and 1.0 are the same value.
+    assert json_equal(1, 1.0)
+    assert json_equal(1.0, 1)
+    assert json_equal(2.5, 2.5)
+    assert not json_equal(1, 2)
+    assert not json_equal(1, 1.5)
+
+
+def test_json_equal_strings_and_null():
+    assert json_equal("economy", "economy")
+    assert not json_equal("economy", "first")
+    assert json_equal(None, None)
+    # Different kinds: null is not a number, a string, or a "missing 0".
+    assert not json_equal(None, 0)
+    assert not json_equal(None, "")
+    assert not json_equal("1", 1)
+
+
+def test_json_equal_nested_lists_and_dicts():
+    assert json_equal([1, [2, {"a": True}]], [1.0, [2, {"a": True}]])
+    # The bool-vs-number rule applies at any depth.
+    assert not json_equal([1, [2, {"a": True}]], [True, [2, {"a": True}]])
+    assert not json_equal({"a": {"b": [1, 2]}}, {"a": {"b": [1, True]}})
+    # Structure mismatches are not matches: length, keys, container kind.
+    assert not json_equal([1, 2], [1, 2, 3])
+    assert not json_equal({"a": 1}, {"a": 1, "b": 2})
+    assert not json_equal({"a": 1}, {"b": 1})
+    assert not json_equal([1, 2], {"0": 1})
+
+
+def test_argument_violations_uses_json_equal():
+    spec = TaskSpec(task_id="t", allowed_actions={"book_flight": {"passengers": [1]}})
+    # "True in [1]" is True in plain Python -- routed through json_equal,
+    # a boolean supplied where a number is permitted is a violation.
+    assert spec.argument_violations("book_flight", {"passengers": True}) == (
+        ("passengers", True),
+    )
+    # 1.0 is the same JSON value as 1: permitted, no violation.
+    assert spec.argument_violations("book_flight", {"passengers": 1.0}) == ()
+
+
+def test_critical_pattern_uses_json_equal():
+    pattern = CriticalPattern(action="book_flight", args={"passengers": 1})
+    bool_step = Step(
+        index=1,
+        state_before={},
+        action=Action(name="book_flight", args={"passengers": True}),
+        state_after={},
+    )
+    float_step = Step(
+        index=1,
+        state_before={},
+        action=Action(name="book_flight", args={"passengers": 1.0}),
+        state_after={},
+    )
+    assert not pattern.matches(bool_step)  # True is not the forbidden 1
+    assert pattern.matches(float_step)

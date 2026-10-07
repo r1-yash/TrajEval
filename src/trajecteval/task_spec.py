@@ -1,35 +1,4 @@
-"""Task specs: the rulebook, one plain JSON file per task.
 
-Graders know *how* to check; a spec says *what* to check. A spec carries
-three rule sections plus metadata:
-
-- ``expected_final_state``    field -> value the final state must equal
-- ``allowed_actions``         action -> per-argument permit lists
-- ``critical_error_patterns`` exact moves that count as critical mistakes
-
-Absent vs. empty is meaningful: a section set to ``None`` (omitted) means a
-grader that needs it *cannot judge* and must return an ERROR result naming
-the section; an empty ``{}`` / ``()`` means the section exists but lists
-nothing to check.
-
-Permission semantics -- the contract ``action_allowed`` /
-``argument_violations`` execute, and the one Step 6's bounds grader must
-implement:
-
-- action listed with ``{}`` -- allowed with any arguments; nothing to check
-- action listed with permit lists -- allowed, and every *supplied* argument
-  named in the map must be one of the listed values
-- empty permit list (``[]``) -- nothing permitted: any supplied value violates
-- argument not in the action's permit map -- unconstrained; permits police
-  declared constraints only and can never *require* an argument (a
-  listed-but-absent argument is not a violation -- completeness is
-  ``expected_final_state``'s job)
-- action not listed at all -- out of bounds
-
-JSON ``null`` and an omitted key mean the same thing everywhere in a spec:
-absent. A ``null`` section is ``None``; a ``null`` ``metadata`` normalizes
-to ``{}``.
-"""
 
 from __future__ import annotations
 
@@ -86,27 +55,7 @@ def _require_task_id(task_id: Any) -> str:
 
 
 def json_equal(actual: Any, expected: Any) -> bool:
-    """Whether two JSON values count as equal under TrajEval's matching rule.
 
-    One function, used by every matcher: permit-list membership
-    (:meth:`TaskSpec.argument_violations`), :meth:`CriticalPattern.matches`,
-    and Step 6's final-state matching. The rule:
-
-    - **same kind of value**: a boolean matches only a boolean, a number
-      only a number, a string only a string, ``null`` only ``null``.
-      In particular ``True`` never matches ``1`` -- Python's ``True == 1``
-      would otherwise let a boolean flag satisfy a passenger count.
-    - **numbers match by value across int/float**: ``1`` matches ``1.0``
-      (JSON has one number type; only bool-vs-number is special-cased).
-    - **lists** match when they have the same length and every element
-      matches recursively under this rule.
-    - **objects** match when their keys are equal and every value matches
-      recursively under this rule.
-    - anything else -- different types, mixed kinds -- is not a match.
-
-    Inputs come from JSON (trajectories and specs), so NaN/Infinity and
-    exotic types never appear; they fall through to the type check.
-    """
     # bool first: bool is a subclass of int, so ``True`` would otherwise
     # sail through the number branch and match ``1``.
     if isinstance(actual, bool) or isinstance(expected, bool):
@@ -127,20 +76,6 @@ def json_equal(actual: Any, expected: Any) -> bool:
 
 @dataclass(frozen=True)
 class CriticalPattern:
-    """One forbidden move, pinned exactly.
-
-    ``args`` matches *positively*: every key in the pattern must be present in
-    the step's arguments and equal under :func:`json_equal` (booleans never
-    match numbers, so a pattern ``1`` does not match a step's ``True``). An
-    absent pattern's ``args`` matches any call of the action; an absent
-    *argument* never matches (not making a move is not making the forbidden
-    move).
-
-    ``description`` narrates *why* the move is forbidden, for the reason
-    line of a failing critical result. It is narrative only: ``matches()``
-    ignores it, nothing parses it, and it is optional (structural fallback:
-    action plus matched args).
-    """
 
     action: str
     args: dict[str, Any] = field(default_factory=dict)
@@ -181,13 +116,7 @@ class CriticalPattern:
 
 @dataclass(frozen=True)
 class TaskSpec:
-    """One task's rules, loaded from ``tasks/<task_id>.json``.
-
-    Sections default to ``None`` (absent), which is distinct from an empty
-    section: graders ask ``missing_section_result`` before judging.
-    ``from_dict`` and ``__post_init__`` validate the same way, so a spec built
-    from a file and one built in code obey one schema.
-    """
+ 
 
     task_id: str
     expected_final_state: dict[str, Any] | None = None
@@ -234,13 +163,7 @@ class TaskSpec:
             raise SpecError(f"spec 'metadata': expected an object, got {type(self.metadata).__name__}")
 
     def action_allowed(self, action: str) -> bool:
-        """Whether ``allowed_actions`` lists this action at all.
-
-        ``{}`` (listed, no permits) means allowed with any arguments; not
-        listed means out of bounds. Requires the section to be present:
-        absence is "cannot judge" (the grader's ``missing_section_result``
-        step), not "not allowed".
-        """
+  
         if self.allowed_actions is None:
             raise ValueError(
                 f"allowed_actions section is absent for task {self.task_id!r}; "
@@ -251,24 +174,7 @@ class TaskSpec:
     def argument_violations(
         self, action: str, args: dict[str, Any]
     ) -> tuple[tuple[str, Any], ...]:
-        """Each *supplied* argument its permit list forbids: ``((arg, value), ...)``.
 
-        Pins the permission semantics documented at the top of this module:
-
-        - only supplied arguments are policed -- a listed-but-absent
-          argument never violates (permits cannot require an argument)
-        - an argument outside the action's permit map is unconstrained
-        - an empty permit list forbids every supplied value
-        - an empty permit map forbids nothing
-        - membership uses :func:`json_equal`: ``True`` is not permitted by
-          a list containing ``1``, but ``1.0`` is permitted by ``[1]``
-
-        Preconditions (violating them is grader-code bug, ValueError):
-        ``allowed_actions`` present (call ``missing_section_result`` first)
-        and ``action`` listed (check ``action_allowed`` first) -- an unlisted
-        action has no permit map, and reporting "no violations" for it would
-        let an out-of-bounds action slip through.
-        """
         if self.allowed_actions is None:
             raise ValueError(
                 f"allowed_actions section is absent for task {self.task_id!r}; "
