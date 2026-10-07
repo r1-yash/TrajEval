@@ -7,7 +7,8 @@
   "allowed_actions": {
     "search_flights": {},
     "book_flight": { "cabin": ["economy"] },
-    "pay": { "method": ["card", "points"] }
+    "pay": { "method": ["card", "points"] },
+    "refund_payment": {}
   },
   "critical_error_patterns": [
     { "action": "book_flight", "args": { "cabin": "first" } },
@@ -15,6 +16,14 @@
   ],
   "metadata": {
     "domain": "travel booking",
-    "budget": 1200
+    "budget": 1200,
+    "state_transitions": {
+      "book_flight": "sets flight, cabin, passengers and status \"booked\"",
+      "pay": "sets the payment method and status \"confirmed\"",
+      "refund_payment": "reverts status to \"booked\" and clears the payment method"
+    },
+    "unconstrained_arguments": {
+      "book_flight": ["passengers"]
+    }
   }
 }

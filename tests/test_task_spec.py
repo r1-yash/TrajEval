@@ -21,9 +21,20 @@ def test_load_travel_booking_by_id():
         # points is deliberately bounds-legal: its only failing dimension is
         # critical (dimension isolation for the Step 5 fixtures)
         "pay": {"method": ["card", "points"]},
+        # no argument constraints: recovery must be legal so the sticky-
+        # critical fixture can undo a mistake inside the rules
+        "refund_payment": {},
     }
     assert [p.action for p in spec.critical_error_patterns] == ["book_flight", "pay"]
     assert spec.metadata["budget"] == 1200
+    # book_flight's passengers argument is deliberately unconstrained...
+    assert spec.metadata["unconstrained_arguments"] == {"book_flight": ["passengers"]}
+    # ...and the transitions the hand-written fixtures are built on:
+    assert set(spec.metadata["state_transitions"]) == {
+        "book_flight",
+        "pay",
+        "refund_payment",
+    }
 
 
 def test_default_tasks_dir_is_cwd(monkeypatch: pytest.MonkeyPatch):
