@@ -85,14 +85,56 @@ def _require_task_id(task_id: Any) -> str:
     return task_id
 
 
+def json_equal(actual: Any, expected: Any) -> bool:
+    """Whether two JSON values count as equal under TrajEval's matching rule.
+
+    One function, used by every matcher: permit-list membership
+    (:meth:`TaskSpec.argument_violations`), :meth:`CriticalPattern.matches`,
+    and Step 6's final-state matching. The rule:
+
+    - **same kind of value**: a boolean matches only a boolean, a number
+      only a number, a string only a string, ``null`` only ``null``.
+      In particular ``True`` never matches ``1`` -- Python's ``True == 1``
+      would otherwise let a boolean flag satisfy a passenger count.
+    - **numbers match by value across int/float**: ``1`` matches ``1.0``
+      (JSON has one number type; only bool-vs-number is special-cased).
+    - **lists** match when they have the same length and every element
+      matches recursively under this rule.
+    - **objects** match when their keys are equal and every value matches
+      recursively under this rule.
+    - anything else -- different types, mixed kinds -- is not a match.
+
+    Inputs come from JSON (trajectories and specs), so NaN/Infinity and
+    exotic types never appear; they fall through to the type check.
+    """
+    # bool first: bool is a subclass of int, so ``True`` would otherwise
+    # sail through the number branch and match ``1``.
+    if isinstance(actual, bool) or isinstance(expected, bool):
+        return isinstance(actual, bool) and isinstance(expected, bool) and actual == expected
+    if isinstance(actual, (int, float)) and isinstance(expected, (int, float)):
+        return actual == expected
+    if isinstance(actual, dict) and isinstance(expected, dict):
+        return actual.keys() == expected.keys() and all(
+            json_equal(actual[key], expected[key]) for key in actual
+        )
+    if isinstance(actual, (list, tuple)) and isinstance(expected, (list, tuple)):
+        return len(actual) == len(expected) and all(
+            json_equal(a, e) for a, e in zip(actual, expected)
+        )
+    # Strings, None, and anything else: same exact type, then value equality.
+    return type(actual) is type(expected) and actual == expected
+
+
 @dataclass(frozen=True)
 class CriticalPattern:
     """One forbidden move, pinned exactly.
 
     ``args`` matches *positively*: every key in the pattern must be present in
-    the step's arguments with an equal value. An absent pattern's ``args``
-    matches any call of the action; an absent *argument* never matches (not
-    making a move is not making the forbidden move).
+    the step's arguments and equal under :func:`json_equal` (booleans never
+    match numbers, so a pattern ``1`` does not match a step's ``True``). An
+    absent pattern's ``args`` matches any call of the action; an absent
+    *argument* never matches (not making a move is not making the forbidden
+    move).
 
     ``description`` narrates *why* the move is forbidden, for the reason
     line of a failing critical result. It is narrative only: ``matches()``
@@ -114,7 +156,7 @@ class CriticalPattern:
         if step.action.name != self.action:
             return False
         return all(
-            key in step.action.args and step.action.args[key] == value
+            key in step.action.args and json_equal(step.action.args[key], value)
             for key, value in self.args.items()
         )
 
@@ -218,6 +260,8 @@ class TaskSpec:
         - an argument outside the action's permit map is unconstrained
         - an empty permit list forbids every supplied value
         - an empty permit map forbids nothing
+        - membership uses :func:`json_equal`: ``True`` is not permitted by
+          a list containing ``1``, but ``1.0`` is permitted by ``[1]``
 
         Preconditions (violating them is grader-code bug, ValueError):
         ``allowed_actions`` present (call ``missing_section_result`` first)
@@ -241,7 +285,10 @@ class TaskSpec:
             allowed_values = permits.get(arg)
             if allowed_values is None:  # arg not in the permit map -> unconstrained
                 continue
-            if value not in allowed_values:
+            # Membership through the shared matcher, not `in`/`==`: in
+            # Python ``True in [1]`` is True, which would let a boolean
+            # sneak past a numeric permit list.
+            if not any(json_equal(value, allowed) for allowed in allowed_values):
                 violations.append((arg, value))
         return tuple(violations)
 
