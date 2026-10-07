@@ -1,0 +1,27 @@
+{
+  "task_id": "travel_booking",
+  "metadata": {
+    "fixture": "failed",
+    "purpose": "2 passengers: in bounds (passengers is unconstrained) but the final state is wrong -- final_state fails alone"
+  },
+  "steps": [
+    {
+      "index": 1,
+      "state_before": {"status": "new"},
+      "action": {"name": "search_flights", "args": {"origin": "SFO", "destination": "NRT"}},
+      "state_after": {"status": "searching", "searches": 1}
+    },
+    {
+      "index": 2,
+      "state_before": {"status": "searching", "searches": 1},
+      "action": {"name": "book_flight", "args": {"flight": "TR420", "cabin": "economy", "passengers": 2}},
+      "state_after": {"status": "booked", "searches": 1, "flight": "TR420", "cabin": "economy", "passengers": 2}
+    },
+    {
+      "index": 3,
+      "state_before": {"status": "booked", "searches": 1, "flight": "TR420", "cabin": "economy", "passengers": 2},
+      "action": {"name": "pay", "args": {"method": "card"}},
+      "state_after": {"status": "confirmed", "searches": 1, "flight": "TR420", "cabin": "economy", "passengers": 2, "payment_method": "card"}
+    }
+  ]
+}

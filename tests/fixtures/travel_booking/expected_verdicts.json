@@ -1,0 +1,52 @@
+{
+  "task_id": "travel_booking",
+  "verdicts": {
+    "clean": {
+      "final_state": "PASS",
+      "bounds": "PASS",
+      "critical": "PASS",
+      "trajectory_quality": "PASS"
+    },
+    "wasteful": {
+      "final_state": "PASS",
+      "bounds": "PASS",
+      "critical": "PASS",
+      "trajectory_quality": "WARN"
+    },
+    "critical_recovered": {
+      "final_state": "PASS",
+      "bounds": "PASS",
+      "critical": "FAIL",
+      "trajectory_quality": "WARN"
+    },
+    "first_class_overlap": {
+      "final_state": "PASS",
+      "bounds": "FAIL",
+      "critical": "FAIL",
+      "trajectory_quality": "WARN"
+    },
+    "failed": {
+      "final_state": "FAIL",
+      "bounds": "PASS",
+      "critical": "PASS",
+      "trajectory_quality": "PASS"
+    },
+    "unlisted_action": {
+      "final_state": "PASS",
+      "bounds": "FAIL",
+      "critical": "PASS",
+      "trajectory_quality": "PASS"
+    },
+    "empty": {
+      "final_state": "FAIL",
+      "bounds": "WARN",
+      "critical": "WARN",
+      "trajectory_quality": "WARN"
+    }
+  },
+  "declared_only": ["trajectory_quality"],
+  "notes": {
+    "trajectory_quality": "declared intent only -- not enforced until the fake judge exists (Step 9). The real judge is nondeterministic, so Step 9 asserts only: clean = PASS and wasteful != PASS.",
+    "empty": "decided in Step 5 planning: final_state FAIL with whole-trajectory evidence (step=null, the expected state was never reached); bounds and critical WARN because they checked nothing -- a clean PASS would oversell an episode with no actions."
+  }
+}

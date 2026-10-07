@@ -1,0 +1,8 @@
+{
+  "task_id": "travel_booking",
+  "metadata": {
+    "fixture": "empty",
+    "purpose": "zero steps: the no-data path (final state never reached, bounds/critical checked nothing)"
+  },
+  "steps": []
+}

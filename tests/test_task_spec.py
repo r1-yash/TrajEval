@@ -387,3 +387,21 @@ def test_critical_pattern_uses_json_equal():
     )
     assert not pattern.matches(bool_step)  # True is not the forbidden 1
     assert pattern.matches(float_step)
+
+
+def test_unconstrained_arguments_are_absent_from_permit_maps():
+    # metadata.unconstrained_arguments documents arguments that are
+    # deliberately NOT constrained by the permit map; the spec file must
+    # not contradict itself (a "declared unconstrained" argument that is
+    # actually listed would silently change bounds semantics).
+    spec = load_spec("travel_booking", tasks_dir=TASKS)
+    unconstrained = spec.metadata["unconstrained_arguments"]
+    assert unconstrained, "expected at least one declared unconstrained argument"
+    for action, arguments in unconstrained.items():
+        assert spec.action_allowed(action), f"{action} declared but not allowed"
+        permit_map = spec.allowed_actions[action]
+        for argument in arguments:
+            assert argument not in permit_map, (
+                f"{action}.{argument} is declared unconstrained in metadata "
+                f"but listed in its permit map {permit_map}"
+            )

@@ -1,0 +1,27 @@
+{
+  "task_id": "travel_booking",
+  "metadata": {
+    "fixture": "clean",
+    "purpose": "all four dimensions PASS: final state reached, every action in bounds, no critical mistake"
+  },
+  "steps": [
+    {
+      "index": 1,
+      "state_before": {"status": "new"},
+      "action": {"name": "search_flights", "args": {"origin": "SFO", "destination": "NRT"}},
+      "state_after": {"status": "searching", "searches": 1}
+    },
+    {
+      "index": 2,
+      "state_before": {"status": "searching", "searches": 1},
+      "action": {"name": "book_flight", "args": {"flight": "TR420", "cabin": "economy", "passengers": 1}},
+      "state_after": {"status": "booked", "searches": 1, "flight": "TR420", "cabin": "economy", "passengers": 1}
+    },
+    {
+      "index": 3,
+      "state_before": {"status": "booked", "searches": 1, "flight": "TR420", "cabin": "economy", "passengers": 1},
+      "action": {"name": "pay", "args": {"method": "card"}},
+      "state_after": {"status": "confirmed", "searches": 1, "flight": "TR420", "cabin": "economy", "passengers": 1, "payment_method": "card"}
+    }
+  ]
+}

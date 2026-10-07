@@ -1,0 +1,33 @@
+{
+  "task_id": "travel_booking",
+  "metadata": {
+    "fixture": "first_class_overlap",
+    "purpose": "books first class then rebooks economy: the same step violates bounds AND critical -- both graders must report it"
+  },
+  "steps": [
+    {
+      "index": 1,
+      "state_before": {"status": "new"},
+      "action": {"name": "search_flights", "args": {"origin": "SFO", "destination": "NRT"}},
+      "state_after": {"status": "searching", "searches": 1}
+    },
+    {
+      "index": 2,
+      "state_before": {"status": "searching", "searches": 1},
+      "action": {"name": "book_flight", "args": {"flight": "TR420", "cabin": "first", "passengers": 1}},
+      "state_after": {"status": "booked", "searches": 1, "flight": "TR420", "cabin": "first", "passengers": 1}
+    },
+    {
+      "index": 3,
+      "state_before": {"status": "booked", "searches": 1, "flight": "TR420", "cabin": "first", "passengers": 1},
+      "action": {"name": "book_flight", "args": {"flight": "TR420", "cabin": "economy", "passengers": 1}},
+      "state_after": {"status": "booked", "searches": 1, "flight": "TR420", "cabin": "economy", "passengers": 1}
+    },
+    {
+      "index": 4,
+      "state_before": {"status": "booked", "searches": 1, "flight": "TR420", "cabin": "economy", "passengers": 1},
+      "action": {"name": "pay", "args": {"method": "card"}},
+      "state_after": {"status": "confirmed", "searches": 1, "flight": "TR420", "cabin": "economy", "passengers": 1, "payment_method": "card"}
+    }
+  ]
+}
