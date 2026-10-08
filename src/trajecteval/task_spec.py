@@ -1,5 +1,7 @@
 
 
+# Task specs: the rulebook -- one JSON file per task; sections are absent (ERROR), empty (WARN "no rules to check"), or judged.
+
 from __future__ import annotations
 
 import json
@@ -43,7 +45,7 @@ def _require_non_empty_str(value: Any, where: str) -> str:
 
 
 def _require_task_id(task_id: Any) -> str:
-    """Validate a task id before it is ever used to build a file path."""
+    # Validate a task id before it is ever used to build a file path.
     _require_non_empty_str(task_id, "task id")
     bad = [ch for ch in task_id if ch not in _TASK_ID_OK]
     if bad or task_id[0] in "_-":
@@ -55,7 +57,7 @@ def _require_task_id(task_id: Any) -> str:
 
 
 def json_equal(actual: Any, expected: Any) -> bool:
-
+    # Exact JSON equality: same keys for objects, same kind for scalars (True never matches 1); contains_failures uses it for leaves.
     # bool first: bool is a subclass of int, so ``True`` would otherwise
     # sail through the number branch and match ``1``.
     if isinstance(actual, bool) or isinstance(expected, bool):
@@ -74,8 +76,39 @@ def json_equal(actual: Any, expected: Any) -> bool:
     return type(actual) is type(expected) and actual == expected
 
 
+def json_contains(actual: Any, expected: Any) -> bool:
+    # Subset match: every field `expected` names must be present and match; extras ignored, lists exact. Boolean form of contains_failures.
+    return not contains_failures(actual, expected)
+
+
+def contains_failures(
+    actual: Any, expected: Any, path: str = ""
+) -> list[tuple[str, str, Any, Any]]:
+    # Records (path, kind, expected, actual), kind "missing" or "mismatch"; paths are plain '.'-joins (a dotted key looks like nesting); a list fails whole at its own path.
+    if not isinstance(expected, dict):
+        # Defensive: specs validate expected_final_state as an object, so a
+        # non-dict expected only comes from direct calls. Fall back to
+        # exact equality -- there is no subsetting to do.
+        return [] if json_equal(actual, expected) else [(path, "mismatch", expected, actual)]
+    if not isinstance(actual, dict):
+        # An object expected where a non-object sits: nothing to walk down,
+        # and the kinds differ -- one mismatch at this path.
+        return [(path, "mismatch", expected, actual)]
+    failures: list[tuple[str, str, Any, Any]] = []
+    for key, wanted in expected.items():
+        here = f"{path}.{key}" if path else key
+        if key not in actual:
+            failures.append((here, "missing", wanted, None))
+        elif isinstance(wanted, dict) and isinstance(actual[key], dict):
+            failures.extend(contains_failures(actual[key], wanted, here))
+        elif not json_equal(actual[key], wanted):
+            failures.append((here, "mismatch", wanted, actual[key]))
+    return failures
+
+
 @dataclass(frozen=True)
 class CriticalPattern:
+    # One forbidden move: action + args matched positively (absent args match any call); description narrates why, never parsed.
 
     action: str
     args: dict[str, Any] = field(default_factory=dict)
@@ -116,7 +149,7 @@ class CriticalPattern:
 
 @dataclass(frozen=True)
 class TaskSpec:
- 
+    # One task's rules; sections default to None (absent) vs {} (empty), validated the same in __post_init__ and from_dict.
 
     task_id: str
     expected_final_state: dict[str, Any] | None = None
@@ -163,7 +196,7 @@ class TaskSpec:
             raise SpecError(f"spec 'metadata': expected an object, got {type(self.metadata).__name__}")
 
     def action_allowed(self, action: str) -> bool:
-  
+        # Whether allowed_actions lists this action; ValueError when the section is absent (call missing_section_result first).
         if self.allowed_actions is None:
             raise ValueError(
                 f"allowed_actions section is absent for task {self.task_id!r}; "
@@ -174,7 +207,7 @@ class TaskSpec:
     def argument_violations(
         self, action: str, args: dict[str, Any]
     ) -> tuple[tuple[str, Any], ...]:
-
+        # Supplied arguments the action's permit lists forbid: ((arg, value), ...); needs the section present and the action listed.
         if self.allowed_actions is None:
             raise ValueError(
                 f"allowed_actions section is absent for task {self.task_id!r}; "
@@ -199,7 +232,7 @@ class TaskSpec:
         return tuple(violations)
 
     def to_dict(self) -> dict[str, Any]:
-        """Round-trippable plain dict; absent sections stay absent (omitted)."""
+        # Round-trippable plain dict; absent sections stay absent (omitted).
         data: dict[str, Any] = {"task_id": self.task_id}
         if self.expected_final_state is not None:
             data["expected_final_state"] = dict(self.expected_final_state)
@@ -252,15 +285,7 @@ class TaskSpec:
 
 
 def load_spec(task_id: str, tasks_dir: str | Path | None = None) -> TaskSpec:
-    """Load ``tasks/<task_id>.json``. No registry: add a file, add a task.
-
-    ``tasks_dir`` defaults to a ``tasks`` folder in the current directory.
-    File problems (missing file, invalid JSON) and schema problems both raise
-    ``SpecError`` -- "the rulebook you pointed me at is broken". The file's
-    own ``task_id`` must equal the requested id: a mismatch means the file
-    was copied or renamed, and the spec that loads is not the spec you asked
-    for, so it raises naming both ids.
-    """
+    # Load tasks/<task_id>.json (no registry: add a file, add a task); broken files and a task_id mismatch raise SpecError.
     _require_task_id(task_id)
     directory = Path(tasks_dir) if tasks_dir is not None else Path.cwd() / "tasks"
     path = directory / f"{task_id}.json"

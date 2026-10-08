@@ -12,12 +12,14 @@ from trajecteval import (
     SpecError,
     Step,
     TaskSpec,
+    Trajectory,
     load_spec,
 )
-from trajecteval.task_spec import json_equal
+from trajecteval.task_spec import contains_failures, json_contains, json_equal
 
 REPO = Path(__file__).resolve().parents[1]
 TASKS = REPO / "tasks"
+FIXTURES = REPO / "tests" / "fixtures" / "travel_booking"
 
 
 def test_load_travel_booking_by_id():
@@ -387,6 +389,99 @@ def test_critical_pattern_uses_json_equal():
     )
     assert not pattern.matches(bool_step)  # True is not the forbidden 1
     assert pattern.matches(float_step)
+
+
+# --------------------------------------------------------------------------
+# json_contains / contains_failures -- the final-state subset matcher
+# --------------------------------------------------------------------------
+
+
+def test_contains_clean_final_state_satisfies_expected():
+    # The integration case: the clean fixture's real final state carries
+    # extra fields (searches, flight, cabin, payment_method) beyond the
+    # expected status/passengers -- subset says satisfied.
+    spec = load_spec("travel_booking", tasks_dir=TASKS)
+    final_state = Trajectory.from_json_file(FIXTURES / "clean.json").steps[-1].state_after
+    assert json_contains(final_state, spec.expected_final_state)
+
+
+def test_contains_missing_field_fails_and_names_it():
+    failures = contains_failures({"status": "confirmed"}, {"status": "confirmed", "passengers": 1})
+    assert failures == [("passengers", "missing", 1, None)]
+    assert not json_contains({"status": "confirmed"}, {"status": "confirmed", "passengers": 1})
+
+
+def test_contains_wrong_value_fails_with_expected_and_actual():
+    failures = contains_failures({"passengers": 2}, {"passengers": 1})
+    assert failures == [("passengers", "mismatch", 1, 2)]
+    assert not json_contains({"passengers": 2}, {"passengers": 1})
+
+
+def test_contains_boolean_never_satisfies_number():
+    # Same kind rule as json_equal, at the subset layer: a boolean flag
+    # can never stand in for a passenger count, in either direction.
+    assert not json_contains({"passengers": True}, {"passengers": 1})
+    assert not json_contains({"passengers": 1}, {"passengers": True})
+    assert json_contains({"passengers": True}, {"passengers": True})
+
+
+def test_contains_ignores_extra_actual_fields():
+    # expected names only what matters; extra fields in actual are nobody's
+    # business (the searches counter is deliberately unlisted).
+    actual = {"status": "confirmed", "passengers": 1, "searches": 5, "flight": "TR420"}
+    assert json_contains(actual, {"status": "confirmed", "passengers": 1})
+    assert contains_failures(actual, {"status": "confirmed", "passengers": 1}) == []
+
+
+def test_contains_nested_objects_recurse_with_dotted_paths():
+    actual = {"booking": {"status": "confirmed", "method": "cash"}}
+    assert not json_contains(actual, {"booking": {"method": "card"}})
+    assert contains_failures(actual, {"booking": {"method": "card"}}) == [
+        ("booking.method", "mismatch", "card", "cash")
+    ]
+    assert contains_failures(actual, {"booking": {"passengers": 1}, "status": "confirmed"}) == [
+        ("booking.passengers", "missing", 1, None),
+        ("status", "missing", "confirmed", None),
+    ]
+    # Nested subset: extras at every level are ignored.
+    assert json_contains(actual, {"booking": {"method": "cash"}})
+
+
+def test_contains_dotted_key_path_is_plain_join_without_escaping():
+    # Documented ambiguity: a literal key containing a dot and real nesting
+    # both display as "a.b". The path is a human label; the structured
+    # expected/actual slots are the authoritative location.
+    missing = contains_failures({"x": 1}, {"a.b": 2})
+    assert missing == [("a.b", "missing", 2, None)]  # literal key, not nesting
+    failures = contains_failures({"a.b": "x"}, {"a.b": "y"})
+    assert failures == [("a.b", "mismatch", "y", "x")]
+    nested = contains_failures({"a": {"b": "x"}}, {"a": {"b": "y"}})
+    assert nested == [("a.b", "mismatch", "y", "x")]
+    assert failures[0][0] == nested[0][0]  # same label, different structures
+
+
+def test_contains_list_mismatch_is_one_record_at_the_list_path():
+    # Lists are leaves: length, order, and element kind judged as a whole,
+    # reported at the list's own path with the WHOLE expected and actual.
+    reordered = contains_failures({"tags": ["b", "a"]}, {"tags": ["a", "b"]})
+    assert reordered == [("tags", "mismatch", ["a", "b"], ["b", "a"])]
+    shorter = contains_failures({"tags": ["a"]}, {"tags": ["a", "b"]})
+    assert shorter == [("tags", "mismatch", ["a", "b"], ["a"])]
+    boolish = contains_failures({"ids": [True]}, {"ids": [1]})
+    assert boolish == [("ids", "mismatch", [1], [True])]
+    assert json_contains({"tags": ["a", "b"]}, {"tags": ["a", "b"]})
+
+
+def test_json_contains_is_exactly_not_contains_failures():
+    pairs = [
+        ({"a": 1}, {"a": 1}),
+        ({"a": 1}, {"a": 2}),
+        ({}, {"a": 1}),
+        ({"a": {"b": [1, 2]}}, {"a": {"b": [1, 2, 3]}}),
+        ("scalar", {"a": 1}),  # non-dict actual where an object is expected
+    ]
+    for actual, expected in pairs:
+        assert json_contains(actual, expected) is (not contains_failures(actual, expected))
 
 
 def test_unconstrained_arguments_are_absent_from_permit_maps():
