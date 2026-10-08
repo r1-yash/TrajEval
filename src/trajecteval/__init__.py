@@ -3,6 +3,7 @@
 from trajecteval.errors import SpecError, TrajectoryError, TrajEvalError
 from trajecteval.graders import (
     BoundsGrader,
+    CriticalGrader,
     FinalStateGrader,
     Grader,
     missing_section_result,
@@ -15,6 +16,7 @@ from trajecteval.task_spec import CriticalPattern, RULE_SECTIONS, TaskSpec, load
 __all__ = [
     "Action",
     "BoundsGrader",
+    "CriticalGrader",
     "CriticalPattern",
     "Dimension",
     "Discontinuity",
