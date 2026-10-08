@@ -11,8 +11,9 @@ state of the world **before and after** each one — and grades that path on
 four separate questions, so a report tells you *why* a run was good or bad,
 not just whether it was.
 
-> **Status:** under construction. Steps 1–5 (scaffold, models, result types,
-> task specs + grader contract, fixtures) are done. Everything else in this
+> **Status:** under construction. Steps 1–6 (scaffold, models, result types,
+> task specs + grader contract, fixtures, the three deterministic graders)
+> are done. Everything else in this
 > README is a **plan** — roadmap rows are marked, and every usage example
 > below says plainly whether it works yet. Nothing here is built unless its
 > roadmap row says so.
@@ -136,8 +137,9 @@ trimmed:
   never a path.
 - **Absent ≠ empty.** A missing section means a grader that needs it *cannot
   judge*: it returns ERROR with evidence naming the section (`step: null` —
-  spec-side, never an accusation against the trajectory). An empty `{}` / `[]`
-  is a deliberate "nothing to check" and is judged normally.
+  spec-side, never an accusation against the trajectory). An empty `{}` / `()`
+  is present but carries no rules: the grader reports WARN with evidence
+  `empty_section` — there was nothing to check, never a silent PASS.
 - **`null` means omitted**, everywhere in a spec — a `null` section behaves
   exactly like an absent one; `null` `metadata` becomes `{}`.
 - **Every rule in a spec is applied**, not just the first matching one. A
@@ -355,7 +357,7 @@ Conventions:
 | 3 | Result types: `Verdict`, `Dimension`, `Evidence`, `GraderResult` | ✅ done |
 | 4 | Task spec + grader contract: data-file rules, load by task id, `Grader` protocol | ✅ done |
 | 5 | Fixtures for task one — seven trajectories (clean, wasteful, critical_recovered, first_class_overlap, failed, unlisted_action, empty) + the machine-readable expected-verdict table | ✅ done |
-| 6 | Three deterministic graders (final state, bounds, critical) | ⏳ planned |
+| 6 | Three deterministic graders (final state, bounds, critical) — reproduce the fixture answer key exactly | ✅ done |
 | 7 | Report: `evaluate()` runs the three deterministic dimensions first, then renders JSON + readable text; the LLM judge is an optional addition once Step 9 exists | ⏳ planned |
 | 8 | Comparison table across traces | ⏳ planned |
 | 9 | LLM judge: contract + fake, fully offline | ⏳ planned |
