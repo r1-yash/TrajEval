@@ -20,6 +20,7 @@ from trajecteval import (
     Verdict,
     evaluate,
     load_spec,
+    render_json,
 )
 
 REPO = Path(__file__).resolve().parents[1]
@@ -235,3 +236,20 @@ def test_evaluate_does_not_mutate_inputs():
     evaluate(trajectory, spec)
     assert spec.to_dict() == spec_before
     assert trajectory.to_dict() == trajectory_before
+
+
+def test_render_json_is_exactly_the_report_dict():
+    report = evaluate(_fixture("failed"), _spec())
+    assert json.loads(render_json(report)) == report.to_dict()
+
+
+def test_render_json_round_trips_through_from_dict():
+    # to_dict -> dumps -> loads -> from_dict == the original report.
+    report = evaluate(_fixture("failed"), _spec())
+    assert Report.from_dict(json.loads(render_json(report))) == report
+
+
+def test_render_json_is_deterministic():
+    # Same report, same bytes: a saved report can be diffed later (Step 8).
+    report = evaluate(_fixture("clean"), _spec())
+    assert render_json(report) == render_json(report)

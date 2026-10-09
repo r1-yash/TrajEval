@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any, Sequence
 
@@ -151,3 +152,10 @@ def evaluate(
         results=tuple(results),
         discontinuities=tuple(trajectory.find_discontinuities()),
     )
+
+
+def render_json(report: Report, *, indent: int = 2) -> str:
+    # The same report as bytes for machines: plain JSON, no envelope, no
+    # trailing newline (Trajectory.to_json sets the precedent). Round-trips
+    # through Report.from_dict unchanged.
+    return json.dumps(report.to_dict(), indent=indent, ensure_ascii=False)
