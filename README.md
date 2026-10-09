@@ -11,9 +11,9 @@ state of the world **before and after** each one — and grades that path on
 four separate questions, so a report tells you *why* a run was good or bad,
 not just whether it was.
 
-> **Status:** under construction. Steps 1–6 (scaffold, models, result types,
-> task specs + grader contract, fixtures, the three deterministic graders)
-> are done. Everything else in this
+> **Status:** under construction. Steps 1–7 (scaffold, models, result types,
+> task specs + grader contract, fixtures, the three deterministic graders,
+> the `evaluate()` report pipeline) are done. Everything else in this
 > README is a **plan** — roadmap rows are marked, and every usage example
 > below says plainly whether it works yet. Nothing here is built unless its
 > roadmap row says so.
@@ -208,15 +208,16 @@ trace               final state   bounds   critical err   trajectory qual
 <task-one>/critical      PASS       PASS       FAIL (step 4)   PASS
 ```
 
-**As a library** *(not implemented yet — Step 7)*
+**As a library** *(Step 7 — works)*
 
 ```python
-from trajecteval import Trajectory, evaluate
+from trajecteval import Trajectory, evaluate, load_spec, render_text
 
 traj = Trajectory.from_json_file("trace.json")
-report = evaluate(traj, spec=load_task_spec("<task-id>"))
+report = evaluate(traj, load_spec("<task-id>"))
 for result in report.results:
     print(result.dimension, result.verdict, result.reason)
+print(render_text(report))   # or render_json(report) for the machine form
 ```
 
 ## The trajectory format
@@ -358,8 +359,8 @@ Conventions:
 | 4 | Task spec + grader contract: data-file rules, load by task id, `Grader` protocol | ✅ done |
 | 5 | Fixtures for task one — seven trajectories (clean, wasteful, critical_recovered, first_class_overlap, failed, unlisted_action, empty) + the machine-readable expected-verdict table | ✅ done |
 | 6 | Three deterministic graders (final state, bounds, critical) — reproduce the fixture answer key exactly | ✅ done |
-| 7 | Report: `evaluate()` runs the three deterministic dimensions first, then renders JSON + readable text; the LLM judge is an optional addition once Step 9 exists | ⏳ planned |
-| 8 | Comparison table across traces | ⏳ planned |
+| 7 | Report: `evaluate()` runs the three deterministic dimensions first (a crashed grader degrades its own column to ERROR, never the run), then renders JSON + readable text; the LLM judge is an optional addition once Step 9 exists | ✅ done |
+| 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ⏳ planned |
 | 9 | LLM judge: contract + fake, fully offline | ⏳ planned |
 | 10 | CLI (`uv run traject ...`) | ⏳ planned |
 | 11 | Toy task two — same graders, new domain, unchanged code | ⏳ planned |
