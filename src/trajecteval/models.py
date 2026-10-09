@@ -119,12 +119,46 @@ class Discontinuity:
 
     step_index: int        # the step whose state_after disagrees
     next_step_index: int   # the following step, whose state_before disagrees
-    differing_keys: list[str]  # top-level keys where the two snapshots differ
+    differing_keys: tuple[str, ...]  # top-level keys where the two snapshots differ
+
+    def __post_init__(self) -> None:
+        # Accept a list at construction (ergonomic), store a tuple: a frozen
+        # class should not keep a mutable field (same rule as Trajectory.steps).
+        if isinstance(self.differing_keys, list):
+            object.__setattr__(self, "differing_keys", tuple(self.differing_keys))
 
     def __str__(self) -> str:
         keys = ", ".join(self.differing_keys)
         return (
             f"steps {self.step_index}->{self.next_step_index} disagree in keys: {keys}"
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        # differing_keys becomes a list: JSON has no tuples.
+        return {
+            "step_index": self.step_index,
+            "next_step_index": self.next_step_index,
+            "differing_keys": list(self.differing_keys),
+        }
+
+    @classmethod
+    def from_dict(cls, data: Any) -> Discontinuity:
+        # Round-trip inverse of to_dict; structural problems raise TrajectoryError (loader-style).
+        data = _require_dict(data, "discontinuity")
+        _require_keys(data, ("step_index", "next_step_index", "differing_keys"), "discontinuity")
+        for key in ("step_index", "next_step_index"):
+            value = data[key]
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise TrajectoryError(
+                    f"discontinuity: '{key}' must be an int, got {type(value).__name__}"
+                )
+        keys = data["differing_keys"]
+        if not isinstance(keys, list) or not all(isinstance(key, str) for key in keys):
+            raise TrajectoryError("discontinuity: 'differing_keys' must be a list of strings")
+        return cls(
+            step_index=data["step_index"],
+            next_step_index=data["next_step_index"],
+            differing_keys=tuple(keys),
         )
 
 

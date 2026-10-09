@@ -89,9 +89,44 @@ def test_discontinuity_is_reported_not_raised():
     assert isinstance(m, Discontinuity)
     assert m.step_index == 1
     assert m.next_step_index == 2
-    assert m.differing_keys == ["files", "sneaky.txt"]
+    assert m.differing_keys == ("files", "sneaky.txt")  # stored as a tuple
     # and step 2 -> 3 agrees, so only the one mismatch
     assert str(m) == "steps 1->2 disagree in keys: files, sneaky.txt"
+
+
+def test_discontinuity_accepts_a_list_but_stores_a_tuple():
+    # find_discontinuities builds a list; the frozen dataclass stores a tuple
+    # so the field itself cannot be mutated after the fact.
+    m = Discontinuity(step_index=1, next_step_index=2, differing_keys=["a"])
+    assert m.differing_keys == ("a",)
+    assert isinstance(m.differing_keys, tuple)
+
+
+def test_discontinuity_to_dict_emits_a_json_list():
+    m = Discontinuity(step_index=1, next_step_index=2, differing_keys=("a", "b"))
+    assert m.to_dict() == {
+        "step_index": 1,
+        "next_step_index": 2,
+        "differing_keys": ["a", "b"],
+    }
+
+
+def test_discontinuity_round_trips_through_dict():
+    m = Discontinuity(step_index=2, next_step_index=3, differing_keys=("files",))
+    assert Discontinuity.from_dict(m.to_dict()) == m
+
+
+def test_discontinuity_from_dict_rejects_structural_problems():
+    with pytest.raises(TrajectoryError, match="'step_index'"):
+        Discontinuity.from_dict(
+            {"step_index": True, "next_step_index": 2, "differing_keys": []}
+        )
+    with pytest.raises(TrajectoryError, match="'differing_keys'"):
+        Discontinuity.from_dict(
+            {"step_index": 1, "next_step_index": 2, "differing_keys": "files"}
+        )
+    with pytest.raises(TrajectoryError, match="missing 'next_step_index'"):
+        Discontinuity.from_dict({"step_index": 1, "differing_keys": []})
 
 
 def test_unknown_keys_swept_into_metadata():
