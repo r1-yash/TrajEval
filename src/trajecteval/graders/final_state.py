@@ -1,4 +1,4 @@
-# Final-state grader: judge the last step's state_after against expected_final_state (subset match); empty section WARNs, empty trajectory FAILs.
+#this just checks last step of final grader
 
 from __future__ import annotations
 
@@ -42,8 +42,8 @@ class FinalStateGrader:
                         value={"expected": dict(expected)},
                     ),
                 ),
-            )
-        last = trajectory.steps[-1]
+            ) 
+        last = trajectory.steps[-1] ##last element of sequence
         failures = contains_failures(last.state_after, expected)
         if not failures:
             return GraderResult(
