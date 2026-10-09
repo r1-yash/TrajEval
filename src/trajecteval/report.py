@@ -159,3 +159,25 @@ def render_json(report: Report, *, indent: int = 2) -> str:
     # trailing newline (Trajectory.to_json sets the precedent). Round-trips
     # through Report.from_dict unchanged.
     return json.dumps(report.to_dict(), indent=indent, ensure_ascii=False)
+
+
+def render_text(report: Report) -> str:
+    # The same report as words for humans: one line per column, evidence
+    # indented under it, and -- the honesty rule -- every Dimension member
+    # with no result gets a 'not evaluated' line, so a three-column report
+    # is never mistaken for a complete one.
+    lines = [f"task {report.task_id} (trajectory {report.trajectory_task_id})"]
+    for result in report.results:
+        lines.append(f"  {result.dimension.value} {result.verdict.value}: {result.reason}")
+        for item in result.evidence:
+            where = f"step {item.step}" if item.step is not None else "no step"
+            lines.append(
+                f"    {item.kind} ({where}): {json.dumps(item.value, ensure_ascii=False)}"
+            )
+    evaluated = {result.dimension for result in report.results}
+    for dimension in Dimension:
+        if dimension not in evaluated:
+            lines.append(f"  not evaluated: {dimension.value}")
+    for item in report.discontinuities:
+        lines.append(f"  discontinuity: {item}")
+    return "\n".join(lines)

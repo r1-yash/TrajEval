@@ -10,7 +10,7 @@ from trajecteval.graders import (
     task_id_mismatch_result,
 )
 from trajecteval.models import Action, Discontinuity, Step, Trajectory
-from trajecteval.report import Report, evaluate, render_json
+from trajecteval.report import Report, evaluate, render_json, render_text
 from trajecteval.results import Dimension, Evidence, GraderResult, Verdict
 from trajecteval.task_spec import CriticalPattern, RULE_SECTIONS, TaskSpec, load_spec
 
@@ -38,5 +38,6 @@ __all__ = [
     "load_spec",
     "missing_section_result",
     "render_json",
+    "render_text",
     "task_id_mismatch_result",
 ]

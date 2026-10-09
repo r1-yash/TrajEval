@@ -11,6 +11,8 @@ from trajecteval import (
     BoundsGrader,
     CriticalGrader,
     Dimension,
+    Discontinuity,
+    Evidence,
     FinalStateGrader,
     GraderResult,
     Report,
@@ -21,6 +23,7 @@ from trajecteval import (
     evaluate,
     load_spec,
     render_json,
+    render_text,
 )
 
 REPO = Path(__file__).resolve().parents[1]
@@ -253,3 +256,123 @@ def test_render_json_is_deterministic():
     # Same report, same bytes: a saved report can be diffed later (Step 8).
     report = evaluate(_fixture("clean"), _spec())
     assert render_json(report) == render_json(report)
+
+
+# -- render_text: the exact format, one test per column state ----------------
+
+
+def _one_column(result: GraderResult, task_id: str = "t", traj_id: str = "t") -> Report:
+    return Report(task_id=task_id, trajectory_task_id=traj_id, results=(result,))
+
+
+def test_text_pass_column_and_header():
+    report = _one_column(
+        GraderResult(
+            dimension=Dimension.FINAL_STATE, verdict=Verdict.PASS, reason="all good"
+        )
+    )
+    assert render_text(report) == "\n".join(
+        [
+            "task t (trajectory t)",
+            "  final_state PASS: all good",
+            "  not evaluated: bounds",
+            "  not evaluated: critical",
+            "  not evaluated: trajectory_quality",
+        ]
+    )
+
+
+def test_text_fail_column_lists_every_evidence_item():
+    report = _one_column(
+        GraderResult(
+            dimension=Dimension.BOUNDS,
+            verdict=Verdict.FAIL,
+            reason="2 actions out of bounds",
+            evidence=(
+                Evidence(
+                    kind="unlisted_action",
+                    step=3,
+                    value={"action": "pay", "args": {"method": "points"}},
+                ),
+                Evidence(
+                    kind="argument_not_permitted",
+                    step=5,
+                    field_name="pay.method",
+                    value={"value": "cash", "permitted": ["card"]},
+                ),
+            ),
+        )
+    )
+    assert render_text(report) == "\n".join(
+        [
+            "task t (trajectory t)",
+            "  bounds FAIL: 2 actions out of bounds",
+            '    unlisted_action (step 3): {"action": "pay", "args": {"method": "points"}}',
+            '    argument_not_permitted (step 5): {"value": "cash", "permitted": ["card"]}',
+            "  not evaluated: final_state",
+            "  not evaluated: critical",
+            "  not evaluated: trajectory_quality",
+        ]
+    )
+
+
+def test_text_warn_column():
+    report = _one_column(
+        GraderResult(
+            dimension=Dimension.FINAL_STATE,
+            verdict=Verdict.WARN,
+            reason="no rules to check",
+            evidence=(
+                Evidence(kind="empty_section", field_name="expected_final_state"),
+            ),
+        )
+    )
+    assert "  final_state WARN: no rules to check" in render_text(report)
+    assert "    empty_section (no step): null" in render_text(report)
+
+
+def test_text_error_from_a_crash():
+    report = evaluate(_fixture("clean"), _spec(), graders=[_CrashingGrader()])
+    text = render_text(report)
+    assert "  trajectory_quality ERROR: the trajectory_quality grader crashed: ZeroDivisionError" in text
+    assert '    grader_crash (no step): {"exception": "ZeroDivisionError", "message": "boom"}' in text
+
+
+def test_text_error_from_a_missing_section():
+    report = evaluate(_fixture("clean"), TaskSpec(task_id="travel_booking"), graders=[FinalStateGrader()])
+    text = render_text(report)
+    assert "  final_state ERROR:" in text
+    assert "    missing_spec_field (no step): null" in text
+    assert "expected_final_state" in text  # the reason names the section
+
+
+def test_text_not_evaluated_lines_follow_the_dimension_enum_order():
+    # Default three columns -> exactly one gap, last in the enum, so a
+    # three-column report is never mistaken for a complete one.
+    report = evaluate(_fixture("clean"), _spec())
+    gaps = [line for line in render_text(report).splitlines() if "not evaluated" in line]
+    assert gaps == ["  not evaluated: trajectory_quality"]
+
+
+def test_text_discontinuity_line():
+    report = Report(
+        task_id="t",
+        trajectory_task_id="t",
+        discontinuities=(Discontinuity(step_index=1, next_step_index=2, differing_keys=("balance",)),),
+    )
+    assert render_text(report).splitlines()[-1] == (
+        "  discontinuity: steps 1->2 disagree in keys: balance"
+    )
+
+
+def test_text_header_names_both_task_ids_when_they_differ():
+    report = _one_column(
+        GraderResult(
+            dimension=Dimension.FINAL_STATE, verdict=Verdict.PASS, reason="fine"
+        ),
+        task_id="travel_booking",
+        traj_id="copied_trace",
+    )
+    assert render_text(report).splitlines()[0] == (
+        "task travel_booking (trajectory copied_trace)"
+    )
