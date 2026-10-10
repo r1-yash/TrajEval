@@ -1,5 +1,6 @@
 """TrajEval -- evaluate AI agents on *how* they work, not just whether they finished."""
 
+from trajecteval.compare import Comparison, compare, render_table
 from trajecteval.errors import SpecError, TrajectoryError, TrajEvalError
 from trajecteval.graders import (
     BoundsGrader,
@@ -17,6 +18,7 @@ from trajecteval.task_spec import CriticalPattern, RULE_SECTIONS, TaskSpec, load
 __all__ = [
     "Action",
     "BoundsGrader",
+    "Comparison",
     "CriticalGrader",
     "CriticalPattern",
     "Dimension",
@@ -34,10 +36,12 @@ __all__ = [
     "TrajectoryError",
     "TrajEvalError",
     "Verdict",
+    "compare",
     "evaluate",
     "load_spec",
     "missing_section_result",
     "render_json",
+    "render_table",
     "render_text",
     "task_id_mismatch_result",
 ]

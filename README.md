@@ -13,7 +13,8 @@ not just whether it was.
 
 > **Status:** under construction. Steps 1–7 (scaffold, models, result types,
 > task specs + grader contract, fixtures, the three deterministic graders,
-> the `evaluate()` report pipeline) are done. Everything else in this
+> the `evaluate()` report pipeline) are done, and Step 8 (the comparison
+> table) is mid-build. Everything else in this
 > README is a **plan** — roadmap rows are marked, and every usage example
 > below says plainly whether it works yet. Nothing here is built unless its
 > roadmap row says so.
@@ -360,7 +361,7 @@ Conventions:
 | 5 | Fixtures for task one — seven trajectories (clean, wasteful, critical_recovered, first_class_overlap, failed, unlisted_action, empty) + the machine-readable expected-verdict table | ✅ done |
 | 6 | Three deterministic graders (final state, bounds, critical) — reproduce the fixture answer key exactly | ✅ done |
 | 7 | Report: `evaluate()` runs the three deterministic dimensions first (a crashed grader degrades its own column to ERROR, never the run), then renders JSON + readable text; the LLM judge is an optional addition once Step 9 exists | ✅ done |
-| 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ⏳ planned |
+| 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ⏳ half done — `compare()` + `render_table` work; the JSON form and CLI wiring (Step 10) remain |
 | 9 | LLM judge: contract + fake, fully offline | ⏳ planned |
 | 10 | CLI (`uv run traject ...`) | ⏳ planned |
 | 11 | Toy task two — same graders, new domain, unchanged code | ⏳ planned |
