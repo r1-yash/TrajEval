@@ -258,7 +258,7 @@ class Trajectory:
     # ----------------------------------------------------------------- query
 
     def find_discontinuities(self) -> list[Discontinuity]:
-        """the state after of a step should be equa to state before of the next step, if not then dicontinuity is there."""
+        """A step's state_after should equal the next step's state_before (json_equal); any difference is a discontinuity -- reported, never raised."""
         mismatches: list[Discontinuity] = []
         for current, following in zip(self.steps, self.steps[1:]):
             # json_equal, not ==: the project comparison rule -- True must not
