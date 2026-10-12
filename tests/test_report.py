@@ -304,6 +304,48 @@ def test_report_error_is_a_traj_eval_error_and_chains_the_original():
     assert isinstance(excinfo.value.__cause__, ValueError)
 
 
+def test_from_dict_rejects_missing_empty_and_non_string_task_ids():
+    with pytest.raises(ReportError, match="'task_id' must be a non-empty string"):
+        Report.from_dict({"task_id": "", "trajectory_task_id": "t"})
+    with pytest.raises(ReportError, match="'trajectory_task_id' must be a non-empty string"):
+        Report.from_dict({"task_id": "t", "trajectory_task_id": 123})
+    with pytest.raises(ReportError, match="missing 'trajectory_task_id'"):
+        Report.from_dict({"task_id": "t"})
+
+
+def test_from_dict_rejects_a_duplicate_dimension():
+    bounds = GraderResult(
+        dimension=Dimension.BOUNDS, verdict=Verdict.PASS, reason="fine"
+    )
+    broken = {
+        "task_id": "t",
+        "trajectory_task_id": "t",
+        "results": [bounds.to_dict(), bounds.to_dict()],
+    }
+    with pytest.raises(ReportError, match="two results for dimension bounds"):
+        Report.from_dict(broken)
+
+
+def test_from_dict_allows_results_in_any_order():
+    # Duplicates are rejected; order is not a constraint (compare() reads by
+    # dimension, and evaluate() order is preserved, not required).
+    quality = GraderResult(
+        dimension=Dimension.TRAJECTORY_QUALITY, verdict=Verdict.PASS, reason="fine"
+    )
+    bounds = GraderResult(dimension=Dimension.BOUNDS, verdict=Verdict.PASS, reason="fine")
+    report = Report.from_dict(
+        {
+            "task_id": "t",
+            "trajectory_task_id": "t",
+            "results": [quality.to_dict(), bounds.to_dict()],
+        }
+    )
+    assert tuple(r.dimension for r in report.results) == (
+        Dimension.TRAJECTORY_QUALITY,
+        Dimension.BOUNDS,
+    )
+
+
 # -- render_text: the exact format, one test per column state ----------------
 
 

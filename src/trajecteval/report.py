@@ -52,6 +52,11 @@ class Report:
         for key in ("task_id", "trajectory_task_id"):
             if key not in data:
                 raise ReportError(f"report missing '{key}'")
+            value = data[key]
+            if not isinstance(value, str) or not value:
+                raise ReportError(
+                    f"report '{key}' must be a non-empty string, got {value!r}"
+                )
         raw_results = data.get("results", [])
         if not isinstance(raw_results, list):
             raise ReportError(
@@ -70,6 +75,14 @@ class Report:
             )
         except (ValueError, TrajectoryError) as exc:
             raise ReportError(f"broken report: {exc}") from exc
+        seen: list[Dimension] = []
+        for result in results:
+            if result.dimension in seen:
+                raise ReportError(
+                    f"report has two results for dimension {result.dimension.value}; "
+                    "one column, one verdict"
+                )
+            seen.append(result.dimension)
         return cls(
             task_id=data["task_id"],
             trajectory_task_id=data["trajectory_task_id"],
