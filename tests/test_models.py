@@ -129,6 +129,53 @@ def test_discontinuity_from_dict_rejects_structural_problems():
         Discontinuity.from_dict({"step_index": 1, "differing_keys": []})
 
 
+def test_bool_vs_number_counts_as_a_discontinuity():
+    # json_equal rule: True is not 1, so a state that swapped a flag for a
+    # count disagrees -- Python's == would have called it continuous.
+    traj = Trajectory(
+        task_id="t1",
+        steps=(
+            Step(
+                index=1,
+                state_before={},
+                action=Action(name="a"),
+                state_after={"flag": True},
+            ),
+            Step(
+                index=2,
+                state_before={"flag": 1},
+                action=Action(name="b"),
+                state_after={"flag": 1},
+            ),
+        ),
+    )
+    mismatches = traj.find_discontinuities()
+    assert len(mismatches) == 1
+    assert mismatches[0].differing_keys == ("flag",)
+
+
+def test_int_vs_float_is_still_continuous():
+    # JSON has one number type: 1 and 1.0 agree under json_equal, same as ==.
+    traj = Trajectory(
+        task_id="t1",
+        steps=(
+            Step(
+                index=1,
+                state_before={},
+                action=Action(name="a"),
+                state_after={"balance": 1},
+            ),
+            Step(
+                index=2,
+                state_before={"balance": 1.0},
+                action=Action(name="b"),
+                state_after={"balance": 1.0},
+            ),
+        ),
+    )
+    assert traj.find_discontinuities() == []
+
+
 def test_unknown_keys_swept_into_metadata():
     data = make_trajectory_dict()
     data["pipeline"] = "ci"

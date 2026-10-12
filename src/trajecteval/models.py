@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from trajecteval.errors import TrajectoryError
+from trajecteval.matching import json_equal
 
 # The keys every trajectory file must have. Anything else at the top level is
 # treated as extra metadata and swept into ``metadata``.
@@ -253,14 +254,16 @@ class Trajectory:
         """the state after of a step should be equa to state before of the next step, if not then dicontinuity is there."""
         mismatches: list[Discontinuity] = []
         for current, following in zip(self.steps, self.steps[1:]):
-            if current.state_after == following.state_before:
+            # json_equal, not ==: the project comparison rule -- True must not
+            # pass for 1 (Python's True == 1 would); 1 vs 1.0 still agrees.
+            if json_equal(current.state_after, following.state_before):
                 continue
             differing = sorted(
                 {
                     *current.state_after.keys() - following.state_before.keys(),
                     *following.state_before.keys() - current.state_after.keys(),
                     *(k for k in current.state_after.keys() & following.state_before.keys()
-                      if current.state_after[k] != following.state_before[k]),
+                      if not json_equal(current.state_after[k], following.state_before[k])),
                 }
             )
             mismatches.append(
