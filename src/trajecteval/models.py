@@ -37,7 +37,7 @@ def _require_keys(obj: dict[str, Any], keys: tuple[str, ...], where: str) -> Non
             raise TrajectoryError(f"{where}: missing '{key}'")
 
 #this class represents an action taken by the agent at a specific step in the trajectory. It contains the name of the action and any associated arguments. The class provides methods to create an instance from a dictionary and to convert an instance back to a dictionary format.
-@dataclass(frozen=True) ##here we freeze the dataclass to make it immutable, which is a good practice for data structures that represent a fixed state, like an action in a trajectory so that llm cannot later modify it 
+@dataclass(frozen=True)  # frozen: fields cannot be rebound after load -- every grader sees the same episode
 class Action:
     """What the agent did at one step.
 
