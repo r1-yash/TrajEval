@@ -2,10 +2,10 @@
 
 Two lanes, kept apart on purpose:
 
-- ``TrajectoryError`` / ``SpecError`` -- *the input files are broken*
-  (structural problems found while loading a trajectory or a task spec).
-  Both subclass ``TrajEvalError`` so a caller can catch "some file I was
-  given is malformed" with one ``except``.
+- ``TrajectoryError`` / ``SpecError`` / ``ReportError`` -- *the input files
+  are broken* (structural problems found while loading a trajectory, a task
+  spec, or a saved report). All subclass ``TrajEvalError`` so a caller can
+  catch "some file I was given is malformed" with one ``except``.
 - ``ValueError`` -- *the grader code is broken* (a GraderResult built with
   a blank reason, an unknown verdict, ...). Results never raise file errors,
   and file loaders never raise ValueError for data shape.
@@ -37,3 +37,11 @@ class SpecError(TrajEvalError):
     unknown key is a typo we reject at load rather than a rule we silently
     ignore).
     """
+
+
+class ReportError(TrajEvalError):
+    """Raised when a saved report file fails *structural* validation at load time."""
+
+    # Same job as the other two, for the JSON form of a Report: a broken
+    # results/discontinuities entry inside a saved report surfaces here too
+    # (Report.from_dict wraps the nested ValueError/TrajectoryError).

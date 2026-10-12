@@ -16,9 +16,11 @@ from trajecteval import (
     FinalStateGrader,
     GraderResult,
     Report,
+    ReportError,
     Step,
     TaskSpec,
     Trajectory,
+    TrajEvalError,
     Verdict,
     evaluate,
     load_spec,
@@ -263,6 +265,43 @@ def test_render_json_keeps_null_values_that_text_omits():
     # display-only -- the machine form keeps "value": null for round trips.
     report = evaluate(_fixture("empty"), _spec())
     assert '"value": null' in render_json(report)
+
+
+def test_broken_saved_report_raises_report_error():
+    # The saved-report file lane: Report.from_dict never raises bare ValueError.
+    with pytest.raises(ReportError, match="must be an object"):
+        Report.from_dict("not a report")
+    with pytest.raises(ReportError, match="missing 'task_id'"):
+        Report.from_dict({})
+
+
+def test_nested_result_errors_surface_as_report_error():
+    # The broken part is a results.py constructor's business; the Report
+    # boundary is the file lane, so it surfaces as ReportError.
+    broken = {"task_id": "t", "trajectory_task_id": "t", "results": [{"dimension": "bounds"}]}
+    with pytest.raises(ReportError, match="verdict"):
+        Report.from_dict(broken)
+
+
+def test_nested_discontinuity_errors_surface_as_report_error():
+    broken = {
+        "task_id": "t",
+        "trajectory_task_id": "t",
+        "discontinuities": [{"step_index": "x", "next_step_index": 2, "differing_keys": []}],
+    }
+    with pytest.raises(ReportError, match="discontinuity"):
+        Report.from_dict(broken)
+
+
+def test_report_error_is_a_traj_eval_error_and_chains_the_original():
+    # One `except TrajEvalError` catches every broken-file case; the nested
+    # exception stays reachable as __cause__ for debugging.
+    with pytest.raises(ReportError) as excinfo:
+        Report.from_dict(
+            {"task_id": "t", "trajectory_task_id": "t", "results": [42]}
+        )
+    assert isinstance(excinfo.value, TrajEvalError)
+    assert isinstance(excinfo.value.__cause__, ValueError)
 
 
 # -- render_text: the exact format, one test per column state ----------------

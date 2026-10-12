@@ -270,7 +270,7 @@ TrajEval/
 ├── src/
 │   └── trajecteval/
 │       ├── __init__.py          # public API surface
-│       ├── errors.py            # TrajEvalError base + TrajectoryError / SpecError
+│       ├── errors.py            # TrajEvalError base + TrajectoryError / SpecError / ReportError
 │       ├── models.py            # Step, Action, Trajectory, Discontinuity + JSON I/O
 │       ├── matching.py          # json_equal + the subset matcher -- shared, no imports from the rest
 │       ├── results.py           # Verdict, Dimension, Evidence, GraderResult

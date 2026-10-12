@@ -1,6 +1,6 @@
 """TrajEval -- evaluate AI agents on *how* they work, not just whether they finished."""
 
-from trajecteval.errors import SpecError, TrajectoryError, TrajEvalError
+from trajecteval.errors import ReportError, SpecError, TrajectoryError, TrajEvalError
 from trajecteval.graders import (
     BoundsGrader,
     CriticalGrader,
@@ -27,6 +27,7 @@ __all__ = [
     "GraderResult",
     "RULE_SECTIONS",
     "Report",
+    "ReportError",
     "Step",
     "SpecError",
     "TaskSpec",

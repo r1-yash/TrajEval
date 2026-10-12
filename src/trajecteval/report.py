@@ -6,6 +6,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Sequence
 
+from trajecteval.errors import ReportError, TrajectoryError
 from trajecteval.graders import BoundsGrader, CriticalGrader, FinalStateGrader, Grader
 from trajecteval.models import Discontinuity, Trajectory
 from trajecteval.results import Dimension, Evidence, GraderResult, Verdict
@@ -42,31 +43,38 @@ class Report:
 
     @classmethod
     def from_dict(cls, data: Any) -> Report:
-        # Inverse of to_dict; structural problems raise ValueError (report-side,
-        # like GraderResult.from_dict -- this is not a file loader).
+        # Inverse of to_dict, in the saved-report file lane: every structural
+        # problem raises ReportError (a TrajEvalError, same except-catch as
+        # SpecError/TrajectoryError), wrapping the nested ValueError from
+        # results.py and TrajectoryError from models.py where they occur.
         if not isinstance(data, dict):
-            raise ValueError(f"report must be an object, got {type(data).__name__}")
+            raise ReportError(f"report must be an object, got {type(data).__name__}")
         for key in ("task_id", "trajectory_task_id"):
             if key not in data:
-                raise ValueError(f"report missing '{key}'")
+                raise ReportError(f"report missing '{key}'")
         raw_results = data.get("results", [])
         if not isinstance(raw_results, list):
-            raise ValueError(
+            raise ReportError(
                 f"report 'results' must be a list, got {type(raw_results).__name__}"
             )
         raw_discontinuities = data.get("discontinuities", [])
         if not isinstance(raw_discontinuities, list):
-            raise ValueError(
+            raise ReportError(
                 "report 'discontinuities' must be a list, "
                 f"got {type(raw_discontinuities).__name__}"
             )
+        try:
+            results = tuple(GraderResult.from_dict(item) for item in raw_results)
+            discontinuities = tuple(
+                Discontinuity.from_dict(item) for item in raw_discontinuities
+            )
+        except (ValueError, TrajectoryError) as exc:
+            raise ReportError(f"broken report: {exc}") from exc
         return cls(
             task_id=data["task_id"],
             trajectory_task_id=data["trajectory_task_id"],
-            results=tuple(GraderResult.from_dict(item) for item in raw_results),
-            discontinuities=tuple(
-                Discontinuity.from_dict(item) for item in raw_discontinuities
-            ),
+            results=results,
+            discontinuities=discontinuities,
         )
 
 
