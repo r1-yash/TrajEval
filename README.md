@@ -272,6 +272,7 @@ TrajEval/
 │       ├── __init__.py          # public API surface
 │       ├── errors.py            # TrajEvalError base + TrajectoryError / SpecError
 │       ├── models.py            # Step, Action, Trajectory, Discontinuity + JSON I/O
+│       ├── matching.py          # json_equal + the subset matcher -- shared, no imports from the rest
 │       ├── results.py           # Verdict, Dimension, Evidence, GraderResult
 │       ├── task_spec.py         # TaskSpec + load-by-id (no registry)
 │       ├── graders/             # deterministic graders — one file per dimension
