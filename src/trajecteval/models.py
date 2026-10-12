@@ -53,6 +53,13 @@ class Action:
     def from_dict(cls, data: Any, where: str = "action") -> Action:
         data = _require_dict(data, where)
         _require_keys(data, _ACTION_REQUIRED_KEYS, where)
+        # The name is what every grader matches against -- a number or a
+        # blank string would silently match nothing, so reject it at load.
+        name = data["name"]
+        if not isinstance(name, str) or not name:
+            raise TrajectoryError(
+                f"{where}: 'name' must be a non-empty string, got {type(name).__name__}"
+            )
         # args, when present, must be a dict -- a stringified or numeric args
         # blob is a structural problem (we could never grade against it later).
         args = data.get("args", {})
@@ -60,7 +67,7 @@ class Action:
             raise TrajectoryError(
                 f"{where}: 'args' must be an object, got {type(args).__name__}"
             )
-        return cls(name=data["name"], args=args)
+        return cls(name=name, args=args)
 
     def to_dict(self) -> dict[str, Any]:
         return {"name": self.name, "args": self.args}

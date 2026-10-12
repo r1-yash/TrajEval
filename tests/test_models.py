@@ -66,6 +66,17 @@ def test_index_duplicate_raises():
         Trajectory.from_dict(data)
 
 
+def test_action_name_must_be_a_non_empty_string():
+    # {"name": 123} used to load; every grader matches on the name, so a
+    # non-string or blank one is a structural problem, named by step.
+    for bad_name in (123, "", None):
+        data = make_trajectory_dict(steps=[
+            {"index": 1, "state_before": {}, "action": {"name": bad_name}, "state_after": {}},
+        ])
+        with pytest.raises(TrajectoryError, match="step 1: 'action': 'name' must be a non-empty string"):
+            Trajectory.from_dict(data)
+
+
 def test_missing_task_id_raises():
     with pytest.raises(TrajectoryError, match="missing required field 'task_id'"):
         Trajectory.from_dict({"steps": []})
