@@ -173,9 +173,10 @@ def render_text(report: Report) -> str:
             where = f"step {item.step}" if item.step is not None else "no step"
             if item.field_name is not None:
                 where = f"{where}, {item.field_name}"
-            lines.append(
-                f"    {item.kind} ({where}): {json.dumps(item.value, ensure_ascii=False)}"
-            )
+            # Display-only: a None value is 'no citation to show', so the
+            # ': ...' tail is dropped -- JSON keeps "value": null.
+            tail = "" if item.value is None else f": {json.dumps(item.value, ensure_ascii=False)}"
+            lines.append(f"    {item.kind} ({where}){tail}")
     evaluated = {result.dimension for result in report.results}
     for dimension in Dimension:
         if dimension not in evaluated:

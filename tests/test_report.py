@@ -258,6 +258,13 @@ def test_render_json_is_deterministic():
     assert render_json(report) == render_json(report)
 
 
+def test_render_json_keeps_null_values_that_text_omits():
+    # render_text drops the ': value' tail when value is None; that is
+    # display-only -- the machine form keeps "value": null for round trips.
+    report = evaluate(_fixture("empty"), _spec())
+    assert '"value": null' in render_json(report)
+
+
 # -- render_text: the exact format, one test per column state ----------------
 
 
@@ -328,7 +335,8 @@ def test_text_warn_column():
         )
     )
     assert "  final_state WARN: no rules to check" in render_text(report)
-    assert "    empty_section (no step, expected_final_state): null" in render_text(report)
+    assert "    empty_section (no step, expected_final_state)" in render_text(report)
+    assert "null" not in render_text(report)  # no dangling value tail
 
 
 def test_text_error_from_a_crash():
@@ -342,7 +350,7 @@ def test_text_error_from_a_missing_section():
     report = evaluate(_fixture("clean"), TaskSpec(task_id="travel_booking"), graders=[FinalStateGrader()])
     text = render_text(report)
     assert "  final_state ERROR:" in text
-    assert "    missing_spec_field (no step, expected_final_state): null" in text
+    assert "    missing_spec_field (no step, expected_final_state)" in text
     assert "expected_final_state" in text  # the reason names the section
 
 
