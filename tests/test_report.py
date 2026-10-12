@@ -308,7 +308,7 @@ def test_text_fail_column_lists_every_evidence_item():
             "task t (trajectory t)",
             "  bounds FAIL: 2 actions out of bounds",
             '    unlisted_action (step 3): {"action": "pay", "args": {"method": "points"}}',
-            '    argument_not_permitted (step 5): {"value": "cash", "permitted": ["card"]}',
+            '    argument_not_permitted (step 5, pay.method): {"value": "cash", "permitted": ["card"]}',
             "  not evaluated: final_state",
             "  not evaluated: critical",
             "  not evaluated: trajectory_quality",
@@ -328,7 +328,7 @@ def test_text_warn_column():
         )
     )
     assert "  final_state WARN: no rules to check" in render_text(report)
-    assert "    empty_section (no step): null" in render_text(report)
+    assert "    empty_section (no step, expected_final_state): null" in render_text(report)
 
 
 def test_text_error_from_a_crash():
@@ -342,7 +342,7 @@ def test_text_error_from_a_missing_section():
     report = evaluate(_fixture("clean"), TaskSpec(task_id="travel_booking"), graders=[FinalStateGrader()])
     text = render_text(report)
     assert "  final_state ERROR:" in text
-    assert "    missing_spec_field (no step): null" in text
+    assert "    missing_spec_field (no step, expected_final_state): null" in text
     assert "expected_final_state" in text  # the reason names the section
 
 

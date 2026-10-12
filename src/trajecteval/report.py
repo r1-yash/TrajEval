@@ -171,6 +171,8 @@ def render_text(report: Report) -> str:
         lines.append(f"  {result.dimension.value} {result.verdict.value}: {result.reason}")
         for item in result.evidence:
             where = f"step {item.step}" if item.step is not None else "no step"
+            if item.field_name is not None:
+                where = f"{where}, {item.field_name}"
             lines.append(
                 f"    {item.kind} ({where}): {json.dumps(item.value, ensure_ascii=False)}"
             )
