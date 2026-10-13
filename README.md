@@ -11,9 +11,10 @@ state of the world **before and after** each one — and grades that path on
 four separate questions, so a report tells you *why* a run was good or bad,
 not just whether it was.
 
-> **Status:** under construction. Steps 1–7 (scaffold, models, result types,
+> **Status:** under construction. Steps 1–8 (scaffold, models, result types,
 > task specs + grader contract, fixtures, the three deterministic graders,
-> the `evaluate()` report pipeline) are done. Everything else in this
+> the `evaluate()` report pipeline, the cross-trace comparison table) are
+> done. Everything else in this
 > README is a **plan** — roadmap rows are marked, and every usage example
 > below says plainly whether it works yet. Nothing here is built unless its
 > roadmap row says so.
@@ -196,16 +197,20 @@ uv add --dev <package>     # development/test dependency
 uv run traject eval tests/fixtures/<task-one>/clean.json
 ```
 
-**Compare traces** *(not implemented yet — Step 10)*
+**Compare traces** *(the CLI is not implemented yet — Step 10; the table
+itself works as a library, below)*
 
 ```bash
 uv run traject compare reports/*.json
 ```
 
 ```text
-trace               final state   bounds   critical err   trajectory qual
-<task-one>/clean         PASS       PASS       PASS            PASS
-<task-one>/critical      PASS       PASS       FAIL (step 4)   PASS
+# deterministic columns only, until the Step 9 judge exists --
+# trajectory_quality stays an explicit "not evaluated", never a guess
+trace               task            discont  final_state   bounds   critical      trajectory_quality
+<task-one>/clean    <task-one>      -        PASS          PASS     PASS          not evaluated
+<task-one>/critical <task-one>      -        PASS          PASS     FAIL (step 4) not evaluated
+legend: !ERROR = could not judge (setup problem); FAIL/WARN = judged -- details in the full report
 ```
 
 **As a library** *(Step 7 — works)*
@@ -219,6 +224,33 @@ for result in report.results:
     print(result.dimension, result.verdict, result.reason)
 print(render_text(report))   # or render_json(report) for the machine form
 ```
+
+**Compare traces as a library** *(Step 8 — works)*
+
+```python
+from pathlib import Path
+
+from trajecteval import (
+    Report, Trajectory, compare, evaluate, load_spec, render_table,
+)
+
+spec = load_spec("<task-id>")
+pairs = [
+    (path.stem, evaluate(Trajectory.from_json_file(path), spec))
+    for path in sorted(Path("reports").glob("*.json"))
+]
+print(render_table(compare(pairs)))     # plain aligned text
+# print(render_table_markdown(...))     # the same cells as a Markdown table
+
+report = evaluate(Trajectory.from_json_file("trace.json"), spec)
+report.to_json_file("reports/clean.json")     # save
+loaded = Report.from_json_file("reports/clean.json")   # load back, equal
+```
+
+Each row is one trace under caller-supplied labels, every dimension is a
+column (a report missing one shows `not evaluated` — columns are never
+dropped), `discont` counts recorder discontinuities, and `!ERROR` marks a
+column that could not be judged.
 
 ## The trajectory format
 
@@ -280,8 +312,8 @@ TrajEval/
 │       │   ├── final_state.py
 │       │   ├── bounds.py
 │       │   └── critical.py
-│       ├── report.py            # evaluate() pipeline + JSON + readable text
-│       ├── compare.py           # cross-trace comparison table
+│       ├── report.py            # evaluate() pipeline + JSON/text/file renderers
+│       ├── compare.py           # cross-trace comparison table (text + markdown)
 │       ├── judge/
 │       │   ├── base.py          # judge protocol + structured output types
 │       │   ├── fake.py          # offline fake — every test uses this
@@ -361,7 +393,7 @@ Conventions:
 | 5 | Fixtures for task one — seven trajectories (clean, wasteful, critical_recovered, first_class_overlap, failed, unlisted_action, empty) + the machine-readable expected-verdict table | ✅ done |
 | 6 | Three deterministic graders (final state, bounds, critical) — reproduce the fixture answer key exactly | ✅ done |
 | 7 | Report: `evaluate()` runs the three deterministic dimensions first (a crashed grader degrades its own column to ERROR, never the run), then renders JSON + readable text; the LLM judge is an optional addition once Step 9 exists | ✅ done |
-| 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ⏳ planned |
+| 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ✅ done |
 | 9 | LLM judge: contract + fake, fully offline | ⏳ planned |
 | 10 | CLI (`uv run traject ...`) | ⏳ planned |
 | 11 | Toy task two — same graders, new domain, unchanged code | ⏳ planned |
