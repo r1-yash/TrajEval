@@ -108,6 +108,14 @@ class Report:
             raise ReportError(f"{path} is not valid JSON: {exc}") from exc
         return cls.from_dict(data)
 
+    def to_json_file(self, path: str | Path, *, indent: int = 2) -> None:
+        # Mirror of from_json_file: writes render_json's bytes plus a trailing
+        # newline (saved text files should end in one). render_json itself
+        # stays newline-free, same as Trajectory.to_json.
+        Path(path).write_text(
+            render_json(self, indent=indent) + "\n", encoding="utf-8"
+        )
+
 
 def _default_graders() -> tuple[Grader, ...]:
     # The three deterministic columns, in dimension order.

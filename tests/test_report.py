@@ -500,3 +500,20 @@ def test_from_json_file_broken_structure_raises_report_error(tmp_path):
     )
     with pytest.raises(ReportError, match="results"):
         Report.from_json_file(path)
+
+
+def test_to_json_file_writes_render_json_plus_a_trailing_newline(tmp_path):
+    report = evaluate(_fixture("clean"), _spec())
+    path = tmp_path / "clean-report.json"
+    report.to_json_file(path)
+    text = path.read_text(encoding="utf-8")
+    assert text == render_json(report) + "\n"
+    # render_json itself is untouched by this step: no newline of its own.
+    assert not render_json(report).endswith("\n")
+
+
+def test_to_json_file_round_trips_through_from_json_file(tmp_path):
+    report = evaluate(_fixture("first_class_overlap"), _spec())
+    path = tmp_path / "overlap-report.json"
+    report.to_json_file(path)
+    assert Report.from_json_file(path) == report
