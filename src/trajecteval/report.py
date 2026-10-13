@@ -12,7 +12,7 @@ from trajecteval.models import Discontinuity, Trajectory
 from trajecteval.results import Dimension, Evidence, GraderResult, Verdict
 from trajecteval.task_spec import TaskSpec
 
-
+##the to_dict and from_dict are a pattern called serialization and deserialization. for converting to python dits tuples, and for converting to json and back.
 @dataclass(frozen=True)
 class Report:
     # One trajectory's full report card: both task ids, one result per column,
@@ -21,16 +21,17 @@ class Report:
 
     task_id: str
     trajectory_task_id: str
-    results: tuple[GraderResult, ...] = ()
+    results: tuple[GraderResult, ...] = () #the ... means that it can contain any number of objects
     discontinuities: tuple[Discontinuity, ...] = ()
 
+    '''the results are pass, warn fail thing and the discontinuties refers to anomalies liek state after not matching state before'''
     def __post_init__(self) -> None:
         # Accept lists at construction (ergonomic), store tuples (frozen class,
         # no mutable fields -- same rule as Trajectory.steps and differing_keys).
-        if isinstance(self.results, list):
-            object.__setattr__(self, "results", tuple(self.results))
+        if isinstance(self.results, list): ##checking what we get is a list or not
+            object.__setattr__(self, "results", tuple(self.results)) #and here we convert it to a tuple because we want it to be be immutable, 
         if isinstance(self.discontinuities, list):
-            object.__setattr__(self, "discontinuities", tuple(self.discontinuities))
+            object.__setattr__(self, "discontinuities", tuple(self.discontinuities)) 
 
     def to_dict(self) -> dict[str, Any]:
         # Round-trippable plain dict: from_dict(to_dict(report)) == report.
@@ -97,9 +98,8 @@ def _default_graders() -> tuple[Grader, ...]:
 
 
 def _require_judgeable(graders: Sequence[Grader]) -> tuple[Dimension, ...]:
-    # Every pre-judging gate -- empty list, valid dimension, one grader per
-    # column -- raises ValueError before any grade() call: broken caller code,
-    # same lane as every other ValueError in the project.
+    # its a security check before it enters grader and checks are -  empty list, valid dimension, one grader per
+    # column -- raises ValueError before any grade() call: broken caller code, same lane as every other ValueError in the project.
     if not graders:
         raise ValueError("evaluate() needs at least one grader; got an empty list")
     dimensions: list[Dimension] = []
