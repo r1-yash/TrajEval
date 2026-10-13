@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Sequence
 
 from trajecteval.errors import ReportError, TrajectoryError
@@ -90,6 +91,22 @@ class Report:
             results=results,
             discontinuities=discontinuities,
         )
+
+    @classmethod
+    def from_json_file(cls, path: str | Path) -> Report:
+        # The saved-report file lane, mirroring Trajectory.from_json_file:
+        # an unreadable file or invalid JSON is a broken input file, so it
+        # raises ReportError -- the same except-catch as every other loader.
+        path = Path(path)
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise ReportError(f"cannot read {path}: {exc}") from exc
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise ReportError(f"{path} is not valid JSON: {exc}") from exc
+        return cls.from_dict(data)
 
 
 def _default_graders() -> tuple[Grader, ...]:

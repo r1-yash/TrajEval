@@ -465,3 +465,38 @@ def test_text_header_names_both_task_ids_when_they_differ():
     assert render_text(report).splitlines()[0] == (
         "task travel_booking (trajectory copied_trace)"
     )
+
+
+# -- file I/O: from_json_file, mirroring Trajectory.from_json_file ----------
+
+
+def test_from_json_file_round_trips_a_saved_report(tmp_path):
+    report = evaluate(_fixture("failed"), _spec())
+    path = tmp_path / "failed-report.json"
+    path.write_text(render_json(report), encoding="utf-8")
+    assert Report.from_json_file(path) == report
+
+
+def test_from_json_file_missing_file_raises_report_error(tmp_path):
+    # Unreadable file = broken input file = ReportError, never OSError.
+    with pytest.raises(ReportError, match="cannot read"):
+        Report.from_json_file(tmp_path / "nope.json")
+
+
+def test_from_json_file_invalid_json_raises_report_error(tmp_path):
+    path = tmp_path / "junk.json"
+    path.write_text("{not json", encoding="utf-8")
+    with pytest.raises(ReportError, match="not valid JSON"):
+        Report.from_json_file(path)
+
+
+def test_from_json_file_broken_structure_raises_report_error(tmp_path):
+    # Valid JSON, broken report: from_dict's structural rules apply, and the
+    # path stays in the message for context.
+    path = tmp_path / "broken.json"
+    path.write_text(
+        '{"task_id": "t", "trajectory_task_id": "t", "results": "nope"}',
+        encoding="utf-8",
+    )
+    with pytest.raises(ReportError, match="results"):
+        Report.from_json_file(path)
