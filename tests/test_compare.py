@@ -17,6 +17,7 @@ from trajecteval import (
     evaluate,
     load_spec,
     render_table,
+    render_table_markdown,
 )
 from trajecteval.models import Trajectory
 
@@ -322,3 +323,70 @@ def test_text_table_all_seven_fixtures_render_one_row_each():
         assert "not evaluated" in row  # trajectory_quality, every row
     for column in ("trace", "task", "discont", "final_state", "bounds", "critical", "trajectory_quality"):
         assert column in lines[0]
+
+
+# -- render_table_markdown: the same cells in Markdown pipes ----------------
+
+
+def test_markdown_table_format_is_pinned():
+    passes = _report_with(
+        GraderResult(
+            dimension=Dimension.FINAL_STATE, verdict=Verdict.PASS, reason="good"
+        )
+    )
+    boom = Report(
+        task_id="t",
+        trajectory_task_id="copy",
+        results=(
+            GraderResult(
+                dimension=Dimension.FINAL_STATE,
+                verdict=Verdict.FAIL,
+                reason="never arrived",
+                evidence=(Evidence(kind="final_state_not_reached", step=3),),
+            ),
+        ),
+        discontinuities=(
+            Discontinuity(step_index=1, next_step_index=2, differing_keys=("x",)),
+        ),
+    )
+    text = render_table_markdown(compare([("clean", passes), ("boom", boom)]))
+    assert text == "\n".join(
+        [
+            "| trace | task | discont | final_state | bounds | critical | trajectory_quality |",
+            "|---|---|---|---|---|---|---|",
+            "| clean | t | - | PASS | not evaluated | not evaluated | not evaluated |",
+            "| boom | t / copy | 1 | FAIL (step 3) | not evaluated | not evaluated | not evaluated |",
+            "*legend: `!ERROR` = could not judge (setup problem); FAIL/WARN = judged -- details in the full report*",
+        ]
+    )
+
+
+def test_markdown_and_text_tables_share_the_same_cells():
+    # One cell rule (_row_cells), two renderers: the markdown table can
+    # never drift from the text table's content.
+    crash = GraderResult(
+        dimension=Dimension.BOUNDS,
+        verdict=Verdict.ERROR,
+        reason="the bounds grader crashed: ZeroDivisionError",
+        evidence=(Evidence(kind="grader_crash"),),
+    )
+    report = Report(
+        task_id="spec_a",
+        trajectory_task_id="copied",
+        results=(_result(Verdict.FAIL, 3), crash),
+        discontinuities=(
+            Discontinuity(step_index=1, next_step_index=2, differing_keys=("x",)),
+        ),
+    )
+    comparison = compare([("r", report)])
+    text, md = render_table(comparison), render_table_markdown(comparison)
+    for cell in ("!ERROR", "FAIL (step 3)", "spec_a / copied", "1", "not evaluated"):
+        assert cell in text and cell in md
+
+
+def test_markdown_table_keeps_every_dimension_column():
+    comparison = compare([("a", _report_with(_result(Verdict.PASS, 1)))])
+    header = render_table_markdown(comparison).splitlines()[0]
+    assert header == (
+        "| trace | task | discont | final_state | bounds | critical | trajectory_quality |"
+    )
