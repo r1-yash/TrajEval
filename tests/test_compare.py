@@ -8,6 +8,7 @@ import pytest
 
 from trajecteval import (
     Dimension,
+    Discontinuity,
     Evidence,
     GraderResult,
     Report,
@@ -15,6 +16,7 @@ from trajecteval import (
     compare,
     evaluate,
     load_spec,
+    render_table,
 )
 from trajecteval.models import Trajectory
 
@@ -198,3 +200,125 @@ def test_compare_is_reproducible_from_saved_reports(tmp_path):
     assert compare([("t", reloaded)]).cell("t", Dimension.BOUNDS) == compare(
         [("t", report)]
     ).cell("t", Dimension.BOUNDS)
+
+
+# -- render_table: plain aligned text ---------------------------------------
+
+
+def test_text_table_format_is_pinned():
+    # Two rows, fixed input: the exact bytes a caller sees, spaces included.
+    passes = _report_with(
+        GraderResult(
+            dimension=Dimension.FINAL_STATE, verdict=Verdict.PASS, reason="good"
+        )
+    )
+    boom = Report(
+        task_id="t",
+        trajectory_task_id="copy",
+        results=(
+            GraderResult(
+                dimension=Dimension.FINAL_STATE,
+                verdict=Verdict.FAIL,
+                reason="never arrived",
+                evidence=(Evidence(kind="final_state_not_reached", step=3),),
+            ),
+        ),
+        discontinuities=(
+            Discontinuity(step_index=1, next_step_index=2, differing_keys=("x",)),
+            Discontinuity(step_index=2, next_step_index=3, differing_keys=("y",)),
+        ),
+    )
+    text = render_table(compare([("clean", passes), ("boom", boom)]))
+    assert text == "\n".join(
+        [
+            "trace  task      discont  final_state    bounds         critical       trajectory_quality",
+            "clean  t         -        PASS           not evaluated  not evaluated  not evaluated",
+            "boom   t / copy  2        FAIL (step 3)  not evaluated  not evaluated  not evaluated",
+            "legend: !ERROR = could not judge (setup problem); FAIL/WARN = judged -- details in the full report",
+        ]
+    )
+
+
+def test_text_table_task_column_shows_both_ids_when_they_differ():
+    # The spec's task id normally; a copied trace graded against another
+    # spec shows both ids, because the disagreement is the row's story.
+    same = Report(task_id="t", trajectory_task_id="t")
+    differ = Report(task_id="spec_a", trajectory_task_id="copied_trace")
+    text = render_table(compare([("a", same), ("b", differ)]))
+    header, row_a, row_b = text.splitlines()[:3]
+    col = header.index("task")
+    assert row_a[col : col + 1] == "t"
+    assert row_b[col:].startswith("spec_a / copied_trace")
+
+
+def test_text_table_discont_column_counts_and_dashes():
+    clean = Report(task_id="t", trajectory_task_id="t")
+    gappy = Report(
+        task_id="t",
+        trajectory_task_id="t",
+        discontinuities=(
+            Discontinuity(step_index=1, next_step_index=2, differing_keys=("a",)),
+            Discontinuity(step_index=2, next_step_index=3, differing_keys=("b",)),
+        ),
+    )
+    header, row_a, row_b = render_table(compare([("a", clean), ("b", gappy)])).splitlines()[:3]
+    col = header.index("discont")
+    assert row_a[col] == "-"  # no recorder gaps: a dash, not a zero or blank
+    assert row_b[col : col + 1] == "2"
+
+
+def test_text_table_legend_is_last_even_without_errors():
+    text = render_table(compare([("a", _report_with(_result(Verdict.PASS, 1)))]))
+    assert text.splitlines()[-1] == (
+        "legend: !ERROR = could not judge (setup problem); "
+        "FAIL/WARN = judged -- details in the full report"
+    )
+
+
+def test_text_table_error_cells_read_differently_from_fail_cells():
+    # The same table, both states: a FAIL row carries the verdict word and
+    # no bang; an ERROR row carries the bang and no verdict word.
+    crash = GraderResult(
+        dimension=Dimension.BOUNDS,
+        verdict=Verdict.ERROR,
+        reason="the bounds grader crashed: ZeroDivisionError",
+        evidence=(Evidence(kind="grader_crash"),),
+    )
+    fail_row_report = _report_with(_result(Verdict.FAIL, 3))
+    crash_row_report = Report(
+        task_id="t",
+        trajectory_task_id="t",
+        results=(_result(Verdict.PASS, 1), crash),
+    )
+    lines = render_table(
+        compare([("fail", fail_row_report), ("crash", crash_row_report)])
+    ).splitlines()
+    assert "FAIL (step 3)" in lines[1] and "!ERROR" not in lines[1]
+    assert "!ERROR" in lines[2] and "FAIL" not in lines[2]
+
+
+def test_text_table_long_labels_keep_alignment():
+    long_label = "a-very-long-trace-label-from-a-file-stem"
+    text = render_table(
+        compare([("s", _report_with(_result(Verdict.PASS, 1))), (long_label, _report_with(_result(Verdict.PASS, 1)))])
+    )
+    lines = text.splitlines()
+    # The last column is never padded, so no line ends in spaces...
+    assert all(not line.endswith(" ") for line in lines)
+    # ...and the final_state cell sits at the same column in every row.
+    col = lines[0].index("final_state")
+    for row in lines[1:-1]:
+        assert row[col : col + 4] == "PASS"
+
+
+def test_text_table_all_seven_fixtures_render_one_row_each():
+    names = sorted(TABLE["verdicts"])
+    comparison = compare([(name, evaluate(_fixture(name), _spec())) for name in names])
+    lines = render_table(comparison).splitlines()
+    assert len(lines) == len(names) + 2  # header + seven rows + legend
+    for name, row in zip(names, lines[1:-1]):
+        assert row.startswith(name)
+        assert "travel_booking" in row
+        assert "not evaluated" in row  # trajectory_quality, every row
+    for column in ("trace", "task", "discont", "final_state", "bounds", "critical", "trajectory_quality"):
+        assert column in lines[0]
