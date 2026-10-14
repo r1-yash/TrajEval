@@ -9,9 +9,7 @@ from typing import Any
 
 
 class Verdict(StrEnum):
-    """Closed set of outcomes. Not a free string: 'fail' or 'Fail' are not
-    verdicts. StrEnum members *are* their string value, so JSON output needs
-    no converter and ``Verdict("FAIL")`` rejects unknown values."""
+    
 
     PASS = "PASS"
     FAIL = "FAIL"
@@ -37,7 +35,7 @@ def _require_non_empty_str(value: Any, where: str) -> str:
         raise ValueError(f"{where} must be a non-empty string, got {value!r}")
     return value
 
-
+#json must and round trip enabled
 def _require_json_native(value: Any, where: str) -> None:
     """Reject values that would not survive a JSON round trip unchanged.
 
