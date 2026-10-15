@@ -10,6 +10,7 @@ from trajecteval.graders import (
     missing_section_result,
     task_id_mismatch_result,
 )
+from trajecteval.judge import Judge, JudgeNote, JudgeResult
 from trajecteval.models import Action, Discontinuity, Step, Trajectory
 from trajecteval.report import Report, evaluate, render_json, render_text
 from trajecteval.results import Dimension, Evidence, GraderResult, Verdict
@@ -27,6 +28,9 @@ __all__ = [
     "FinalStateGrader",
     "Grader",
     "GraderResult",
+    "Judge",
+    "JudgeNote",
+    "JudgeResult",
     "RULE_SECTIONS",
     "Report",
     "ReportError",
