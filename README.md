@@ -91,7 +91,7 @@ still FAIL at the end.
 Every cell holds a verdict — **PASS**, **WARN**, **FAIL**, or **ERROR** —
 with a one-sentence reason and evidence citing step numbers. ERROR means the
 grader could not judge (a setup problem), never that the trajectory broke a
-rule.
+rule. Full verdict reference: [docs/DESIGN.md](docs/DESIGN.md).
 
 ## What works today
 
@@ -206,7 +206,9 @@ rules live in one plain JSON file per task. This is
 - **`critical_error_patterns`** — exact moves that count as critical mistakes:
   the action name plus, if given, arguments that must all match exactly.
 
-Adding a new task means writing one JSON file — no new grader code.
+Adding a new task means writing one JSON file — no new grader code. Deeper
+semantics — absent vs. empty sections, `null` handling, the full permit-list
+rules — live in [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Design principles
 
@@ -221,19 +223,13 @@ Adding a new task means writing one JSON file — no new grader code.
 5. **ERROR ≠ FAIL.** A grader that can't judge says so; it never guesses.
 6. **Rules live in task specs, not grader code.** Graders stay domain-agnostic;
    every rule in a spec list is applied.
-7. **Small and focused.** Single-environment, one task type at a time. No plugin
-   registries, no over-engineering until a real need appears.
-8. **Tested without the network.** Offline tests, fake judge, fixture
-   trajectories as ground truth.
-9. **Python/uv only.** Everything runs as `uv run ...`. No pip, no venv
-   activation, no Node/npm/TypeScript.
 
-## Development
+## Testing & development
 
 Every command goes through `uv`:
 
 ```bash
-uv run pytest                          # full suite (offline, always)
+uv run pytest                          # full suite (offline by default)
 uv run pytest tests/test_models.py -v  # one file
 uv run pytest -k discontinu            # by name
 ```
@@ -241,10 +237,11 @@ uv run pytest -k discontinu            # by name
 Conventions:
 
 - One module = one responsibility; one test file per module.
-- **No test may require network access or an API key** — the judge is faked.
-- Hand-made fixtures are the ground truth; a recorder can generate traces, but
-  tests never depend on one until Step 12, and never on an LLM until (optional)
-  Step 13.
+- The default suite is **offline and deterministic**: hand-made fixtures are
+  the ground truth, and unit tests use a small scripted fake judge.
+- Step 9 adds a real LLM client. Live tests that call it are clearly
+  separated, skipped by default, and need an API key — the default suite
+  never touches the network.
 
 ## The trajectory format
 
@@ -271,78 +268,52 @@ One episode per JSON file — plain data, no database:
 }
 ```
 
-Loading rules (implemented in Step 2):
-
-- Step indices must be sequential — gaps or duplicates are rejected with an
-  error that names the step.
-- Only structural problems **raise** at load time (missing `task_id`, missing
-  step keys, missing action name, bad index sequence). Every such message names
-  the step involved.
-- A state discontinuity between one step's `state_after` and the next step's
-  `state_before` does **not** prevent loading — it is *reported* by
-  `find_discontinuities()` so it can appear in the report.
-- Unknown top-level keys are preserved in `metadata`. On a collision, the
-  explicit `metadata` entry wins.
+Loading rules are enforced by the loaders: step indices must be sequential
+(gaps and duplicates are rejected, naming the step), only structural problems
+raise, and a state discontinuity between steps is *reported* — it never
+blocks loading. Full rules: [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Project structure
+
+What exists today:
 
 ```text
 TrajEval/
 ├── pyproject.toml               # project metadata + dependencies (uv owns this)
 ├── uv.lock                      # pinned versions (reproducible installs)
 ├── README.md
-├── tasks/                       # one JSON spec per task — the only place rules live
-│   └── travel_booking.json      # task one spec (fixtures live in tests/fixtures/travel_booking/)
-├── src/
-│   └── trajecteval/
-│       ├── __init__.py          # public API surface
-│       ├── errors.py            # TrajEvalError base + TrajectoryError / SpecError / ReportError
-│       ├── models.py            # Step, Action, Trajectory, Discontinuity + JSON I/O
-│       ├── matching.py          # json_equal + the subset matcher -- shared, no imports from the rest
-│       ├── results.py           # Verdict, Dimension, Evidence, GraderResult
-│       ├── task_spec.py         # TaskSpec + load-by-id (no registry)
-│       ├── graders/             # deterministic graders — one file per dimension
-│       │   ├── base.py          # Grader protocol: grade(spec, trajectory)
-│       │   ├── final_state.py
-│       │   ├── bounds.py
-│       │   └── critical.py
-│       ├── report.py            # evaluate() pipeline + JSON/text/file renderers
-│       ├── compare.py           # cross-trace comparison table (text + markdown)
-│       ├── judge/
-│       │   ├── base.py          # judge protocol + structured output types
-│       │   ├── fake.py          # offline fake — every test uses this
-│       │   └── llm.py           # real client (later)
-│       ├── cli.py               # uv run traject ...
-│       ├── environment.py       # simulated environment (later)
-│       ├── recorder.py          # thin recorder wrapping the environment (later)
-│       └── adapters/
-│           └── debuggernaut.py  # optional, only if real logs exist (later)
-├── tests/
-│   ├── fixtures/
-│   │   ├── minimal.json         # loader fixture (Step 2)
-│   │   ├── discontinuous.json   # discontinuity fixture (Step 2)
-│   │   ├── travel_booking/      # task one: seven trajectories
-│   │   │   ├── clean.json
-│   │   │   ├── wasteful.json
-│   │   │   ├── critical_recovered.json
-│   │   │   ├── first_class_overlap.json
-│   │   │   ├── failed.json
-│   │   │   ├── unlisted_action.json
-│   │   │   ├── empty.json
-│   │   │   └── expected_verdicts.json   # verdict per fixture per dimension
-│   │   └── <task-two>/          # smaller, differently shaped (later)
-│   ├── test_fixtures.py         # fixtures load, are continuous, match the table
-│   ├── test_smoke.py
-│   └── ...                      # one test file per module
-└── examples/                    # LLM-agent demo (later)
+├── docs/
+│   └── DESIGN.md                # deep rules: verdicts, evidence, permits, loading
+├── tasks/
+│   └── travel_booking.json      # task one's rules — the only place rules live
+├── src/trajecteval/
+│   ├── __init__.py              # public API surface
+│   ├── errors.py                # TrajEvalError + TrajectoryError / SpecError / ReportError
+│   ├── models.py                # Step, Action, Trajectory, Discontinuity + JSON I/O
+│   ├── matching.py              # json_equal + the subset matcher
+│   ├── results.py               # Verdict, Dimension, Evidence, GraderResult
+│   ├── task_spec.py             # TaskSpec + load-by-task-id (no registry)
+│   ├── graders/                 # deterministic graders — one file per dimension
+│   │   ├── base.py              # Grader protocol: grade(spec, trajectory)
+│   │   ├── final_state.py
+│   │   ├── bounds.py
+│   │   └── critical.py
+│   ├── report.py                # evaluate() + JSON/text/file renderers
+│   ├── compare.py               # cross-trace comparison table (text + markdown)
+│   └── judge/
+│       └── base.py              # judge contract (protocol + JudgeResult/JudgeNote)
+└── tests/                       # one test file per module, plus fixtures:
+    └── fixtures/
+        ├── minimal.json         # loader fixture
+        ├── discontinuous.json   # discontinuity fixture
+        └── travel_booking/      # seven trajectories + expected_verdicts.json
 ```
 
-**This is the target layout, not the current tree.** Today only
-`pyproject.toml`, `README.md`, `tasks/travel_booking.json`,
-`src/trajecteval/{__init__,errors,models,results,task_spec}.py`,
-`src/trajecteval/graders/`, `tests/` and
-`tests/fixtures/travel_booking/` exist — the roadmap's status column
-says what's built.
+Planned, in roadmap order (not built): the real LLM judge client + its
+scripted unit-test fake (`judge/`), the CLI (`cli.py`), the simulated
+environment and recorder (`environment.py`, `recorder.py`), task two's
+fixtures, and — only if real attempt logs ever exist — a Debuggernaut
+adapter. The [roadmap](#roadmap) is the source of truth for what's next.
 
 **Why `src/` layout?** It prevents a classic trap: Python silently importing
 your working directory instead of the installed package, so tests pass on your
@@ -351,12 +322,11 @@ installed — uv does that installation automatically.
 
 ## Toy tasks
 
-Two toy tasks carry the tests: **task one is travel booking, task two is
-support-ticket triage** (both confirmed). Neither is file-based. Task one gets
-seven fixtures with an expected-verdict table beside them: clean, wasteful,
-critical_recovered, first_class_overlap, failed, unlisted_action, empty.
-Task two is smaller and shaped differently, and exists to prove the graders
-work unchanged on a new domain.
+Task one is travel booking: seven fixture trajectories plus a
+machine-readable expected-verdict table beside them. Task two (support-ticket
+triage, Step 13) is smaller and shaped differently, and exists to prove the
+graders run unchanged on a new domain — same code, only the spec and
+fixtures change.
 
 ## Roadmap
 
@@ -370,12 +340,16 @@ work unchanged on a new domain.
 | 6 | Three deterministic graders (final state, bounds, critical) — reproduce the fixture answer key exactly | ✅ done |
 | 7 | Report: `evaluate()` runs the three deterministic dimensions first (a crashed grader degrades its own column to ERROR, never the run), then renders JSON + readable text; the LLM judge is an optional addition once Step 9 exists | ✅ done |
 | 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ✅ done |
-| 9 | LLM judge: contract + fake, fully offline | ⏳ planned |
+| 9 | Real LLM judge: adapter + validation + **one real client** — the contract is already committed (`judge/base.py`); a small scripted fake covers unit tests | 🚧 started |
 | 10 | CLI (`uv run traject ...`) | ⏳ planned |
-| 11 | Toy task two — same graders, new domain, unchanged code | ⏳ planned |
-| 12 | Recorder + simulated environment (generate traces by running actions) | ⏳ planned |
-| 13 | LLM-agent demo (agent → recorder → report; needs an API key) | ⏳ planned |
-| 14 | Debuggernaut adapter — **optional**, only if real logs exist | ⏳ planned (optional) |
+| 11 | Recorder + simulated environment for travel_booking | ⏳ planned |
+| 12 | LLM-agent demo: agent → recorder → report, real traces (needs an API key) | ⏳ planned |
+| 13 | Toy task two — same graders, new domain, graders unchanged | ⏳ planned |
+
+**Later / maybe** (not scheduled, one line each):
+
+- Other judge backends (e.g. Jev — read about, not verified)
+- Debuggernaut adapter (only if real attempt logs exist)
 
 ## Design notes & FAQ
 
@@ -397,30 +371,19 @@ exactly what should stay boring and domain-agnostic. A spec file is reviewable,
 diffable, and testable as data. It also forces rules to be explicit: if
 something is graded, it's written down in the spec — not buried in a branch.
 
-**Why two toy tasks?**
-One task proves a grader works; two tasks prove the grader isn't secretly about
-task one. Task two runs through the exact same graders with only the spec and
-fixtures changed.
-
-**Why is the LLM judge injectable?**
-So tests never touch the network. `evaluate(..., judge=FakeJudge())` runs
-offline and deterministically; the real client is a one-line swap at the call
-site, and API keys stay out of core logic.
+**Why is the judge injectable?**
+So the default tests never touch the network — a small scripted fake judge
+stands in — while the product direction is a *real* client: Step 9 builds one
+real LLM backend behind the already-committed contract
+(`src/trajecteval/judge/base.py`). Swapping judges is a one-line change at the
+call site, and API keys stay out of core logic. (The `evaluate(..., judge=...)`
+wiring lands with Step 9 — today only the contract exists.)
 
 **Why dataclasses instead of Pydantic?**
 The project parses its own well-defined JSON format rather than validating
 arbitrary external input at an API boundary. Stdlib dataclasses keep the core
 dependency-free and the mental model small. Revisiting later if needs grow is
 normal.
-
-**Where does Debuggernaut fit?**
-Nowhere required. It's an optional final adapter (Step 14), included only if
-real attempt logs exist. Everything through Step 13 runs on simulated tasks.
-
-**What does a report look like?**
-Two artifacts per trace: a `.json` file with verdicts, reasons, and evidence,
-plus a human-readable rendering of the same data. The comparison table aligns
-many reports side by side.
 
 ## License
 
