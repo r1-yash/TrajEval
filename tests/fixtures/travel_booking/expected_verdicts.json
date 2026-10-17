@@ -46,7 +46,7 @@
   },
   "declared_only": ["trajectory_quality"],
   "notes": {
-    "trajectory_quality": "declared intent only -- not enforced until the fake judge exists (Step 9). The real judge is nondeterministic, so Step 9 asserts only: clean = PASS and wasteful != PASS.",
+    "trajectory_quality": "declared expectations for the real judge, not enforced by the offline suite -- a real LLM judge is nondeterministic. Live tests (pytest -m live) check only loose sanity: the verdict is from the closed set PASS/WARN/FAIL, and a non-PASS carries at least one note.",
     "empty": "decided in Step 5 planning: final_state FAIL with whole-trajectory evidence (step=null, the expected state was never reached); bounds and critical WARN because they checked nothing -- a clean PASS would oversell an episode with no actions."
   }
 }

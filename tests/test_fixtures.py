@@ -82,19 +82,20 @@ def test_quality_column_is_declared_intent_only():
     table = _table()
     assert table["declared_only"] == ["trajectory_quality"]
     note = table["notes"]["trajectory_quality"]
-    # The hand-off to Step 9 must stay spelled out: the real judge is
-    # nondeterministic, so it may only be held to clean = PASS and
-    # wasteful != PASS -- the other quality values are intent, not contract.
+    # The note must stay honest: the quality values are expectations, never
+    # enforced offline (a real judge is nondeterministic); only the live
+    # tests touch the real judge, and only for loose sanity.
     assert "nondeterministic" in note
-    assert "Step 9" in note
+    assert "not enforced by the offline suite" in note
+    assert "pytest -m live" in note
 
 
 def test_every_dimension_has_a_fixture_that_fails_only_it():
     """One wrong thing per fixture: for each dimension, at least one fixture
     is non-PASS in that dimension and PASS in every other *enforced*
-    dimension (columns in ``declared_only`` are intent, not contract, until
-    Step 9 -- so e.g. critical_recovered may carry a WARN quality column and
-    still isolate critical).
+    dimension (columns in ``declared_only`` are intent, never contract --
+    a real judge is nondeterministic, so e.g. critical_recovered may carry
+    a WARN quality column and still isolate critical).
 
     This is the isolation property the graders rely on: a grader that fails
     the wrong column, or fails everything, is caught by a fixture whose other
