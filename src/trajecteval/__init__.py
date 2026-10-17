@@ -11,9 +11,12 @@ from trajecteval.graders import (
     task_id_mismatch_result,
 )
 from trajecteval.judge import (
+    GrokChatClient,
     Judge,
     JudgeNote,
     JudgeResult,
+    LLMClientError,
+    LLMJudge,
     ScriptedJudge,
     TrajectoryQualityGrader,
 )
@@ -32,11 +35,14 @@ __all__ = [
     "Discontinuity",
     "Evidence",
     "FinalStateGrader",
+    "GrokChatClient",
     "Grader",
     "GraderResult",
     "Judge",
     "JudgeNote",
     "JudgeResult",
+    "LLMClientError",
+    "LLMJudge",
     "RULE_SECTIONS",
     "Report",
     "ReportError",
