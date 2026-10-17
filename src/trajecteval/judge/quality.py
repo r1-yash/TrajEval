@@ -7,7 +7,12 @@ from __future__ import annotations
 from typing import Any
 
 from trajecteval.graders.base import task_id_mismatch_result
-from trajecteval.judge.base import Judge, JudgeResult
+from trajecteval.judge.base import (
+    Judge,
+    JudgeResult,
+    LLMClientError,
+    TrajectoryTooLongError,
+)
 from trajecteval.judge.validate import JudgeOutputError
 from trajecteval.models import Trajectory
 from trajecteval.results import Dimension, Evidence, GraderResult, Verdict
@@ -59,10 +64,50 @@ class TrajectoryQualityGrader:
             )
         try:
             result = self._judge.judge(spec, trajectory)
+        except TrajectoryTooLongError as exc:
+            # Over the size budget: the model was never called. ERROR with
+            # both numbers as evidence -- what was measured, and against
+            # what limit.
+            return GraderResult(
+                dimension=self.dimension,
+                verdict=Verdict.ERROR,
+                reason=(
+                    f"trajectory too long to judge: prompt is {exc.size} "
+                    f"characters (limit {exc.limit})"
+                ),
+                evidence=(
+                    Evidence(
+                        kind="trajectory_too_long",
+                        step=None,
+                        value={"size": exc.size, "limit": exc.limit},
+                    ),
+                ),
+            )
+        except LLMClientError as exc:
+            # The judge could not be reached (network, auth, rate limit,
+            # timeout): a setup problem, so an ERROR column with the status
+            # and the capped provider message -- never the crash lane, and
+            # never a pass. The key is not in either field by construction.
+            return GraderResult(
+                dimension=self.dimension,
+                verdict=Verdict.ERROR,
+                reason=f"the trajectory-quality judge could not be reached: {exc}",
+                evidence=(
+                    Evidence(
+                        kind="judge_unavailable",
+                        step=None,
+                        value={
+                            "problem": str(exc),
+                            "status": exc.status,
+                            "detail": exc.detail,
+                        },
+                    ),
+                ),
+            )
         except JudgeOutputError as exc:
             # Unusable answer: the can't-judge lane. Any OTHER exception
-            # (transport, judge bug) propagates, which evaluate() turns into
-            # the crash lane -- the two failures stay tellable apart.
+            # (a bug in judge or grader code) propagates, which evaluate()
+            # turns into the crash lane -- the lanes stay tellable apart.
             return _invalid_output_result(self.dimension, exc)
         if not isinstance(result, JudgeResult):
             raise TypeError(

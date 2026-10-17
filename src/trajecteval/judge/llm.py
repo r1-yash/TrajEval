@@ -13,7 +13,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-from trajecteval.judge.base import JudgeResult
+from trajecteval.judge.base import JudgeResult, LLMClientError
 from trajecteval.judge.prompt import build_prompt
 from trajecteval.judge.validate import parse_judge_output
 from trajecteval.models import Trajectory
@@ -30,17 +30,9 @@ DEFAULT_MODEL = "grok-4"
 DEFAULT_BASE_URL = "https://api.x.ai/v1"
 DEFAULT_TIMEOUT = 60.0
 
-# How much of a provider's error body rides along in an exception message.
+# How much of a provider's error body rides along in an exception message
+# (and in the ERROR evidence built from it).
 _ERROR_BODY_LIMIT = 300
-
-
-class LLMClientError(Exception):
-    # Transport-level failure (network, bad key, rate limit, unexpected
-    # response). The quality grader deliberately does NOT catch this, so it
-    # reaches evaluate()'s crash lane as "crashed: LLMClientError" -- a
-    # client failure can never become a silent pass.
-
-    pass
 
 
 def _env_float(name: str, default: float) -> float:
@@ -115,10 +107,14 @@ class GrokChatClient:
         except urllib.error.HTTPError as exc:
             detail = exc.read().decode("utf-8", "replace")[:_ERROR_BODY_LIMIT]
             raise LLMClientError(
-                f"judge request failed: HTTP {exc.code} from {self._base_url}: {detail}"
+                f"judge request failed: HTTP {exc.code} from {self._base_url}: {detail}",
+                status=exc.code,
+                detail=detail,
             ) from None
         except urllib.error.URLError as exc:
-            raise LLMClientError(f"judge request failed: {exc.reason}") from None
+            raise LLMClientError(
+                f"judge request failed: {exc.reason}", detail=str(exc.reason)
+            ) from None
         try:
             data = json.loads(body)
             content = data["choices"][0]["message"]["content"]
@@ -135,10 +131,12 @@ class GrokChatClient:
 
 class LLMJudge:
     # The Judge protocol for real runs: prompt -> HTTP -> strict validation.
-    # JudgeOutputError (unusable answer) reaches the quality grader, which
-    # makes it an ERROR column; LLMClientError propagates into evaluate()'s
-    # crash lane. Constructing this (or its default client) is the only way
-    # a model ever gets called -- evaluate() never builds one itself.
+    # JudgeOutputError (unusable answer), LLMClientError (judge
+    # unreachable), and TrajectoryTooLongError (prompt over budget) all
+    # reach the quality grader, which converts them to ERROR columns; only
+    # genuine bugs propagate into evaluate()'s crash lane. Constructing this
+    # (or its default client) is the only way a model ever gets called --
+    # evaluate() never builds one itself.
 
     def __init__(self, client: GrokChatClient | None = None) -> None:
         self._client = client if client is not None else GrokChatClient()

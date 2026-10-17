@@ -9,7 +9,14 @@ import urllib.request
 
 import pytest
 
-from trajecteval import GrokChatClient, LLMClientError, LLMJudge, TaskSpec, Trajectory
+from trajecteval import (
+    GrokChatClient,
+    LLMClientError,
+    LLMJudge,
+    TaskSpec,
+    Trajectory,
+    TrajectoryTooLongError,
+)
 from trajecteval.judge.llm import BASE_URL_ENV, KEY_ENV, MODEL_ENV, TIMEOUT_ENV
 from trajecteval.judge.validate import JudgeOutputError
 
@@ -156,16 +163,23 @@ def test_http_error_becomes_llm_client_error_without_the_key(clean_env, monkeypa
     _capturing_urlopen(clean_env, error=error)
     with pytest.raises(LLMClientError) as excinfo:
         GrokChatClient().complete("s", "u")
-    message = str(excinfo.value)
+    exc = excinfo.value
+    message = str(exc)
     assert "HTTP 401" in message
     assert "invalid key" in message  # provider detail rides along, capped
     assert KEY not in message  # the key never does
+    # Structured fields for the grader's evidence: status + capped detail.
+    assert exc.status == 401
+    assert exc.detail == '{"error": "invalid key"}'
+    assert KEY not in exc.detail
 
 
 def test_network_error_becomes_llm_client_error(clean_env, monkeypatch):
     _capturing_urlopen(clean_env, error=urllib.error.URLError("name or service not known"))
-    with pytest.raises(LLMClientError, match="name or service not known"):
+    with pytest.raises(LLMClientError, match="name or service not known") as excinfo:
         GrokChatClient().complete("s", "u")
+    assert excinfo.value.status is None  # no HTTP round trip happened
+    assert "name or service not known" in excinfo.value.detail
 
 
 def test_unexpected_response_shape_becomes_llm_client_error(clean_env, monkeypatch):
@@ -226,11 +240,44 @@ def test_llm_judge_surfaces_unusable_answers_as_judge_output_error(clean_env):
 
 
 def test_llm_judge_client_errors_propagate_untouched(clean_env):
+    # LLMJudge itself does not swallow them -- the quality grader converts
+    # them into the judge_unavailable ERROR column.
     class _StubClient:
         model = "stub"
 
         def complete(self, system: str, user: str) -> str:
-            raise LLMClientError("judge request failed: HTTP 429")
+            raise LLMClientError("judge request failed: HTTP 429", status=429)
 
     with pytest.raises(LLMClientError, match="HTTP 429"):
         LLMJudge(_StubClient()).judge(_spec(), _trajectory())
+
+
+def test_oversized_trajectory_never_reaches_the_client(clean_env):
+    # The model is not called when the prompt is over budget: build_prompt
+    # refuses first, and the error carries the measured size.
+    calls: list[str] = []
+
+    class _RecordingClient:
+        model = "stub"
+
+        def complete(self, system: str, user: str) -> str:
+            calls.append(user)
+            return '{"verdict": "pass", "reason": "x", "notes": []}'
+
+    huge = Trajectory.from_dict(
+        {
+            "task_id": "travel_booking",
+            "steps": [
+                {
+                    "index": 1,
+                    "state_before": {},
+                    "action": {"name": "search_flights", "args": {"blob": "x" * 30_000}},
+                    "state_after": {},
+                }
+            ],
+        }
+    )
+    with pytest.raises(TrajectoryTooLongError) as excinfo:
+        LLMJudge(_RecordingClient()).judge(_spec(), huge)
+    assert calls == []  # zero model calls
+    assert excinfo.value.size > excinfo.value.limit == 24_000

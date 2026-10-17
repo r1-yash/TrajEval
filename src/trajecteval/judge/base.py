@@ -76,6 +76,36 @@ class JudgeResult:
                 )
 
 
+# Two failures the quality grader converts into ERROR results instead of
+# letting them hit the crash lane: a client that could not reach the model,
+# and a trajectory too big to send. Both carry the numbers an evidence item
+# should show; neither ever holds an API key.
+class LLMClientError(Exception):
+    # Network, auth, rate-limit, timeout, or an unexpected response while
+    # talking to the judge model. status is the HTTP code when there was
+    # one; detail is the provider's message, capped by the client before it
+    # gets here. Genuine bugs do NOT raise this -- they still crash-lane.
+
+    def __init__(
+        self, message: str, *, status: int | None = None, detail: str = ""
+    ) -> None:
+        super().__init__(message)
+        self.status = status
+        self.detail = detail
+
+
+class TrajectoryTooLongError(Exception):
+    # The built prompt is over the size budget: the model is not called at
+    # all. size/limit are characters, carried for the ERROR evidence.
+
+    def __init__(self, *, size: int, limit: int) -> None:
+        super().__init__(
+            f"judge prompt is {size} characters, over the {limit}-character budget"
+        )
+        self.size = size
+        self.limit = limit
+
+
 # runtime_checkable so isinstance() can check a judge at evaluate()'s gate.
 @runtime_checkable
 class Judge(Protocol):

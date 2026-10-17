@@ -19,6 +19,7 @@ from trajecteval.judge import (
     LLMJudge,
     ScriptedJudge,
     TrajectoryQualityGrader,
+    TrajectoryTooLongError,
 )
 from trajecteval.models import Action, Discontinuity, Step, Trajectory
 from trajecteval.report import Report, evaluate, render_json, render_text
@@ -53,6 +54,7 @@ __all__ = [
     "Trajectory",
     "TrajectoryError",
     "TrajectoryQualityGrader",
+    "TrajectoryTooLongError",
     "TrajEvalError",
     "Verdict",
     "compare",

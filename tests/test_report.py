@@ -23,6 +23,7 @@ from trajecteval import (
     Step,
     TaskSpec,
     Trajectory,
+    TrajectoryQualityGrader,
     TrajEvalError,
     Verdict,
     evaluate,
@@ -560,9 +561,26 @@ def test_evaluate_with_judge_adds_the_quality_column():
     assert "not evaluated" not in text  # all four columns present now
 
 
-def test_evaluate_rejects_judge_and_graders_together():
-    with pytest.raises(ValueError, match="not both"):
-        evaluate(_fixture("clean"), _spec(), graders=[FinalStateGrader()], judge=_warn_judge())
+def test_judge_appends_the_quality_grader_to_a_custom_grader_list():
+    # No "not both" gate: judge= simply adds the quality grader to
+    # whichever list is in use.
+    graders = [FinalStateGrader(), BoundsGrader(), CriticalGrader()]
+    report = evaluate(
+        _fixture("clean"), _spec(), graders=graders, judge=_warn_judge()
+    )
+    assert [r.dimension.value for r in report.results] == [
+        *DETERMINISTIC,
+        "trajectory_quality",
+    ]
+    assert report.results[-1].verdict is Verdict.WARN
+
+
+def test_a_second_quality_grader_is_still_rejected():
+    # judge= plus a grader list that already grades quality = two graders
+    # for one column -- the existing duplicate check catches it.
+    graders = [FinalStateGrader(), TrajectoryQualityGrader(_warn_judge())]
+    with pytest.raises(ValueError, match="duplicate"):
+        evaluate(_fixture("clean"), _spec(), graders=graders, judge=_warn_judge())
 
 
 def test_evaluate_rejects_a_non_judge():

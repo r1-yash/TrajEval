@@ -1,7 +1,9 @@
 # Tests for TrajectoryQualityGrader (the adapter) and ScriptedJudge (the
 # test double): the Judge contract folded into the Grader contract, the
-# can't-judge lane, and the proof that an empty trajectory never costs a
+# can't-judge lanes, and the proof that an empty trajectory never costs a
 # judge call.
+
+import json
 
 import pytest
 
@@ -10,10 +12,12 @@ from trajecteval import (
     GraderResult,
     JudgeNote,
     JudgeResult,
+    LLMClientError,
     ScriptedJudge,
     TaskSpec,
     Trajectory,
     TrajectoryQualityGrader,
+    TrajectoryTooLongError,
     Verdict,
     task_id_mismatch_result,
 )
@@ -155,11 +159,57 @@ def test_unusable_output_without_excerpt_omits_that_key():
     assert "output_excerpt" not in value
 
 
-# ------------------------------------------------------ crash lane (raises)
+# --------------------------------------------------- judge-unavailable lane
 
-def test_judge_transport_errors_propagate_to_the_crash_lane():
-    # Not caught here on purpose: network/auth failures keep their type so
-    # evaluate() reports "crashed: LLMClientError", not a fake verdict.
+def test_client_error_becomes_error_judge_unavailable():
+    # Network/auth/rate-limit/timeout is a setup problem, NOT a bug: ERROR
+    # with status + capped provider detail as evidence, never grader_crash.
+    scripted = _judge(
+        raises=LLMClientError(
+            "judge request failed: HTTP 401 from https://api.x.ai/v1: invalid key",
+            status=401,
+            detail="invalid key",
+        )
+    )
+    result = TrajectoryQualityGrader(scripted).grade(_spec(), _trajectory())
+    assert result.verdict is Verdict.ERROR
+    assert "could not be reached" in result.reason
+    evidence = result.evidence[0]
+    assert evidence.kind == "judge_unavailable"
+    assert evidence.step is None
+    assert evidence.value["status"] == 401
+    assert evidence.value["detail"] == "invalid key"
+    assert "HTTP 401" in evidence.value["problem"]
+
+
+def test_client_error_evidence_never_carries_a_key():
+    # The client keeps the key in the Authorization header only; the
+    # evidence is built from problem/status/detail, none of which hold it.
+    scripted = _judge(
+        raises=LLMClientError(
+            "judge request failed: HTTP 401", status=401, detail="invalid key"
+        )
+    )
+    result = TrajectoryQualityGrader(scripted).grade(_spec(), _trajectory())
+    assert "sk-" not in json.dumps(result.evidence[0].value)
+
+
+def test_too_long_trajectory_becomes_error_with_size_and_limit():
+    scripted = _judge(raises=TrajectoryTooLongError(size=30_000, limit=24_000))
+    result = TrajectoryQualityGrader(scripted).grade(_spec(), _trajectory())
+    assert result.verdict is Verdict.ERROR
+    assert "trajectory too long to judge" in result.reason
+    assert "30000" in result.reason and "24000" in result.reason
+    evidence = result.evidence[0]
+    assert evidence.kind == "trajectory_too_long"
+    assert evidence.value == {"size": 30_000, "limit": 24_000}
+
+
+# ------------------------------------------------------ crash lane (genuine bugs)
+
+def test_genuine_judge_bug_still_propagates_to_the_crash_lane():
+    # Not every failure is a lane above: a real bug (here: a plain
+    # RuntimeError) keeps its type so evaluate() reports "crashed: ...".
     scripted = _judge(raises=RuntimeError("connection reset"))
     with pytest.raises(RuntimeError, match="connection reset"):
         TrajectoryQualityGrader(scripted).grade(_spec(), _trajectory())

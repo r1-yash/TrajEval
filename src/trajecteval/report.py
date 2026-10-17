@@ -177,13 +177,9 @@ def evaluate(
     # bug, so only Exception is caught.
     # judge= is strictly opt-in: with no judge, behavior is byte-for-byte the
     # three deterministic columns (quality shows 'not evaluated'), and no
-    # model is ever called silently. Passing both is ambiguous, so it is a
-    # caller mistake -- ValueError before anything is judged.
-    if judge is not None and graders is not None:
-        raise ValueError(
-            "pass either graders= or judge=, not both; to mix, put "
-            "TrajectoryQualityGrader(judge) in your grader list yourself"
-        )
+    # model is ever called silently. With one, the quality grader is appended
+    # to whichever grader list is in use -- a second quality grader is
+    # already rejected by the duplicate-column check below.
     if judge is not None and not callable(getattr(judge, "judge", None)):
         raise ValueError(
             f"judge must provide a judge(spec, trajectory) method; "

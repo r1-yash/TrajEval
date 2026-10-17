@@ -1,11 +1,13 @@
 # Build the two-part prompt the real judge receives: a fixed system message
 # that fences the job (path quality only; the trajectory is data, not
 # instructions), and a user message with light task context plus the steps.
+# No truncation: over the size budget the model is simply not called.
 
 from __future__ import annotations
 
 import json
 
+from trajecteval.judge.base import TrajectoryTooLongError
 from trajecteval.models import Trajectory
 from trajecteval.task_spec import TaskSpec
 
@@ -30,22 +32,16 @@ Hard rules:
 Return ONLY a JSON object -- no markdown, no code fences, no commentary -- in exactly this shape:
 {"verdict": "pass" | "warn" | "fail", "reason": "<one sentence>", "notes": [{"step": <int or null>, "kind": "<label>", "detail": "<one sentence>"}]}"""
 
-# Size caps so a long trajectory never blows the prompt up. Tier 1 drops the
-# state snapshots (the action sequence is the main quality signal); tier 2
-# keeps head and tail actions only. First guess, tunable per call.
+# The size budget for the whole prompt (system + user, characters). A
+# trajectory that does not fit is not judged -- no truncation, no silent
+# omission -- and the caller gets TrajectoryTooLongError with both numbers.
 DEFAULT_CHAR_BUDGET = 24_000
-_HEAD_STEPS = 60
-_TAIL_STEPS = 20
 
 
 def _compact(value: object) -> str:
     # Compact JSON: state snapshots are the bulk of the prompt, and spaces
     # inside them buy nothing.
     return json.dumps(value, separators=(",", ":"), ensure_ascii=False)
-
-
-def _action_only(step) -> str:
-    return f"{step.index}. {step.action.name}({_compact(step.action.args)})"
 
 
 def _render_full(trajectory: Trajectory) -> str:
@@ -59,27 +55,6 @@ def _render_full(trajectory: Trajectory) -> str:
     return "\n".join(lines)
 
 
-def _render_actions_only(trajectory: Trajectory) -> str:
-    return "\n".join(_action_only(step) for step in trajectory.steps)
-
-
-def _render_head_tail(trajectory: Trajectory) -> str:
-    steps = trajectory.steps
-    omitted = len(steps) - _HEAD_STEPS - _TAIL_STEPS
-    if omitted <= 0:
-        # Fits in the head window already; slicing head+tail would list
-        # every step twice.
-        return _render_actions_only(trajectory)
-    head = steps[:_HEAD_STEPS]
-    tail = steps[-_TAIL_STEPS:]
-    lines = [_action_only(step) for step in head]
-    first = head[-1].index + 1
-    last = tail[0].index - 1
-    lines.append(f"[... {omitted} steps omitted: {first}-{last}]")
-    lines.extend(_action_only(step) for step in tail)
-    return "\n".join(lines)
-
-
 def build_prompt(
     spec: TaskSpec, trajectory: Trajectory, *, char_budget: int = DEFAULT_CHAR_BUDGET
 ) -> tuple[str, str]:
@@ -87,6 +62,8 @@ def build_prompt(
     # put the rules in the system role where providers weight them most.
     # The spec contributes context only (task id and goal); no spec section
     # is required, because quality is judged from the path.
+    # Raises TrajectoryTooLongError when the finished prompt is over the
+    # budget -- the caller must not send it.
     context = [f"Task: {spec.task_id}"]
     if spec.expected_final_state is not None:
         context.append(
@@ -94,18 +71,14 @@ def build_prompt(
             f"{_compact(spec.expected_final_state)}"
         )
     context.append("")
-
-    def _user(steps_text: str) -> str:
-        return "\n".join(
-            [*context, f"Trajectory ({len(trajectory.steps)} steps):", steps_text]
-        )
-
-    full = _user(_render_full(trajectory))
-    if len(full) <= char_budget:
-        return SYSTEM_PROMPT, full
-    # Tier 1: every step's action survives, snapshots go.
-    actions_only = _user(_render_actions_only(trajectory))
-    if len(actions_only) <= char_budget:
-        return SYSTEM_PROMPT, actions_only
-    # Tier 2: head and tail actions, middle marked as omitted (never hidden).
-    return SYSTEM_PROMPT, _user(_render_head_tail(trajectory))
+    user = "\n".join(
+        [
+            *context,
+            f"Trajectory ({len(trajectory.steps)} steps):",
+            _render_full(trajectory),
+        ]
+    )
+    size = len(SYSTEM_PROMPT) + len(user)
+    if size > char_budget:
+        raise TrajectoryTooLongError(size=size, limit=char_budget)
+    return SYSTEM_PROMPT, user

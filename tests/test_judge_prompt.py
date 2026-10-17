@@ -1,8 +1,10 @@
 # Tests for the judge prompt builder: the job stays fenced, every step shows
-# up, and long trajectories shrink in two disclosed tiers instead of
-# exploding the prompt.
+# up whole, and an over-budget trajectory refuses to build a prompt instead
+# of being silently truncated.
 
-from trajecteval import TaskSpec, Trajectory
+import pytest
+
+from trajecteval import TaskSpec, Trajectory, TrajectoryTooLongError
 from trajecteval.judge.prompt import SYSTEM_PROMPT, build_prompt
 
 
@@ -69,35 +71,28 @@ def test_goal_line_omitted_when_spec_has_none():
     assert "Task: travel_booking" in user
 
 
-def test_tier_one_drops_snapshots_but_keeps_every_action():
-    # Full render (~837 chars) overflows 500; actions-only (~466) fits.
-    _, user = build_prompt(_spec(), _trajectory(10), char_budget=500)
-    assert "before:" not in user
-    assert "after:" not in user
-    for i in range(1, 11):
-        assert f"{i}. search_flights(" in user
+def test_prompt_over_budget_raises_instead_of_truncating():
+    # No tiers, no silent omission: an over-budget prompt refuses to build.
+    with pytest.raises(TrajectoryTooLongError) as excinfo:
+        build_prompt(_spec(), _trajectory(10), char_budget=100)
+    assert excinfo.value.limit == 100
+    assert excinfo.value.size > 100
+    assert "over the 100-character budget" in str(excinfo.value)
 
 
-def test_tier_two_keeps_head_and_tail_with_an_omission_marker():
-    _, user = build_prompt(_spec(), _trajectory(100), char_budget=120)
-    assert "1. search_flights(" in user
-    assert "100. search_flights(" in user
-    # 60 head + 20 tail leaves steps 61-80, named in the marker.
-    assert "[... 20 steps omitted: 61-80]" in user
-    assert "70. search_flights(" not in user  # middle omitted
-    assert "81. search_flights(" in user  # tail starts here
+def test_budget_counts_system_plus_user_characters_exactly():
+    system, user = build_prompt(_spec(), _trajectory(2), char_budget=10_000)
+    exact = len(system) + len(user)
+    # Exactly at the budget still builds; one character less does not.
+    build_prompt(_spec(), _trajectory(2), char_budget=exact)
+    with pytest.raises(TrajectoryTooLongError) as excinfo:
+        build_prompt(_spec(), _trajectory(2), char_budget=exact - 1)
+    assert excinfo.value.size == exact
 
 
-def test_full_render_wins_when_it_fits():
+def test_within_budget_the_full_render_with_states_is_kept():
     _, user = build_prompt(_spec(), _trajectory(3), char_budget=10_000)
     assert 'before: {"i":1}' in user
-
-
-def test_tier_two_never_duplicates_steps_on_short_trajectories():
-    # omitted <= 0 (5 steps, head window 60): render actions once, no marker.
-    _, user = build_prompt(_spec(), _trajectory(5), char_budget=50)
-    assert user.count("1. search_flights(") == 1
-    assert "omitted" not in user
 
 
 def test_empty_trajectory_still_renders():
