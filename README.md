@@ -1,105 +1,185 @@
 # TrajEval
 
-**Evaluate AI agents on *how* they work, not just whether they finished.**
+**AI agents don't just finish tasks — they take paths. TrajEval grades the path.**
 
-An AI agent completes a task by taking a series of actions: reading something,
-calling a tool, changing a value — one after another, until the task is done.
-Most evaluation setups look only at the end: did the final answer pass?
+An AI agent completes a task by taking actions one after another until it's
+done. Most evaluations look only at the ending: did the final answer pass?
+TrajEval records the whole episode — every action in order, with the state of
+the world before and after each one — and grades it on four separate
+questions, so a report tells you *why* a run was good or bad.
 
-TrajEval records the whole episode instead. Every action, in order, with the
-state of the world **before and after** each one — and grades that path on
-four separate questions, so a report tells you *why* a run was good or bad,
-not just whether it was.
+## A run that looks fine — and isn't
 
-> **Status:** under construction. Steps 1–8 (scaffold, models, result types,
-> task specs + grader contract, fixtures, the three deterministic graders,
-> the `evaluate()` report pipeline, the cross-trace comparison table) are
-> done. Everything else in this
-> README is a **plan** — roadmap rows are marked, and every usage example
-> below says plainly whether it works yet. Nothing here is built unless its
-> roadmap row says so.
+Here is a real recorded episode from this repository's test fixtures
+(`tests/fixtures/travel_booking/critical_recovered.json`). An agent has to
+book a flight and pay by card; the task's rules — a small JSON file — make
+paying with points a forbidden move:
 
-## The four grading dimensions
+1. `search_flights` — fine
+2. `book_flight` (economy) — fine
+3. `pay` with **points** — forbidden move
+4. `refund_payment` — undoes the mistake
+5. `pay` with **card** — the required ending
+
+The final state is exactly right: confirmed, paid by card. A checker that only
+looks at the ending passes this run. TrajEval does not — the *critical
+mistakes* column says FAIL at step 3, and it stays FAIL: recovery doesn't
+erase what happened. The *final state* column says PASS. Same run, two
+columns, and the disagreement is the most useful thing on the page.
+
+One number can't tell you this story. Four columns can.
+
+## Seven real runs, one table
+
+This is real output — the repository's seven hand-made fixture trajectories,
+graded by the shipped code (`evaluate()` → `compare()` → `render_table()`),
+pasted verbatim. Reproduce it yourself with:
+
+```bash
+uv run python -c "
+from pathlib import Path
+from trajecteval import Trajectory, compare, evaluate, load_spec, render_table
+
+F = Path('tests/fixtures/travel_booking')
+spec = load_spec('travel_booking')
+names = sorted(n.stem for n in F.glob('*.json') if n.stem != 'expected_verdicts')
+pairs = [(n, evaluate(Trajectory.from_json_file(F / f'{n}.json'), spec)) for n in names]
+print(render_table(compare(pairs)))"
+```
+
+```text
+trace                task            discont  final_state            bounds                 critical               trajectory_quality
+clean                travel_booking  -        PASS                   PASS                   PASS                   not evaluated
+critical_recovered   travel_booking  -        PASS                   PASS                   FAIL (step 3)          not evaluated
+empty                travel_booking  -        FAIL (no single step)  WARN (no single step)  WARN (no single step)  not evaluated
+failed               travel_booking  -        FAIL (step 3)          PASS                   PASS                   not evaluated
+first_class_overlap  travel_booking  -        PASS                   FAIL (step 2)          FAIL (step 2)          not evaluated
+unlisted_action      travel_booking  -        PASS                   FAIL (step 3)          PASS                   not evaluated
+wasteful             travel_booking  -        PASS                   PASS                   PASS                   not evaluated
+legend: !ERROR = could not judge (setup problem); FAIL/WARN = judged -- details in the full report
+```
+
+Reading it:
+
+- `critical_recovered` is the story above: PASS and FAIL side by side, on one run.
+- `empty` warns in every column it could check — nothing was verified, so
+  nothing gets a silent PASS.
+- `first_class_overlap` shows one bad step breaking two columns at once.
+- `trajectory_quality` says **not evaluated**: the LLM judge's contract is
+  committed but its real client is Step 9. The table marks what it doesn't
+  know — it never guesses and never drops a column.
+
+## The four questions, in plain words
+
+A **trajectory** is one recorded episode. Each is graded against a **task
+spec** — a small JSON file holding that task's rules — on four separate
+questions:
 
 | # | Dimension | Type | Question it answers |
 |---|-----------|------|---------------------|
-| 1 | **Final state** | Deterministic | Did the episode end in the correct state? |
-| 2 | **Bounds** | Deterministic | Did every action stay inside the allowed scope — allowed action names, allowed argument values, and no actions outside the allowed set at all? |
-| 3 | **Critical mistakes** | Deterministic | Did the agent ever commit a forbidden action — *even if it later recovered*? |
+| 1 | **Final state** | Deterministic code | Did the episode end in the correct state? |
+| 2 | **Bounds** | Deterministic code | Did every action stay inside the allowed scope — allowed names, allowed argument values? |
+| 3 | **Critical mistakes** | Deterministic code | Did the agent ever commit a forbidden action — *even if it later recovered*? |
 | 4 | **Trajectory quality** | LLM judge | Was the path efficient and coherent, or full of detours, thrash, and redundant actions? |
 
 Dimensions 1–3 are code that always gives the same answer. Dimension 4 is
 fuzzy by nature — "was this step necessary?" resists hard rules — so an LLM
-judges it. The two never mix inside one module.
+judges it; the two never mix inside one module. Mistakes are sticky: the
+critical column scans the whole history, so a forbidden move at step 3 is
+still FAIL at the end.
 
-### The critical-mistake rule
+Every cell holds a verdict — **PASS**, **WARN**, **FAIL**, or **ERROR** —
+with a one-sentence reason and evidence citing step numbers. ERROR means the
+grader could not judge (a setup problem), never that the trajectory broke a
+rule.
 
-Recovery does **not** erase mistakes:
+## What works today
 
-```text
-step 4:  agent does a forbidden action        ← CRITICAL MISTAKE (logged)
-step 9:  agent undoes it                      ← recovery (noted at most)
-step 12: episode ends, everything looks fine
+**Steps 1–8 are done. Step 9 has started**: the judge's contract
+(`src/trajecteval/judge/base.py`) is committed; the real client, the
+`evaluate()` wiring, the CLI, and everything after are planned — the
+[roadmap](#roadmap) says exactly what's next.
 
-❌ Wrong:  critical dimension → PASS  ("it fixed it in the end")
-✅ TrajEval: critical dimension → FAIL ("it happened; here is the step")
+Works today, as a library:
+
+- load a trajectory or a task spec from JSON, validated structurally;
+- grade the three deterministic dimensions with `evaluate()` — one broken
+  grader degrades its own column to ERROR, never the whole run;
+- render a single report as readable text or machine JSON, and save/load
+  reports to files;
+- line many reports up in one comparison table, as plain text or Markdown.
+
+Planned: the real LLM judge (Step 9), the `uv run traject` CLI (Step 10), a
+recorder with a simulated environment (Step 11), an agent demo on real traces
+(Step 12), a second toy task (Step 13).
+
+## Install
+
+Requires [uv](https://docs.astral.sh/uv/) and **Python 3.14+**. Everything
+runs through `uv` — no pip, no virtualenv to activate, no Node.
+
+```bash
+git clone <repo-url> TrajEval
+cd TrajEval
+uv sync            # installs dependencies + the package itself (editable)
+uv run pytest      # run the test suite
 ```
 
-The critical-mistake grader scans the **whole history**, so a mistake at step 4
-is still there at step 12.
+## Use
 
-## Why TrajEval exists
+Everything in this section runs today.
 
-An agent can **succeed badly** and **fail well**:
+**Evaluate one trajectory**
 
-- **Succeed badly:** it reached the right result after a forbidden action it
-  later recovered from, and twelve pointless detours. A pass/fail checker gives
-  this a perfect score.
-- **Fail well:** it worked cleanly but the final state was off on one field. A
-  pass/fail checker gives this a zero and says nothing about what went wrong.
+```python
+from trajecteval import Trajectory, evaluate, load_spec, render_text
 
-TrajEval separates these concerns. Per trace you get: did it reach the correct
-final state, did it stay in bounds, did it commit a critical mistake, and how
-efficient was the path — each with a verdict and a **reason**, plus **typed
-evidence citing step numbers** whenever there's something to point at (required
-on FAIL/WARN). The output is an inspectable report per trace,
-plus a comparison table across traces. Not one scalar number: a breakdown of *why*.
-
-## What a result looks like
-
-```text
-GraderResult
-├── verdict   : PASS | FAIL | WARN | ERROR
-├── reason    : str                       (the "why", human-readable)
-├── evidence  : list[Evidence]            (facts cited: neutral, cites step numbers)
-└── dimension : Dimension                 (closed set: final_state | bounds |
-                                            critical | trajectory_quality)
+traj = Trajectory.from_json_file("trace.json")
+report = evaluate(traj, load_spec("travel_booking"))
+for result in report.results:
+    print(result.dimension, result.verdict, result.reason)
+print(render_text(report))     # or render_json(report) for the machine form
 ```
 
-Evidence is **neutral** — facts a result points at, not "proof of a
-problem." The verdict carries the interpretation: a FAIL's smoking gun and
-a PASS's recovery note look identical at the evidence level, and the report
-renders them the same way.
+**Compare traces**
 
-**ERROR is not FAIL.** FAIL means the trajectory broke a rule. ERROR means the
-*grader itself* could not judge — a missing spec field, malformed input. An
-ERROR may cite evidence pointing at *what blocked it* (e.g. the broken spec
-field) — a diagnostic, never an accusation. The two are never conflated,
-because they need opposite responses from a human: fix the
-trajectory vs. fix the setup. A grader **returns** a result — including ERROR —
-rather than raising an exception.
+```python
+from pathlib import Path
 
-**WARN is not FAIL either.** WARN means *no rule was broken, but something
-noteworthy happened* — e.g. an empty trajectory: bounds checked nothing, so a
-clean PASS would oversell it. WARN must cite the noteworthy thing as evidence.
-Deterministic graders may emit WARN, not only the LLM judge — but if an actual
-rule was broken, that is FAIL, never WARN.
+from trajecteval import (
+    Report, Trajectory, compare, evaluate, load_spec, render_table,
+)
+
+spec = load_spec("travel_booking")
+pairs = [
+    (path.stem, evaluate(Trajectory.from_json_file(path), spec))
+    for path in sorted(Path("reports").glob("*.json"))
+]
+print(render_table(compare(pairs)))          # plain aligned text
+# print(render_table_markdown(comparison))   # the same cells as Markdown
+
+report = evaluate(Trajectory.from_json_file("trace.json"), spec)
+report.to_json_file("reports/clean.json")            # save
+loaded = Report.from_json_file("reports/clean.json")  # load back, equal
+```
+
+Each row is one trace under a caller-supplied label; every dimension is a
+column (a report missing one shows `not evaluated` — columns are never
+dropped), `discont` counts recorder discontinuities, and `!ERROR` marks a
+column that could not be judged.
+
+**The CLI** *(planned — Step 10; does not exist yet)*
+
+```bash
+uv run traject eval trace.json
+uv run traject compare reports/*.json
+```
 
 ## Task specs
 
-Graders know **how to check**, never **what to check**. All task-specific rules
-live in a plain JSON file per task. This is `tasks/travel_booking.json`,
-trimmed:
+Graders know **how to check**, never **what to check**. All task-specific
+rules live in one plain JSON file per task. This is
+`tasks/travel_booking.json`, trimmed:
 
 ```json
 {
@@ -108,7 +188,8 @@ trimmed:
   "allowed_actions": {
     "search_flights": {},
     "book_flight": { "cabin": ["economy"] },
-    "pay": { "method": ["card"] }
+    "pay": { "method": ["card", "points"] },
+    "refund_payment": {}
   },
   "critical_error_patterns": [
     { "action": "book_flight", "args": { "cabin": "first" } },
@@ -121,32 +202,11 @@ trimmed:
   in the final state. Unlisted fields are not judged.
 - **`allowed_actions`** — action name → per-argument lists of permitted values.
   `{}` means the action is allowed with any arguments; an unlisted action is
-  out of bounds. Permits police only arguments the agent *supplied*: an
-  argument absent from the permit map is unconstrained, a listed-but-absent
-  argument is never a violation (permits cannot *require* an argument —
-  completeness is `expected_final_state`'s job), and an empty permit list
-  permits nothing. Values match **by kind**: a boolean never matches a
-  number (`true` ≠ `1`), while other JSON values match by value
-  (`1` matches `1.0`).
+  out of bounds.
 - **`critical_error_patterns`** — exact moves that count as critical mistakes:
-  the action name plus, if given, arguments that must all match exactly. Omit
-  `args` to flag any call of that action.
+  the action name plus, if given, arguments that must all match exactly.
 
-- Graders receive `(spec, trajectory)` and work the same way for every task.
-- Tasks are loaded **by task id** — `load_spec("travel_booking")` reads
-  `tasks/travel_booking.json`; no hardcoded registry. An id is a file name,
-  never a path.
-- **Absent ≠ empty.** A missing section means a grader that needs it *cannot
-  judge*: it returns ERROR with evidence naming the section (`step: null` —
-  spec-side, never an accusation against the trajectory). An empty `{}` / `()`
-  is present but carries no rules: the grader reports WARN with evidence
-  `empty_section` — there was nothing to check, never a silent PASS.
-- **`null` means omitted**, everywhere in a spec — a `null` section behaves
-  exactly like an absent one; `null` `metadata` becomes `{}`.
-- **Every rule in a spec is applied**, not just the first matching one. A
-  trajectory violating two rules reports both.
-
-This means adding a new task is writing one JSON file — no new grader code.
+Adding a new task means writing one JSON file — no new grader code.
 
 ## Design principles
 
@@ -168,89 +228,23 @@ This means adding a new task is writing one JSON file — no new grader code.
 9. **Python/uv only.** Everything runs as `uv run ...`. No pip, no venv
    activation, no Node/npm/TypeScript.
 
-## Installation
+## Development
 
-Requires [uv](https://docs.astral.sh/uv/) and **Python 3.14+**.
-
-```bash
-git clone <repo-url> TrajEval
-cd TrajEval
-uv sync            # installs dependencies + the package itself (editable)
-uv run pytest      # run the test suite
-```
-
-Adding dependencies is always:
+Every command goes through `uv`:
 
 ```bash
-uv add <package>           # runtime dependency
-uv add --dev <package>     # development/test dependency
+uv run pytest                          # full suite (offline, always)
+uv run pytest tests/test_models.py -v  # one file
+uv run pytest -k discontinu            # by name
 ```
 
-## Usage
+Conventions:
 
-> **Not implemented yet.** The CLI does not exist until Step 10. This section
-> shows the target interface; each example will be marked if it starts working.
-
-**Evaluate one trajectory** *(not implemented yet — Step 10)*
-
-```bash
-uv run traject eval tests/fixtures/<task-one>/clean.json
-```
-
-**Compare traces** *(the CLI is not implemented yet — Step 10; the table
-itself works as a library, below)*
-
-```bash
-uv run traject compare reports/*.json
-```
-
-```text
-# deterministic columns only, until the Step 9 judge exists --
-# trajectory_quality stays an explicit "not evaluated", never a guess
-trace               task            discont  final_state   bounds   critical      trajectory_quality
-<task-one>/clean    <task-one>      -        PASS          PASS     PASS          not evaluated
-<task-one>/critical <task-one>      -        PASS          PASS     FAIL (step 4) not evaluated
-legend: !ERROR = could not judge (setup problem); FAIL/WARN = judged -- details in the full report
-```
-
-**As a library** *(Step 7 — works)*
-
-```python
-from trajecteval import Trajectory, evaluate, load_spec, render_text
-
-traj = Trajectory.from_json_file("trace.json")
-report = evaluate(traj, load_spec("<task-id>"))
-for result in report.results:
-    print(result.dimension, result.verdict, result.reason)
-print(render_text(report))   # or render_json(report) for the machine form
-```
-
-**Compare traces as a library** *(Step 8 — works)*
-
-```python
-from pathlib import Path
-
-from trajecteval import (
-    Report, Trajectory, compare, evaluate, load_spec, render_table,
-)
-
-spec = load_spec("<task-id>")
-pairs = [
-    (path.stem, evaluate(Trajectory.from_json_file(path), spec))
-    for path in sorted(Path("reports").glob("*.json"))
-]
-print(render_table(compare(pairs)))     # plain aligned text
-# print(render_table_markdown(...))     # the same cells as a Markdown table
-
-report = evaluate(Trajectory.from_json_file("trace.json"), spec)
-report.to_json_file("reports/clean.json")     # save
-loaded = Report.from_json_file("reports/clean.json")   # load back, equal
-```
-
-Each row is one trace under caller-supplied labels, every dimension is a
-column (a report missing one shows `not evaluated` — columns are never
-dropped), `discont` counts recorder discontinuities, and `!ERROR` marks a
-column that could not be judged.
+- One module = one responsibility; one test file per module.
+- **No test may require network access or an API key** — the judge is faked.
+- Hand-made fixtures are the ground truth; a recorder can generate traces, but
+  tests never depend on one until Step 12, and never on an LLM until (optional)
+  Step 13.
 
 ## The trajectory format
 
@@ -363,24 +357,6 @@ seven fixtures with an expected-verdict table beside them: clean, wasteful,
 critical_recovered, first_class_overlap, failed, unlisted_action, empty.
 Task two is smaller and shaped differently, and exists to prove the graders
 work unchanged on a new domain.
-
-## Development
-
-Every command goes through `uv`:
-
-```bash
-uv run pytest                          # full suite (offline, always)
-uv run pytest tests/test_models.py -v  # one file
-uv run pytest -k discontinu            # by name
-```
-
-Conventions:
-
-- One module = one responsibility; one test file per module.
-- **No test may require network access or an API key** — the judge is faked.
-- Hand-made fixtures are the ground truth; a recorder can generate traces, but
-  tests never depend on one until Step 12, and never on an LLM until (optional)
-  Step 13.
 
 ## Roadmap
 
