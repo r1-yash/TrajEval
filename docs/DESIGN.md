@@ -108,7 +108,7 @@ The rules around it:
   check first (same pinned order as the deterministic graders) → empty
   trajectory short-circuit (WARN, evidence `empty_trajectory`, the judge is
   called **zero** times — a paid model never answers "no path") →
-  `LLMJudge.judge()` = `build_prompt()` → `GrokChatClient.complete()` →
+  `LLMJudge.judge()` = `build_prompt()` → `OpenAIChatClient.complete()` →
   `parse_judge_output()`.
 - **The prompt judges path quality only:** detours, repeated actions,
   thrash, poor recovery. It fences off final state, bounds, and critical
@@ -137,8 +137,9 @@ The rules around it:
 - **Configuration is environmental:** key `TRAJECTEVAL_JUDGE_API_KEY`
   (required — missing gives a plain message at construction; never in a
   repo file, never in a message), model `TRAJECTEVAL_JUDGE_MODEL` (default
-  `grok-4`), base URL `TRAJECTEVAL_JUDGE_BASE_URL` (default
-  `https://api.x.ai/v1`), timeout `TRAJECTEVAL_JUDGE_TIMEOUT` seconds
+  `openai/gpt-oss-120b`, a Groq-hosted model), base URL
+  `TRAJECTEVAL_JUDGE_BASE_URL` (default `https://api.groq.com/openai/v1`),
+  timeout `TRAJECTEVAL_JUDGE_TIMEOUT` seconds
   (default 60). Requests use temperature 0 and JSON output mode.
 - **Tests:** the default suite drives the seam with `ScriptedJudge` — no
   network, no key, no spend — and never puts `trajectory_quality` in the

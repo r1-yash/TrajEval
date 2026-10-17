@@ -98,7 +98,7 @@ rule. Full verdict reference: [docs/DESIGN.md](docs/DESIGN.md).
 **Steps 1–8 are done. Step 9 — the real LLM judge — is implemented,
 awaiting first live run**: contract, strict output validation, prompt
 builder, the quality-grader adapter, `evaluate(judge=...)` wiring, and one
-real client (Grok over plain HTTP). The offline suite is green and the live
+real client (Groq over plain HTTP). The offline suite is green and the live
 tests are written, but they have not yet been run against a real key —
 that run (`uv run pytest -m live` with `TRAJECTEVAL_JUDGE_API_KEY`) is what
 marks Step 9 done. The CLI and everything after are planned — the
@@ -148,7 +148,7 @@ for result in report.results:
 print(render_text(report))     # or render_json(report) for the machine form
 ```
 
-**Judge path quality with a real LLM** *(needs a Grok API key; without a
+**Judge path quality with a real LLM** *(needs a Groq API key; without a
 judge the fourth column stays `not evaluated`, and the default test suite
 uses a scripted fake instead)*
 
@@ -158,7 +158,7 @@ from trajecteval import LLMJudge, Trajectory, evaluate, load_spec
 report = evaluate(
     Trajectory.from_json_file("trace.json"),
     load_spec("travel_booking"),
-    judge=LLMJudge(),  # reads TRAJECTEVAL_JUDGE_API_KEY; model grok-4
+    judge=LLMJudge(),  # reads TRAJECTEVAL_JUDGE_API_KEY; Groq model default
 )
 ```
 
@@ -267,7 +267,7 @@ Conventions:
   the ground truth, and unit tests use a small scripted fake judge
   (`ScriptedJudge`) — no network, no API key, no spend.
 - Live tests exist behind a marker: `uv run pytest -m live` calls the real
-  Grok client with two loose sanity checks (allowed verdicts only — never a
+  Groq client with two loose sanity checks (allowed verdicts only — never a
   fixed expected verdict) and needs `TRAJECTEVAL_JUDGE_API_KEY`. They are
   deselected by default, so the default suite never touches the network.
 
@@ -333,7 +333,7 @@ TrajEval/
 │       ├── prompt.py             # exact system prompt + size cap (no truncation)
 │       ├── validate.py           # strict parse of the model's answer
 │       ├── quality.py            # TrajectoryQualityGrader: Judge → Grader
-│       ├── llm.py                # Grok client (stdlib HTTP) + LLMJudge
+│       ├── llm.py                # OpenAI-compatible client (Groq) + LLMJudge
 │       └── fake.py               # ScriptedJudge — unit tests pay nothing
 └── tests/                       # one test file per module, plus fixtures:
     └── fixtures/
@@ -372,7 +372,7 @@ fixtures change.
 | 6 | Three deterministic graders (final state, bounds, critical) — reproduce the fixture answer key exactly | ✅ done |
 | 7 | Report: `evaluate()` runs the three deterministic dimensions first (a crashed grader degrades its own column to ERROR, never the run), then renders JSON + readable text; the LLM judge is an optional `judge=` addition (Step 9) | ✅ done |
 | 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ✅ done |
-| 9 | Real LLM judge: contract + strict output validation + prompt builder + `TrajectoryQualityGrader` adapter + `evaluate(judge=...)` + one real client (Grok, stdlib HTTP) + `ScriptedJudge` for offline tests; live tests behind `pytest -m live` | **implemented, awaiting first live run** — offline suite green; run `uv run pytest -m live` with your `TRAJECTEVAL_JUDGE_API_KEY` to close it out |
+| 9 | Real LLM judge: contract + strict output validation + prompt builder + `TrajectoryQualityGrader` adapter + `evaluate(judge=...)` + one real client (Groq default, stdlib HTTP) + `ScriptedJudge` for offline tests; live tests behind `pytest -m live` | **implemented, awaiting first live run** — offline suite green; run `uv run pytest -m live` with your `TRAJECTEVAL_JUDGE_API_KEY` to close it out |
 | 10 | CLI (`uv run traject ...`) | ⏳ planned |
 | 11 | Recorder + simulated environment for travel_booking | ⏳ planned |
 | 12 | LLM-agent demo: agent → recorder → report, real traces (needs an API key) | ⏳ planned |
@@ -405,7 +405,7 @@ something is graded, it's written down in the spec — not buried in a branch.
 
 **Why is the judge injectable?**
 So the default tests never touch the network — a small scripted fake judge
-stands in — while the product runs a real one: `LLMJudge()` calls Grok over
+stands in — while the product runs a real one: `LLMJudge()` calls Groq over
 plain standard-library HTTP behind the committed contract
 (`src/trajecteval/judge/base.py`). Swapping judges is a one-line change at
 the call site, and API keys stay out of core logic: `evaluate()` only ever
