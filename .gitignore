@@ -9,3 +9,12 @@ wheels/
 # Virtual environments
 .venv
 .DS_Store
+
+# Secrets -- API keys never live in this repo
+.env
+.env.*
+*.env
+*.pem
+*.key
+secrets.*
+
