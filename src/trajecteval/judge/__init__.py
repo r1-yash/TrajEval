@@ -1,5 +1,15 @@
-# The judge seam: contract now, offline fake next, real LLM client later.
+# The judge seam: the contract, strict output validation, the prompt
+# builder, the quality-grader adapter, and a scripted fake for tests that
+# must not spend API money.
 
 from trajecteval.judge.base import Judge, JudgeNote, JudgeResult
+from trajecteval.judge.fake import ScriptedJudge
+from trajecteval.judge.quality import TrajectoryQualityGrader
 
-__all__ = ["Judge", "JudgeNote", "JudgeResult"]
+__all__ = [
+    "Judge",
+    "JudgeNote",
+    "JudgeResult",
+    "ScriptedJudge",
+    "TrajectoryQualityGrader",
+]
