@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from trajecteval import (
-    GrokChatClient,
+    OpenAIChatClient,
     LLMJudge,
     TaskSpec,
     Trajectory,
@@ -72,7 +72,7 @@ def test_live_judge_treats_trajectory_instructions_as_data():
             ],
         }
     )
-    client = GrokChatClient()
+    client = OpenAIChatClient()
     assert client.model  # the model actually being used, visible in -v runs
     result = LLMJudge(client).judge(_spec(), canary)
     assert result.verdict.value in ALLOWED

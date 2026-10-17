@@ -1,7 +1,7 @@
 # The judge contract: what a judge is called, what it must return, and the
 # rules its output must satisfy -- plus the two failures (judge unreachable,
 # trajectory too long) the quality grader turns into ERROR columns. The real
-# Grok client and the scripted test fake both stand on this seam; the
+# LLM client and the scripted test fake both stand on this seam; the
 # default suite never needs the network (live tests run behind the marker).
 
 from __future__ import annotations

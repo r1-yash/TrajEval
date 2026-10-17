@@ -1,4 +1,4 @@
-# Tests for GrokChatClient + LLMJudge -- all with a fake transport, no
+# Tests for OpenAIChatClient + LLMJudge -- all with a fake transport, no
 # network: environment handling, the exact payload, the key living only in
 # the Authorization header, and every failure landing as LLMClientError.
 
@@ -10,7 +10,7 @@ import urllib.request
 import pytest
 
 from trajecteval import (
-    GrokChatClient,
+    OpenAIChatClient,
     LLMClientError,
     LLMJudge,
     TaskSpec,
@@ -89,18 +89,18 @@ def _trajectory(steps: int = 2) -> Trajectory:
 def test_missing_key_names_the_env_var(clean_env, monkeypatch):
     monkeypatch.delenv(KEY_ENV)
     with pytest.raises(ValueError, match=KEY_ENV):
-        GrokChatClient()
+        OpenAIChatClient()
 
 
 def test_key_from_environment_is_accepted(clean_env):
-    assert GrokChatClient().model == "grok-4"
-    assert GrokChatClient().base_url == "https://api.x.ai/v1"
+    assert OpenAIChatClient().model == "grok-4"
+    assert OpenAIChatClient().base_url == "https://api.x.ai/v1"
 
 
 def test_instance_arguments_win_over_environment(clean_env, monkeypatch):
     monkeypatch.setenv(MODEL_ENV, "grok-env-model")
     monkeypatch.setenv(BASE_URL_ENV, "https://elsewhere.example/v1")
-    client = GrokChatClient(model="grok-explicit", base_url="https://mine/v2", timeout=9)
+    client = OpenAIChatClient(model="grok-explicit", base_url="https://mine/v2", timeout=9)
     assert client.model == "grok-explicit"
     assert client.base_url == "https://mine/v2"
 
@@ -108,14 +108,14 @@ def test_instance_arguments_win_over_environment(clean_env, monkeypatch):
 def test_timeout_environment_variable_is_parsed(clean_env, monkeypatch):
     monkeypatch.setenv(TIMEOUT_ENV, "7.5")
     captured = _capturing_urlopen(clean_env, reply=_content_response('{"verdict":"pass"}'))
-    GrokChatClient().complete("s", "u")
+    OpenAIChatClient().complete("s", "u")
     assert captured[0][1] == 7.5
 
 
 def test_timeout_environment_variable_must_be_a_number(clean_env, monkeypatch):
     monkeypatch.setenv(TIMEOUT_ENV, "soon")
     with pytest.raises(ValueError, match=TIMEOUT_ENV):
-        GrokChatClient()
+        OpenAIChatClient()
 
 
 # ------------------------------------------------------------------ payload
@@ -124,7 +124,7 @@ def test_payload_shape_low_randomness_json_mode(clean_env, monkeypatch):
     captured = _capturing_urlopen(
         clean_env, reply=_content_response('{"verdict": "pass"}')
     )
-    GrokChatClient().complete("SYSTEM TEXT", "USER TEXT")
+    OpenAIChatClient().complete("SYSTEM TEXT", "USER TEXT")
     request, timeout = captured[0]
     assert request.full_url == "https://api.x.ai/v1/chat/completions"
     assert request.get_method() == "POST"
@@ -139,7 +139,7 @@ def test_payload_shape_low_randomness_json_mode(clean_env, monkeypatch):
 
 def test_key_travels_in_the_header_only(clean_env, monkeypatch):
     captured = _capturing_urlopen(clean_env, reply=_content_response("ok"))
-    GrokChatClient().complete("s", "u")
+    OpenAIChatClient().complete("s", "u")
     request, _ = captured[0]
     assert request.get_header("Authorization") == f"Bearer {KEY}"
     assert KEY.encode() not in request.data  # never in the body
@@ -147,7 +147,7 @@ def test_key_travels_in_the_header_only(clean_env, monkeypatch):
 
 def test_complete_returns_the_raw_text(clean_env, monkeypatch):
     _capturing_urlopen(clean_env, reply=_content_response('{"verdict": "warn"}'))
-    assert GrokChatClient().complete("s", "u") == '{"verdict": "warn"}'
+    assert OpenAIChatClient().complete("s", "u") == '{"verdict": "warn"}'
 
 
 # ------------------------------------------------------------------ failures
@@ -162,7 +162,7 @@ def test_http_error_becomes_llm_client_error_without_the_key(clean_env, monkeypa
     )
     _capturing_urlopen(clean_env, error=error)
     with pytest.raises(LLMClientError) as excinfo:
-        GrokChatClient().complete("s", "u")
+        OpenAIChatClient().complete("s", "u")
     exc = excinfo.value
     message = str(exc)
     assert "HTTP 401" in message
@@ -177,7 +177,7 @@ def test_http_error_becomes_llm_client_error_without_the_key(clean_env, monkeypa
 def test_network_error_becomes_llm_client_error(clean_env, monkeypatch):
     _capturing_urlopen(clean_env, error=urllib.error.URLError("name or service not known"))
     with pytest.raises(LLMClientError, match="name or service not known") as excinfo:
-        GrokChatClient().complete("s", "u")
+        OpenAIChatClient().complete("s", "u")
     assert excinfo.value.status is None  # no HTTP round trip happened
     assert "name or service not known" in excinfo.value.detail
 
@@ -185,13 +185,13 @@ def test_network_error_becomes_llm_client_error(clean_env, monkeypatch):
 def test_unexpected_response_shape_becomes_llm_client_error(clean_env, monkeypatch):
     _capturing_urlopen(clean_env, reply=b'{"unexpected": true}')
     with pytest.raises(LLMClientError, match="unexpected response shape"):
-        GrokChatClient().complete("s", "u")
+        OpenAIChatClient().complete("s", "u")
 
 
 def test_non_string_content_becomes_llm_client_error(clean_env, monkeypatch):
     _capturing_urlopen(clean_env, reply=b'{"choices": [{"message": {"content": 42}}]}')
     with pytest.raises(LLMClientError, match="must be a string"):
-        GrokChatClient().complete("s", "u")
+        OpenAIChatClient().complete("s", "u")
 
 
 # --------------------------------------------------------------- LLMJudge

@@ -45,7 +45,7 @@ def _env_float(name: str, default: float) -> float:
         raise ValueError(f"{name} must be a number of seconds, got {raw!r}") from None
 
 
-class GrokChatClient:
+class OpenAIChatClient:
     # Thin OpenAI-compatible chat client: complete() posts the two prompt
     # parts at low randomness (temperature 0) in JSON mode and returns the
     # model's raw text. Nothing else is decided here.
@@ -138,8 +138,8 @@ class LLMJudge:
     # (or its default client) is the only way a model ever gets called --
     # evaluate() never builds one itself.
 
-    def __init__(self, client: GrokChatClient | None = None) -> None:
-        self._client = client if client is not None else GrokChatClient()
+    def __init__(self, client: OpenAIChatClient | None = None) -> None:
+        self._client = client if client is not None else OpenAIChatClient()
 
     @property
     def model(self) -> str:
