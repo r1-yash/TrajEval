@@ -100,9 +100,10 @@ The rules around it:
 
 - **Injection, not construction.** `evaluate()` never builds a client or
   calls a model on its own: the column appears only when a `judge=` is
-  passed, and passing both `graders=` and `judge=` is a `ValueError`
-  (mixing means building the adapter yourself). Without a judge the column
-  renders `not evaluated`, exactly as before Step 9.
+  passed, and `judge=` simply appends the quality grader to whichever
+  grader list is in use — a second grader for the quality column is
+  rejected by the existing duplicate-column check. Without a judge the
+  column renders `not evaluated`, exactly as before Step 9.
 - **One path, five steps:** `TrajectoryQualityGrader.grade()` → task-id
   check first (same pinned order as the deterministic graders) → empty
   trajectory short-circuit (WARN, evidence `empty_trajectory`, the judge is
@@ -113,8 +114,10 @@ The rules around it:
   thrash, poor recovery. It fences off final state, bounds, and critical
   mistakes (already graded), and declares the trajectory data to analyze —
   never instructions to follow. Steps travel as index + action + state
-  before/after; over a character budget the snapshots drop first, then the
-  middle steps, marked as omitted — never silently hidden.
+  before/after, untruncated; if the finished prompt (system + user) is over
+  the size budget (default 24,000 characters) `build_prompt()` refuses with
+  `TrajectoryTooLongError` — the model is not called at all, and the column
+  becomes ERROR with evidence `trajectory_too_long` (`size`, `limit`).
 - **Validation is strict and lives apart from the client.** Not-valid JSON
   (fences are not stripped), wrong keys, an unknown or uppercase verdict, a
   note citing a step the trajectory does not have, WARN with no note, FAIL
@@ -122,11 +125,15 @@ The rules around it:
   with evidence kind `judge_invalid_output` (the `problem`, plus `bad_step`
   and a short `output_excerpt` when they apply). Nothing is guessed,
   repaired, or retried.
-- **Two failure lanes stay tellable apart:** an unusable *answer* is
-  returned as ERROR `judge_invalid_output`; a *transport* failure (network,
-  bad key, rate limit) raises `LLMClientError` out of the grader and lands
-  in `evaluate()`'s crash lane as ERROR `grader_crash`, exception type in
-  the reason.
+- **Three can't-judge outcomes, and one crash lane, stay tellable apart:**
+  an unusable *answer* → ERROR `judge_invalid_output`; an unreachable
+  *judge* (network, bad key, rate limit, timeout) → the grader catches
+  `LLMClientError` and returns ERROR `judge_unavailable` with the HTTP
+  `status` and the capped provider `detail` as evidence (never the key);
+  an *over-budget prompt* → ERROR `trajectory_too_long` with `size` and
+  `limit`. None of the three is a crash, and none can become a pass. Only
+  a genuine bug in judge or grader code still reaches `evaluate()`'s
+  crash lane (ERROR `grader_crash`, exception type in the reason).
 - **Configuration is environmental:** key `TRAJECTEVAL_JUDGE_API_KEY`
   (required — missing gives a plain message at construction; never in a
   repo file, never in a message), model `TRAJECTEVAL_JUDGE_MODEL` (default

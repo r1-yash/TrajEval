@@ -95,10 +95,13 @@ rule. Full verdict reference: [docs/DESIGN.md](docs/DESIGN.md).
 
 ## What works today
 
-**Steps 1–9 are done, including the real LLM judge**: contract, strict
-output validation, prompt builder, the quality-grader adapter,
-`evaluate(judge=...)` wiring, and one real client (Grok over plain HTTP).
-The CLI and everything after are planned — the
+**Steps 1–8 are done. Step 9 — the real LLM judge — is implemented,
+awaiting first live run**: contract, strict output validation, prompt
+builder, the quality-grader adapter, `evaluate(judge=...)` wiring, and one
+real client (Grok over plain HTTP). The offline suite is green and the live
+tests are written, but they have not yet been run against a real key —
+that run (`uv run pytest -m live` with `TRAJECTEVAL_JUDGE_API_KEY`) is what
+marks Step 9 done. The CLI and everything after are planned — the
 [roadmap](#roadmap) says exactly what's next.
 
 Works today, as a library:
@@ -327,7 +330,7 @@ TrajEval/
 │   ├── compare.py               # cross-trace comparison table (text + markdown)
 │   └── judge/                    # judge code — never in graders/
 │       ├── base.py               # contract (protocol + JudgeResult/JudgeNote)
-│       ├── prompt.py             # exact system prompt + trajectory capping
+│       ├── prompt.py             # exact system prompt + size cap (no truncation)
 │       ├── validate.py           # strict parse of the model's answer
 │       ├── quality.py            # TrajectoryQualityGrader: Judge → Grader
 │       ├── llm.py                # Grok client (stdlib HTTP) + LLMJudge
@@ -369,7 +372,7 @@ fixtures change.
 | 6 | Three deterministic graders (final state, bounds, critical) — reproduce the fixture answer key exactly | ✅ done |
 | 7 | Report: `evaluate()` runs the three deterministic dimensions first (a crashed grader degrades its own column to ERROR, never the run), then renders JSON + readable text; the LLM judge is an optional `judge=` addition (Step 9) | ✅ done |
 | 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ✅ done |
-| 9 | Real LLM judge: contract + strict output validation + prompt builder + `TrajectoryQualityGrader` adapter + `evaluate(judge=...)` + one real client (Grok, stdlib HTTP) + `ScriptedJudge` for offline tests; live tests behind `pytest -m live` | ✅ done — offline suite green; live path awaits a `TRAJECTEVAL_JUDGE_API_KEY` run (`uv run pytest -m live`) |
+| 9 | Real LLM judge: contract + strict output validation + prompt builder + `TrajectoryQualityGrader` adapter + `evaluate(judge=...)` + one real client (Grok, stdlib HTTP) + `ScriptedJudge` for offline tests; live tests behind `pytest -m live` | **implemented, awaiting first live run** — offline suite green; run `uv run pytest -m live` with your `TRAJECTEVAL_JUDGE_API_KEY` to close it out |
 | 10 | CLI (`uv run traject ...`) | ⏳ planned |
 | 11 | Recorder + simulated environment for travel_booking | ⏳ planned |
 | 12 | LLM-agent demo: agent → recorder → report, real traces (needs an API key) | ⏳ planned |
