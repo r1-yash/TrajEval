@@ -1,5 +1,6 @@
-# One real provider, thin and swappable: Grok (xAI) over its
-# OpenAI-compatible HTTP API, standard library only. Transport and
+# One real provider, thin and swappable: Groq's OpenAI-compatible API
+# (any compatible endpoint works via TRAJECTEVAL_JUDGE_BASE_URL),
+# standard library only. Transport and
 # composition only -- it returns raw text; strict parsing lives in
 # validate.py. The API key comes from the environment (never a file in the
 # repo), is sent only in the Authorization header, and is never printed,
@@ -26,8 +27,10 @@ MODEL_ENV = "TRAJECTEVAL_JUDGE_MODEL"
 BASE_URL_ENV = "TRAJECTEVAL_JUDGE_BASE_URL"
 TIMEOUT_ENV = "TRAJECTEVAL_JUDGE_TIMEOUT"
 
-DEFAULT_MODEL = "grok-4"
-DEFAULT_BASE_URL = "https://api.x.ai/v1"
+# Groq-hosted default; check GET /openai/v1/models with your key before a
+# first live run, and override with MODEL_ENV if it isn't listed there.
+DEFAULT_MODEL = "openai/gpt-oss-120b"
+DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
 DEFAULT_TIMEOUT = 60.0
 
 # How much of a provider's error body rides along in an exception message

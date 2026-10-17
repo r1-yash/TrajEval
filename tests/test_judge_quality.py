@@ -166,7 +166,7 @@ def test_client_error_becomes_error_judge_unavailable():
     # with status + capped provider detail as evidence, never grader_crash.
     scripted = _judge(
         raises=LLMClientError(
-            "judge request failed: HTTP 401 from https://api.x.ai/v1: invalid key",
+            "judge request failed: HTTP 401 from https://api.groq.com/openai/v1: invalid key",
             status=401,
             detail="invalid key",
         )

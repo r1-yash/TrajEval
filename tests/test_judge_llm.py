@@ -93,15 +93,15 @@ def test_missing_key_names_the_env_var(clean_env, monkeypatch):
 
 
 def test_key_from_environment_is_accepted(clean_env):
-    assert OpenAIChatClient().model == "grok-4"
-    assert OpenAIChatClient().base_url == "https://api.x.ai/v1"
+    assert OpenAIChatClient().model == "openai/gpt-oss-120b"
+    assert OpenAIChatClient().base_url == "https://api.groq.com/openai/v1"
 
 
 def test_instance_arguments_win_over_environment(clean_env, monkeypatch):
-    monkeypatch.setenv(MODEL_ENV, "grok-env-model")
+    monkeypatch.setenv(MODEL_ENV, "groq-env-model")
     monkeypatch.setenv(BASE_URL_ENV, "https://elsewhere.example/v1")
-    client = OpenAIChatClient(model="grok-explicit", base_url="https://mine/v2", timeout=9)
-    assert client.model == "grok-explicit"
+    client = OpenAIChatClient(model="groq-explicit", base_url="https://mine/v2", timeout=9)
+    assert client.model == "groq-explicit"
     assert client.base_url == "https://mine/v2"
 
 
@@ -126,10 +126,10 @@ def test_payload_shape_low_randomness_json_mode(clean_env, monkeypatch):
     )
     OpenAIChatClient().complete("SYSTEM TEXT", "USER TEXT")
     request, timeout = captured[0]
-    assert request.full_url == "https://api.x.ai/v1/chat/completions"
+    assert request.full_url == "https://api.groq.com/openai/v1/chat/completions"
     assert request.get_method() == "POST"
     body = json.loads(request.data)
-    assert body["model"] == "grok-4"
+    assert body["model"] == "openai/gpt-oss-120b"
     assert body["temperature"] == 0
     assert body["response_format"] == {"type": "json_object"}
     assert [m["role"] for m in body["messages"]] == ["system", "user"]
@@ -154,7 +154,7 @@ def test_complete_returns_the_raw_text(clean_env, monkeypatch):
 
 def test_http_error_becomes_llm_client_error_without_the_key(clean_env, monkeypatch):
     error = urllib.error.HTTPError(
-        "https://api.x.ai/v1/chat/completions",
+        "https://api.groq.com/openai/v1/chat/completions",
         401,
         "Unauthorized",
         None,

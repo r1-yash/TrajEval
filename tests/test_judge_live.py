@@ -1,4 +1,4 @@
-# Live judge tests: loose sanity against the real Grok API -- never a fixed
+# Live judge tests: loose sanity against the real Groq API -- never a fixed
 # expected verdict (a real judge is not deterministic). Deselected by default
 # via pyproject addopts, and skipped without a key, so the normal suite never
 # touches the network or spends money. Run with: uv run pytest -m live
