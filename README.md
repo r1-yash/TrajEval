@@ -65,9 +65,9 @@ Reading it:
 - `empty` warns in every column it could check — nothing was verified, so
   nothing gets a silent PASS.
 - `first_class_overlap` shows one bad step breaking two columns at once.
-- `trajectory_quality` says **not evaluated**: the LLM judge's contract is
-  committed but its real client is Step 9. The table marks what it doesn't
-  know — it never guesses and never drops a column.
+- `trajectory_quality` says **not evaluated**: this command passes no judge,
+  and `evaluate()` only ever calls a model when you hand it one. The table
+  marks what it doesn't know — it never guesses and never drops a column.
 
 ## The four questions, in plain words
 
@@ -95,9 +95,10 @@ rule. Full verdict reference: [docs/DESIGN.md](docs/DESIGN.md).
 
 ## What works today
 
-**Steps 1–8 are done. Step 9 has started**: the judge's contract
-(`src/trajecteval/judge/base.py`) is committed; the real client, the
-`evaluate()` wiring, the CLI, and everything after are planned — the
+**Steps 1–9 are done, including the real LLM judge**: contract, strict
+output validation, prompt builder, the quality-grader adapter,
+`evaluate(judge=...)` wiring, and one real client (Grok over plain HTTP).
+The CLI and everything after are planned — the
 [roadmap](#roadmap) says exactly what's next.
 
 Works today, as a library:
@@ -105,11 +106,14 @@ Works today, as a library:
 - load a trajectory or a task spec from JSON, validated structurally;
 - grade the three deterministic dimensions with `evaluate()` — one broken
   grader degrades its own column to ERROR, never the whole run;
+- judge trajectory quality with a real LLM by passing `judge=` — a model is
+  only ever called when you pass one, and its key comes from the
+  environment;
 - render a single report as readable text or machine JSON, and save/load
   reports to files;
 - line many reports up in one comparison table, as plain text or Markdown.
 
-Planned: the real LLM judge (Step 9), the `uv run traject` CLI (Step 10), a
+Planned: the `uv run traject` CLI (Step 10), a
 recorder with a simulated environment (Step 11), an agent demo on real traces
 (Step 12), a second toy task (Step 13).
 
@@ -140,6 +144,25 @@ for result in report.results:
     print(result.dimension, result.verdict, result.reason)
 print(render_text(report))     # or render_json(report) for the machine form
 ```
+
+**Judge path quality with a real LLM** *(needs a Grok API key; without a
+judge the fourth column stays `not evaluated`, and the default test suite
+uses a scripted fake instead)*
+
+```python
+from trajecteval import LLMJudge, Trajectory, evaluate, load_spec
+
+report = evaluate(
+    Trajectory.from_json_file("trace.json"),
+    load_spec("travel_booking"),
+    judge=LLMJudge(),  # reads TRAJECTEVAL_JUDGE_API_KEY; model grok-4
+)
+```
+
+The judge only judges *path quality* (detours, repeated actions, thrash,
+poor recovery) — final state, bounds, and critical mistakes stay with the
+deterministic graders. A model answer that fails validation becomes an
+ERROR column with evidence, never a guessed verdict.
 
 **Compare traces**
 
@@ -238,10 +261,12 @@ Conventions:
 
 - One module = one responsibility; one test file per module.
 - The default suite is **offline and deterministic**: hand-made fixtures are
-  the ground truth, and unit tests use a small scripted fake judge.
-- Step 9 adds a real LLM client. Live tests that call it are clearly
-  separated, skipped by default, and need an API key — the default suite
-  never touches the network.
+  the ground truth, and unit tests use a small scripted fake judge
+  (`ScriptedJudge`) — no network, no API key, no spend.
+- Live tests exist behind a marker: `uv run pytest -m live` calls the real
+  Grok client with two loose sanity checks (allowed verdicts only — never a
+  fixed expected verdict) and needs `TRAJECTEVAL_JUDGE_API_KEY`. They are
+  deselected by default, so the default suite never touches the network.
 
 ## The trajectory format
 
@@ -300,8 +325,13 @@ TrajEval/
 │   │   └── critical.py
 │   ├── report.py                # evaluate() + JSON/text/file renderers
 │   ├── compare.py               # cross-trace comparison table (text + markdown)
-│   └── judge/
-│       └── base.py              # judge contract (protocol + JudgeResult/JudgeNote)
+│   └── judge/                    # judge code — never in graders/
+│       ├── base.py               # contract (protocol + JudgeResult/JudgeNote)
+│       ├── prompt.py             # exact system prompt + trajectory capping
+│       ├── validate.py           # strict parse of the model's answer
+│       ├── quality.py            # TrajectoryQualityGrader: Judge → Grader
+│       ├── llm.py                # Grok client (stdlib HTTP) + LLMJudge
+│       └── fake.py               # ScriptedJudge — unit tests pay nothing
 └── tests/                       # one test file per module, plus fixtures:
     └── fixtures/
         ├── minimal.json         # loader fixture
@@ -309,8 +339,7 @@ TrajEval/
         └── travel_booking/      # seven trajectories + expected_verdicts.json
 ```
 
-Planned, in roadmap order (not built): the real LLM judge client + its
-scripted unit-test fake (`judge/`), the CLI (`cli.py`), the simulated
+Planned, in roadmap order (not built): the CLI (`cli.py`), the simulated
 environment and recorder (`environment.py`, `recorder.py`), task two's
 fixtures, and — only if real attempt logs ever exist — a Debuggernaut
 adapter. The [roadmap](#roadmap) is the source of truth for what's next.
@@ -338,9 +367,9 @@ fixtures change.
 | 4 | Task spec + grader contract: data-file rules, load by task id, `Grader` protocol | ✅ done |
 | 5 | Fixtures for task one — seven trajectories (clean, wasteful, critical_recovered, first_class_overlap, failed, unlisted_action, empty) + the machine-readable expected-verdict table | ✅ done |
 | 6 | Three deterministic graders (final state, bounds, critical) — reproduce the fixture answer key exactly | ✅ done |
-| 7 | Report: `evaluate()` runs the three deterministic dimensions first (a crashed grader degrades its own column to ERROR, never the run), then renders JSON + readable text; the LLM judge is an optional addition once Step 9 exists | ✅ done |
+| 7 | Report: `evaluate()` runs the three deterministic dimensions first (a crashed grader degrades its own column to ERROR, never the run), then renders JSON + readable text; the LLM judge is an optional `judge=` addition (Step 9) | ✅ done |
 | 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ✅ done |
-| 9 | Real LLM judge: adapter + validation + **one real client** — the contract is already committed (`judge/base.py`); a small scripted fake covers unit tests | 🚧 started |
+| 9 | Real LLM judge: contract + strict output validation + prompt builder + `TrajectoryQualityGrader` adapter + `evaluate(judge=...)` + one real client (Grok, stdlib HTTP) + `ScriptedJudge` for offline tests; live tests behind `pytest -m live` | ✅ done — offline suite green; live path awaits a `TRAJECTEVAL_JUDGE_API_KEY` run (`uv run pytest -m live`) |
 | 10 | CLI (`uv run traject ...`) | ⏳ planned |
 | 11 | Recorder + simulated environment for travel_booking | ⏳ planned |
 | 12 | LLM-agent demo: agent → recorder → report, real traces (needs an API key) | ⏳ planned |
@@ -373,11 +402,12 @@ something is graded, it's written down in the spec — not buried in a branch.
 
 **Why is the judge injectable?**
 So the default tests never touch the network — a small scripted fake judge
-stands in — while the product direction is a *real* client: Step 9 builds one
-real LLM backend behind the already-committed contract
-(`src/trajecteval/judge/base.py`). Swapping judges is a one-line change at the
-call site, and API keys stay out of core logic. (The `evaluate(..., judge=...)`
-wiring lands with Step 9 — today only the contract exists.)
+stands in — while the product runs a real one: `LLMJudge()` calls Grok over
+plain standard-library HTTP behind the committed contract
+(`src/trajecteval/judge/base.py`). Swapping judges is a one-line change at
+the call site, and API keys stay out of core logic: `evaluate()` only ever
+calls a model when you pass it a judge, and the key comes from
+`TRAJECTEVAL_JUDGE_API_KEY` — never a file in the repo, never printed.
 
 **Why dataclasses instead of Pydantic?**
 The project parses its own well-defined JSON format rather than validating

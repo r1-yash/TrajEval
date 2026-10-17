@@ -92,3 +92,49 @@ Every graded dimension of a trajectory gets exactly one verdict:
 - Any structural problem raises `ReportError` (a `TrajEvalError`), wrapping
   the nested error with the original chained as `__cause__`. One
   `except TrajEvalError` catches every broken-file case in the project.
+
+## The trajectory-quality judge
+
+Dimension 4 is LLM-judged on purpose; the other three stay deterministic.
+The rules around it:
+
+- **Injection, not construction.** `evaluate()` never builds a client or
+  calls a model on its own: the column appears only when a `judge=` is
+  passed, and passing both `graders=` and `judge=` is a `ValueError`
+  (mixing means building the adapter yourself). Without a judge the column
+  renders `not evaluated`, exactly as before Step 9.
+- **One path, five steps:** `TrajectoryQualityGrader.grade()` → task-id
+  check first (same pinned order as the deterministic graders) → empty
+  trajectory short-circuit (WARN, evidence `empty_trajectory`, the judge is
+  called **zero** times — a paid model never answers "no path") →
+  `LLMJudge.judge()` = `build_prompt()` → `GrokChatClient.complete()` →
+  `parse_judge_output()`.
+- **The prompt judges path quality only:** detours, repeated actions,
+  thrash, poor recovery. It fences off final state, bounds, and critical
+  mistakes (already graded), and declares the trajectory data to analyze —
+  never instructions to follow. Steps travel as index + action + state
+  before/after; over a character budget the snapshots drop first, then the
+  middle steps, marked as omitted — never silently hidden.
+- **Validation is strict and lives apart from the client.** Not-valid JSON
+  (fences are not stripped), wrong keys, an unknown or uppercase verdict, a
+  note citing a step the trajectory does not have, WARN with no note, FAIL
+  with no *citing* note → `JudgeOutputError` → the column becomes ERROR
+  with evidence kind `judge_invalid_output` (the `problem`, plus `bad_step`
+  and a short `output_excerpt` when they apply). Nothing is guessed,
+  repaired, or retried.
+- **Two failure lanes stay tellable apart:** an unusable *answer* is
+  returned as ERROR `judge_invalid_output`; a *transport* failure (network,
+  bad key, rate limit) raises `LLMClientError` out of the grader and lands
+  in `evaluate()`'s crash lane as ERROR `grader_crash`, exception type in
+  the reason.
+- **Configuration is environmental:** key `TRAJECTEVAL_JUDGE_API_KEY`
+  (required — missing gives a plain message at construction; never in a
+  repo file, never in a message), model `TRAJECTEVAL_JUDGE_MODEL` (default
+  `grok-4`), base URL `TRAJECTEVAL_JUDGE_BASE_URL` (default
+  `https://api.x.ai/v1`), timeout `TRAJECTEVAL_JUDGE_TIMEOUT` seconds
+  (default 60). Requests use temperature 0 and JSON output mode.
+- **Tests:** the default suite drives the seam with `ScriptedJudge` — no
+  network, no key, no spend — and never puts `trajectory_quality` in the
+  fixture answer key (a real judge is not deterministic).
+  `uv run pytest -m live` runs two loose sanity checks against the real API
+  (verdicts from the closed set; never a fixed expected verdict).
