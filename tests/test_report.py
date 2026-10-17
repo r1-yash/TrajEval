@@ -15,8 +15,11 @@ from trajecteval import (
     Evidence,
     FinalStateGrader,
     GraderResult,
+    JudgeNote,
+    JudgeResult,
     Report,
     ReportError,
+    ScriptedJudge,
     Step,
     TaskSpec,
     Trajectory,
@@ -517,3 +520,102 @@ def test_to_json_file_round_trips_through_from_json_file(tmp_path):
     path = tmp_path / "overlap-report.json"
     report.to_json_file(path)
     assert Report.from_json_file(path) == report
+
+
+# ------------------------------------------------------------- judge wiring
+# evaluate(judge=...) is strictly opt-in: without one, the report is the
+# three deterministic columns plus the 'not evaluated' quality line, and no
+# model is ever called. ScriptedJudge keeps all of this offline.
+
+def _warn_judge() -> ScriptedJudge:
+    return ScriptedJudge(
+        [
+            JudgeResult(
+                verdict=Verdict.WARN,
+                reason="step 3 repeats step 2",
+                notes=(JudgeNote(step=3, kind="repeated_action", detail="same search"),),
+            )
+        ]
+    )
+
+
+def test_evaluate_without_judge_is_exactly_the_three_columns():
+    report = evaluate(_fixture("clean"), _spec())
+    assert [r.dimension.value for r in report.results] == list(DETERMINISTIC)
+    assert "not evaluated: trajectory_quality" in render_text(report)
+
+
+def test_evaluate_with_judge_adds_the_quality_column():
+    report = evaluate(_fixture("clean"), _spec(), judge=_warn_judge())
+    assert [r.dimension.value for r in report.results] == [
+        *DETERMINISTIC,
+        "trajectory_quality",
+    ]
+    quality = report.results[-1]
+    assert quality.verdict is Verdict.WARN
+    assert quality.evidence[0].kind == "repeated_action"
+    assert quality.evidence[0].step == 3
+    text = render_text(report)
+    assert "trajectory_quality WARN: step 3 repeats step 2" in text
+    assert "not evaluated" not in text  # all four columns present now
+
+
+def test_evaluate_rejects_judge_and_graders_together():
+    with pytest.raises(ValueError, match="not both"):
+        evaluate(_fixture("clean"), _spec(), graders=[FinalStateGrader()], judge=_warn_judge())
+
+
+def test_evaluate_rejects_a_non_judge():
+    with pytest.raises(ValueError, match="judge must provide"):
+        evaluate(_fixture("clean"), _spec(), judge=object())
+
+
+def test_a_non_callable_judge_attribute_is_rejected():
+    # The gate checks attribute presence AND callability; a judge whose
+    # 'judge' is data, not a method, dies here -- before any judging.
+
+    class _NotAJudge:
+        judge = "not a method"
+
+    with pytest.raises(ValueError, match="judge must provide"):
+        evaluate(_fixture("clean"), _spec(), judge=_NotAJudge())
+
+
+def test_crashing_judge_degrades_only_its_own_column():
+    # A transport failure is a crash, not a verdict: the quality column
+    # becomes ERROR with the exception type; the other three still judge.
+    scripted = ScriptedJudge(raises=RuntimeError("connection reset"))
+    report = evaluate(_fixture("clean"), _spec(), judge=scripted)
+    by_dimension = {r.dimension.value: r for r in report.results}
+    quality = by_dimension["trajectory_quality"]
+    assert quality.verdict is Verdict.ERROR
+    assert quality.evidence[0].kind == "grader_crash"
+    assert quality.evidence[0].value["exception"] == "RuntimeError"
+    for name in DETERMINISTIC:
+        assert by_dimension[name].verdict is not Verdict.ERROR
+
+
+def test_judged_report_round_trips_through_json():
+    report = evaluate(_fixture("wasteful"), _spec(), judge=_warn_judge())
+    assert Report.from_dict(json.loads(render_json(report))) == report
+
+
+def test_older_three_column_report_still_loads():
+    # Reports saved before Step 9 (no trajectory_quality result) are still
+    # valid reports -- the column renders as 'not evaluated'.
+    old = {
+        "task_id": "travel_booking",
+        "trajectory_task_id": "travel_booking",
+        "results": [
+            {
+                "dimension": "final_state",
+                "verdict": "PASS",
+                "reason": "reached",
+                "evidence": [],
+            }
+        ],
+        "discontinuities": [],
+    }
+    report = Report.from_dict(old)
+    assert len(report.results) == 1
+    assert "not evaluated: trajectory_quality" in render_text(report)

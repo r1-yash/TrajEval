@@ -9,6 +9,8 @@ from typing import Any, Sequence
 
 from trajecteval.errors import ReportError, TrajectoryError
 from trajecteval.graders import BoundsGrader, CriticalGrader, FinalStateGrader, Grader
+from trajecteval.judge.base import Judge
+from trajecteval.judge.quality import TrajectoryQualityGrader
 from trajecteval.models import Discontinuity, Trajectory
 from trajecteval.results import Dimension, Evidence, GraderResult, Verdict
 from trajecteval.task_spec import TaskSpec
@@ -167,12 +169,29 @@ def evaluate(
     trajectory: Trajectory,
     spec: TaskSpec,
     graders: Sequence[Grader] | None = None,
+    judge: Judge | None = None,
 ) -> Report:
     # The foreman, not an inspector: hand every grader the same spec and the
     # same trajectory, keep one broken grader to its own column, and assemble
     # the report card. KeyboardInterrupt/SystemExit are the operator, not a
     # bug, so only Exception is caught.
+    # judge= is strictly opt-in: with no judge, behavior is byte-for-byte the
+    # three deterministic columns (quality shows 'not evaluated'), and no
+    # model is ever called silently. Passing both is ambiguous, so it is a
+    # caller mistake -- ValueError before anything is judged.
+    if judge is not None and graders is not None:
+        raise ValueError(
+            "pass either graders= or judge=, not both; to mix, put "
+            "TrajectoryQualityGrader(judge) in your grader list yourself"
+        )
+    if judge is not None and not callable(getattr(judge, "judge", None)):
+        raise ValueError(
+            f"judge must provide a judge(spec, trajectory) method; "
+            f"got {type(judge).__name__}"
+        )
     chosen = _default_graders() if graders is None else tuple(graders)
+    if judge is not None:
+        chosen = (*chosen, TrajectoryQualityGrader(judge))
     dimensions = _require_judgeable(chosen)
     results: list[GraderResult] = []
     for grader, dimension in zip(chosen, dimensions):
