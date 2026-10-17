@@ -11,3 +11,11 @@ dev = [
     "pytest>=9.1.1",
 ]
 
+[tool.pytest.ini_options]
+# Live tests call a real LLM API: deselected by default so the normal suite
+# never touches the network or spends money. Run them with `uv run pytest -m live`.
+addopts = "-m 'not live'"
+markers = [
+    "live: calls a real LLM API (needs TRAJECTEVAL_JUDGE_API_KEY); deselected by default",
+]
+
