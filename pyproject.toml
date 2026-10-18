@@ -1,10 +1,14 @@
 [project]
-name = "trajeval"
+name = "trajecteval"
 version = "0.1.0"
-description = "Add your description here"
+description = "Grade AI agent trajectories on four dimensions: final state, bounds, critical mistakes, and LLM-judged path quality"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.9"]
+build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
