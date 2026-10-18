@@ -110,9 +110,17 @@ The rules around it:
   called **zero** times — a paid model never answers "no path") →
   `LLMJudge.judge()` = `build_prompt()` → `OpenAIChatClient.complete()` →
   `parse_judge_output()`.
-- **The prompt judges path quality only:** detours, repeated actions,
-  thrash, poor recovery. It fences off final state, bounds, and critical
-  mistakes (already graded), and declares the trajectory data to analyze —
+- **The prompt judges wasted effort only:** identical actions repeated,
+  actions that were undone or reversed, and steps that add nothing to
+  reaching the goal. It fences off final state, bounds, critical mistakes,
+  and other broken rules (already graded): they must never lower the
+  quality verdict or score, and when the only problem looks like a broken
+  rule, only the effort it wasted is judged (for example an action that
+  had to be undone), nothing more. Severity is a stated rule the model
+  follows: nothing wasted → `pass`; a single wasted, undone, or corrected
+  step → `warn`, never `fail`; `fail` only when waste dominates the path —
+  the same action repeated three or more times, or several wasted steps
+  forming a loop. It declares the trajectory data to analyze —
   never instructions to follow. Steps travel as index + action + state
   before/after, untruncated; if the finished prompt (system + user) is over
   the size budget (default 24,000 characters) `build_prompt()` refuses with

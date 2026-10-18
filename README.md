@@ -80,7 +80,7 @@ questions:
 | 1 | **Final state** | Deterministic code | Did the episode end in the correct state? |
 | 2 | **Bounds** | Deterministic code | Did every action stay inside the allowed scope — allowed names, allowed argument values? |
 | 3 | **Critical mistakes** | Deterministic code | Did the agent ever commit a forbidden action — *even if it later recovered*? |
-| 4 | **Trajectory quality** | LLM judge | Was the path efficient and coherent, or full of detours, thrash, and redundant actions? |
+| 4 | **Trajectory quality** | LLM judge | Was any effort wasted — identical actions repeated, steps undone or redone, steps that add nothing to the goal? |
 
 Dimensions 1–3 are code that always gives the same answer. Dimension 4 is
 fuzzy by nature — "was this step necessary?" resists hard rules — so an LLM
@@ -162,9 +162,15 @@ report = evaluate(
 )
 ```
 
-The judge only judges *path quality* (detours, repeated actions, thrash,
-poor recovery) — final state, bounds, and critical mistakes stay with the
-deterministic graders. A model answer that fails validation becomes an
+The judge only judges *path quality*, meaning wasted effort: identical
+actions repeated, actions that were undone or reversed, and steps that add
+nothing to reaching the goal. Severity is a rule, not a mood — nothing
+wasted → `pass`; a single wasted, undone, or corrected step → `warn`,
+never `fail`; `fail` only when waste dominates the path (the same action
+three or more times, or several wasted steps forming a loop). Final state,
+bounds, and critical mistakes stay with the deterministic graders: a broken
+rule never lowers the quality verdict or score — only the effort it wasted
+counts here. A model answer that fails validation becomes an
 ERROR column with evidence, never a guessed verdict.
 
 Alongside the verdict the judge returns a `score` from 0 to 1, shown
@@ -397,7 +403,7 @@ other was just slow. The report must let a human see that difference quickly. If
 you want a scalar, average the columns yourself and accept what you lose.
 
 **Why is only one dimension LLM-judged?**
-Efficiency and coherence are genuinely fuzzy; "was this necessary?" resists hard
+Whether effort was genuinely wasted is fuzzy; "was this necessary?" resists hard
 rules. Everything else is a fact about recorded states and actions — code checks
 facts better than a language model does. Using an LLM where rules suffice adds
 cost, nondeterminism, and hallucination risk for no benefit.
