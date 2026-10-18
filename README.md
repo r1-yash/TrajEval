@@ -69,6 +69,26 @@ Reading it:
   and `evaluate()` only ever calls a model when you hand it one. The table
   marks what it doesn't know — it never guesses and never drops a column.
 
+The same seven traces, this time through the real judge — one run, model
+`openai/gpt-oss-120b` via Groq, 18 Oct 2026; judge output varies between
+runs:
+
+```text
+trace                task            discont  final_state            bounds                 critical               trajectory_quality
+clean                travel_booking  -        PASS                   PASS                   PASS                   PASS 0.96
+critical_recovered   travel_booking  -        PASS                   PASS                   FAIL (step 3)          WARN 0.70 (step 4)
+empty                travel_booking  -        FAIL (no single step)  WARN (no single step)  WARN (no single step)  WARN (no single step)
+failed               travel_booking  -        FAIL (step 3)          PASS                   PASS                   PASS 0.92
+first_class_overlap  travel_booking  -        PASS                   FAIL (step 2)          FAIL (step 2)          WARN 0.70 (step 3)
+unlisted_action      travel_booking  -        PASS                   FAIL (step 3)          PASS                   WARN 0.70 (step 3)
+wasteful             travel_booking  -        PASS                   PASS                   PASS                   FAIL 0.30 (step 3)
+```
+
+Only `trajectory_quality` is model-judged; the other three columns are
+deterministic code. One corrected step is a `WARN`, and only a repeated
+loop is a `FAIL`. The score is coarse — differences under about 0.1 mean
+little — and the cited step can differ between runs.
+
 ## The four questions, in plain words
 
 A **trajectory** is one recorded episode. Each is graded against a **task
@@ -95,14 +115,12 @@ rule. Full verdict reference: [docs/DESIGN.md](docs/DESIGN.md).
 
 ## What works today
 
-**Steps 1–8 are done. Step 9 — the real LLM judge — is implemented,
-awaiting first live run**: contract, strict output validation, prompt
-builder, the quality-grader adapter, `evaluate(judge=...)` wiring, and one
-real client (Groq over plain HTTP). The offline suite is green and the live
-tests are written, but they have not yet been run against a real key —
-that run (`uv run pytest -m live` with `TRAJECTEVAL_JUDGE_API_KEY`) is what
-marks Step 9 done. The CLI and everything after are planned — the
-[roadmap](#roadmap) says exactly what's next.
+**Steps 1–9 are done, including the real LLM judge**: contract, strict
+output validation, prompt builder, the quality-grader adapter,
+`evaluate(judge=...)` wiring, and one real client (Groq over plain HTTP) —
+verified live on Groq (`openai/gpt-oss-120b`) on 18 Oct 2026. The CLI and
+everything after are planned — the [roadmap](#roadmap) says exactly what's
+next.
 
 Works today, as a library:
 
@@ -383,7 +401,7 @@ fixtures change.
 | 6 | Three deterministic graders (final state, bounds, critical) — reproduce the fixture answer key exactly | ✅ done |
 | 7 | Report: `evaluate()` runs the three deterministic dimensions first (a crashed grader degrades its own column to ERROR, never the run), then renders JSON + readable text; the LLM judge is an optional `judge=` addition (Step 9) | ✅ done |
 | 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ✅ done |
-| 9 | Real LLM judge: contract + strict output validation + prompt builder + `TrajectoryQualityGrader` adapter + `evaluate(judge=...)` + one real client (Groq default, stdlib HTTP) + `ScriptedJudge` for offline tests; live tests behind `pytest -m live` | **implemented, awaiting first live run** — offline suite green; run `uv run pytest -m live` with your `TRAJECTEVAL_JUDGE_API_KEY` to close it out |
+| 9 | Real LLM judge: contract + strict output validation + prompt builder + `TrajectoryQualityGrader` adapter + `evaluate(judge=...)` + one real client (Groq default, stdlib HTTP) + `ScriptedJudge` for offline tests; live tests behind `pytest -m live` | **✅ done** — verified live on Groq (openai/gpt-oss-120b), 18 Oct 2026 |
 | 10 | CLI (`uv run traject ...`) | ⏳ planned |
 | 11 | Recorder + simulated environment for travel_booking | ⏳ planned |
 | 12 | LLM-agent demo: agent → recorder → report, real traces (needs an API key) | ⏳ planned |
