@@ -596,6 +596,15 @@ def test_no_score_renders_the_verdict_line_exactly_as_before():
     assert "trajectory_quality WARN: step 3 repeats step 2" in render_text(report)
 
 
+def test_judge_note_evidence_prints_its_sentence_not_the_wrapper():
+    # A note's detail is the value; the reader gets the sentence, never
+    # the storage shape.
+    report = evaluate(_fixture("clean"), _spec(), judge=_warn_judge())
+    text = render_text(report)
+    assert "    repeated_action (step 3): same search" in text
+    assert '"detail"' not in text  # no dict braces leaking into the words
+
+
 def test_judge_appends_the_quality_grader_to_a_custom_grader_list():
     # No "not both" gate: judge= simply adds the quality grader to
     # whichever list is in use.

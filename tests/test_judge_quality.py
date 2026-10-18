@@ -71,7 +71,7 @@ def test_judge_result_becomes_a_grader_result():
     cited = result.evidence[0]
     assert cited.kind == "repeated_action"
     assert cited.step == 2
-    assert cited.value == {"detail": "same search"}
+    assert cited.value == "same search"
     whole = result.evidence[1]
     assert whole.step is None
 

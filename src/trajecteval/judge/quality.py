@@ -115,8 +115,9 @@ class TrajectoryQualityGrader:
             )
         evidence = [
             # Every note becomes evidence: kind is the open label, the step
-            # citation survives, and the detail rides in value (JSON-native).
-            Evidence(kind=note.kind, step=note.step, value={"detail": note.detail})
+            # citation survives, and the detail IS the value (a plain
+            # string; render_text prints it as the sentence it is).
+            Evidence(kind=note.kind, step=note.step, value=note.detail)
             for note in result.notes
         ]
         if result.score is not None:

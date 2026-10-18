@@ -251,8 +251,15 @@ def render_text(report: Report) -> str:
             if item.field_name is not None:
                 where = f"{where}, {item.field_name}"
             # Display-only: a None value is 'no citation to show', so the
-            # ': ...' tail is dropped -- JSON keeps "value": null.
-            tail = "" if item.value is None else f": {json.dumps(item.value, ensure_ascii=False)}"
+            # ': ...' tail is dropped -- JSON keeps "value": null. A string
+            # value (a judge note's detail) prints as the sentence it is;
+            # anything else is data, so it stays JSON.
+            if item.value is None:
+                tail = ""
+            elif isinstance(item.value, str):
+                tail = f": {item.value}"
+            else:
+                tail = f": {json.dumps(item.value, ensure_ascii=False)}"
             lines.append(f"    {item.kind} ({where}){tail}")
     evaluated = {result.dimension for result in report.results}
     for dimension in Dimension:
