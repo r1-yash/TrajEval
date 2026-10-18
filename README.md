@@ -32,19 +32,18 @@ One number can't tell you this story. Four columns can.
 ## Seven real runs, one table
 
 This is real output — the repository's seven hand-made fixture trajectories,
-graded by the shipped code (`evaluate()` → `compare()` → `render_table()`),
-pasted verbatim. Reproduce it yourself with:
+graded by the shipped code (`evaluate()` → `compare()` → `render_table()`,
+now reachable as one command), pasted verbatim. Reproduce it yourself with:
 
 ```bash
-uv run python -c "
-from pathlib import Path
-from trajecteval import Trajectory, compare, evaluate, load_spec, render_table
-
-F = Path('tests/fixtures/travel_booking')
-spec = load_spec('travel_booking')
-names = sorted(n.stem for n in F.glob('*.json') if n.stem != 'expected_verdicts')
-pairs = [(n, evaluate(Trajectory.from_json_file(F / f'{n}.json'), spec)) for n in names]
-print(render_table(compare(pairs)))"
+uv run traject evaluate \
+  tests/fixtures/travel_booking/clean.json \
+  tests/fixtures/travel_booking/critical_recovered.json \
+  tests/fixtures/travel_booking/empty.json \
+  tests/fixtures/travel_booking/failed.json \
+  tests/fixtures/travel_booking/first_class_overlap.json \
+  tests/fixtures/travel_booking/unlisted_action.json \
+  tests/fixtures/travel_booking/wasteful.json
 ```
 
 ```text
@@ -115,12 +114,13 @@ rule. Full verdict reference: [docs/DESIGN.md](docs/DESIGN.md).
 
 ## What works today
 
-**Steps 1–9 are done, including the real LLM judge**: contract, strict
-output validation, prompt builder, the quality-grader adapter,
-`evaluate(judge=...)` wiring, and one real client (Groq over plain HTTP) —
-verified live on Groq (`openai/gpt-oss-120b`) on 18 Oct 2026. The CLI and
-everything after are planned — the [roadmap](#roadmap) says exactly what's
-next.
+**Steps 1–10 are done, including the real LLM judge and the CLI**: contract,
+strict output validation, prompt builder, the quality-grader adapter,
+`evaluate(judge=...)` wiring, one real client (Groq over plain HTTP) —
+verified live on Groq (`openai/gpt-oss-120b`) on 18 Oct 2026 — and the
+`uv run traject evaluate` command, verified live through the CLI on
+19 Oct 2026. Everything after the CLI is planned — the
+[roadmap](#roadmap) says exactly what's next.
 
 Works today, as a library:
 
@@ -134,9 +134,12 @@ Works today, as a library:
   reports to files;
 - line many reports up in one comparison table, as plain text or Markdown.
 
-Planned: the `uv run traject` CLI (Step 10), a
-recorder with a simulated environment (Step 11), an agent demo on real traces
-(Step 12), a second toy task (Step 13).
+Works today, from the command line: `uv run traject evaluate` grades one
+trace (a detailed report) or several (a comparison table); `--judge` opts
+into the paid model, and nothing else ever calls one.
+
+Planned: a recorder with a simulated environment (Step 11), an agent demo
+on real traces (Step 12), a second toy task (Step 13).
 
 ## Install
 
@@ -154,7 +157,63 @@ uv run pytest      # run the test suite
 
 Everything in this section runs today.
 
-**Evaluate one trajectory**
+**From the command line**
+
+`uv run traject evaluate` grades one trace (a detailed report) or several
+(a comparison table). The task rules come from each trace's own `task_id`
+— it loads `tasks/<task_id>.json` from the working directory. No model is
+ever called unless you pass `--judge`:
+
+```bash
+uv run traject evaluate \
+  tests/fixtures/travel_booking/clean.json \
+  tests/fixtures/travel_booking/critical_recovered.json \
+  tests/fixtures/travel_booking/empty.json \
+  tests/fixtures/travel_booking/failed.json \
+  tests/fixtures/travel_booking/first_class_overlap.json \
+  tests/fixtures/travel_booking/unlisted_action.json \
+  tests/fixtures/travel_booking/wasteful.json
+```
+
+Real output, pasted verbatim:
+
+```text
+trace                task            discont  final_state            bounds                 critical               trajectory_quality
+clean                travel_booking  -        PASS                   PASS                   PASS                   not evaluated
+critical_recovered   travel_booking  -        PASS                   PASS                   FAIL (step 3)          not evaluated
+empty                travel_booking  -        FAIL (no single step)  WARN (no single step)  WARN (no single step)  not evaluated
+failed               travel_booking  -        FAIL (step 3)          PASS                   PASS                   not evaluated
+first_class_overlap  travel_booking  -        PASS                   FAIL (step 2)          FAIL (step 2)          not evaluated
+unlisted_action      travel_booking  -        PASS                   FAIL (step 3)          PASS                   not evaluated
+wasteful             travel_booking  -        PASS                   PASS                   PASS                   not evaluated
+legend: !ERROR = could not judge (setup problem); FAIL/WARN = judged -- details in the full report
+```
+
+One trace prints the detailed report instead. Adding `--judge` opts into
+the paid model — the key comes from the environment, so the natural way to
+run it is `uv run --env-file .env traject evaluate trace.json --judge`.
+Real output, one run of `critical_recovered.json --judge` — model
+`openai/gpt-oss-120b` via Groq, 19 Oct 2026; judge output varies between
+runs:
+
+```text
+task travel_booking (trajectory travel_booking)
+  final_state PASS: final state at step 5 matches expected_final_state (2 field(s))
+  bounds PASS: all 5 step(s) are within allowed_actions
+  critical FAIL: 1 critical mistake(s): step 3: pay {'method': 'points'}
+    critical_error (step 3, pay): {"action": "pay", "args": {"method": "points"}}
+  trajectory_quality WARN 0.70: A refund undone the previous payment, causing unnecessary extra effort.
+    undo_action (step 4): Refund payment reverted the confirmed status, requiring a second payment.
+```
+
+Exit codes mean one thing: **0 = the command ran, nonzero = it could not
+run** (broken input, an unknown task, a missing key — one clear line, no
+traceback). There is no pass/fail exit code, because there is no overall
+score: a FAIL verdict is a result in the report, not a command failure. A
+judge that cannot reach the model is the same story — the table shows
+`!ERROR` in that cell and the command still exits 0.
+
+**Evaluate one trajectory** (from Python)
 
 ```python
 from trajecteval import Trajectory, evaluate, load_spec, render_text
@@ -222,13 +281,6 @@ Each row is one trace under a caller-supplied label; every dimension is a
 column (a report missing one shows `not evaluated` — columns are never
 dropped), `discont` counts recorder discontinuities, and `!ERROR` marks a
 column that could not be judged.
-
-**The CLI** *(planned — Step 10; does not exist yet)*
-
-```bash
-uv run traject eval trace.json
-uv run traject compare reports/*.json
-```
 
 ## Task specs
 
@@ -357,6 +409,7 @@ TrajEval/
 │   │   └── critical.py
 │   ├── report.py                # evaluate() + JSON/text/file renderers
 │   ├── compare.py               # cross-trace comparison table (text + markdown)
+│   ├── cli.py                   # the traject command — thin glue, no logic of its own
 │   └── judge/                    # judge code — never in graders/
 │       ├── base.py               # contract (protocol + JudgeResult/JudgeNote)
 │       ├── prompt.py             # exact system prompt + size cap (no truncation)
@@ -371,10 +424,10 @@ TrajEval/
         └── travel_booking/      # seven trajectories + expected_verdicts.json
 ```
 
-Planned, in roadmap order (not built): the CLI (`cli.py`), the simulated
-environment and recorder (`environment.py`, `recorder.py`), task two's
-fixtures, and — only if real attempt logs ever exist — a Debuggernaut
-adapter. The [roadmap](#roadmap) is the source of truth for what's next.
+Planned, in roadmap order (not built): the simulated environment and
+recorder (`environment.py`, `recorder.py`), task two's fixtures, and —
+only if real attempt logs ever exist — a Debuggernaut adapter. The
+[roadmap](#roadmap) is the source of truth for what's next.
 
 **Why `src/` layout?** It prevents a classic trap: Python silently importing
 your working directory instead of the installed package, so tests pass on your
@@ -402,7 +455,7 @@ fixtures change.
 | 7 | Report: `evaluate()` runs the three deterministic dimensions first (a crashed grader degrades its own column to ERROR, never the run), then renders JSON + readable text; the LLM judge is an optional `judge=` addition (Step 9) | ✅ done |
 | 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ✅ done |
 | 9 | Real LLM judge: contract + strict output validation + prompt builder + `TrajectoryQualityGrader` adapter + `evaluate(judge=...)` + one real client (Groq default, stdlib HTTP) + `ScriptedJudge` for offline tests; live tests behind `pytest -m live` | **✅ done** — verified live on Groq (openai/gpt-oss-120b), 18 Oct 2026 |
-| 10 | CLI (`uv run traject ...`) | ⏳ planned |
+| 10 | CLI (`uv run traject evaluate ...`) | **✅ done** — no-judge table verified offline in tests; one live judged run on Groq (openai/gpt-oss-120b) through the CLI, 19 Oct 2026 |
 | 11 | Recorder + simulated environment for travel_booking | ⏳ planned |
 | 12 | LLM-agent demo: agent → recorder → report, real traces (needs an API key) | ⏳ planned |
 | 13 | Toy task two — same graders, new domain, graders unchanged | ⏳ planned |
