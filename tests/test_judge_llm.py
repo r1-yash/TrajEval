@@ -145,6 +145,24 @@ def test_key_travels_in_the_header_only(clean_env, monkeypatch):
     assert KEY.encode() not in request.data  # never in the body
 
 
+def test_user_agent_identifies_package_and_key_is_only_in_authorization(
+    clean_env, monkeypatch
+):
+    captured = _capturing_urlopen(clean_env, reply=_content_response('{"verdict":"pass"}'))
+    OpenAIChatClient().complete("s", "u")
+    request, _ = captured[0]
+    # Identifying UA, so the provider's edge doesn't drop urllib's default.
+    assert request.get_header("User-agent") == "trajecteval"
+    # The key is in exactly one header, and nowhere else on the wire.
+    assert request.get_header("Authorization") == f"Bearer {KEY}"
+    assert all(
+        KEY not in value
+        for name, value in request.header_items()
+        if name.lower() != "authorization"
+    )
+    assert KEY.encode() not in request.data
+
+
 def test_complete_returns_the_raw_text(clean_env, monkeypatch):
     _capturing_urlopen(clean_env, reply=_content_response('{"verdict": "warn"}'))
     assert OpenAIChatClient().complete("s", "u") == '{"verdict": "warn"}'

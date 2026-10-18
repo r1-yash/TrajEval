@@ -33,6 +33,11 @@ DEFAULT_MODEL = "openai/gpt-oss-120b"
 DEFAULT_BASE_URL = "https://api.groq.com/openai/v1"
 DEFAULT_TIMEOUT = 60.0
 
+# Identifying User-Agent: Groq's Cloudflare edge rejects urllib's default
+# "Python-urllib/3.x" with error 1010 before the request is routed. The API
+# key never appears here -- it travels in the Authorization header only.
+USER_AGENT = "trajecteval"
+
 # How much of a provider's error body rides along in an exception message
 # (and in the ERROR evidence built from it).
 _ERROR_BODY_LIMIT = 300
@@ -98,6 +103,7 @@ class OpenAIChatClient:
             data=json.dumps(payload).encode("utf-8"),
             headers={
                 "Content-Type": "application/json",
+                "User-Agent": USER_AGENT,
                 # The key exists only in this header, which never enters an
                 # exception message (only request/response bodies do).
                 "Authorization": f"Bearer {self._key}",
