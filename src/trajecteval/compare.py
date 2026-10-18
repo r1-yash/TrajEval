@@ -28,28 +28,39 @@ def _cell_text(report: Report, dimension: Dimension) -> str:
     # 'not evaluated'; ERROR -> the bang marker, never a hint (its evidence
     # is diagnostic, not a citation about the trajectory); PASS -> bare
     # (a clean cell stays clean); FAIL/WARN -> sorted deduplicated step
-    # numbers, or '(no single step)' when its evidence cites none.
+    # numbers, or '(no single step)' when its evidence cites none. A
+    # quality_score evidence item (the judge's 0-1 number) renders beside
+    # the verdict; only the quality grader ever emits one, and ERROR lanes
+    # carry none.
     for result in report.results:
         if result.dimension is dimension:
             break
     else:
         return NOT_EVALUATED
+    score = next(
+        (item.value for item in result.evidence if item.kind == "quality_score"),
+        None,
+    )
+    scored = f" {score:.2f}" if isinstance(score, (int, float)) else ""
     if result.verdict is Verdict.ERROR:
         return ERROR_MARK
     if result.verdict is Verdict.PASS:
-        return "PASS"
+        return f"PASS{scored}"
     # GraderResult rejects evidence-less FAIL/WARN, so evidence exists here.
     steps = sorted({item.step for item in result.evidence if item.step is not None})
     if not steps:
         # Whole-episode or spec-side finding (empty_section, final_state
         # never reached): no single step is to blame.
-        return f"{result.verdict.value} (no single step)"
+        return f"{result.verdict.value}{scored} (no single step)"
     if len(steps) == 1:
-        return f"{result.verdict.value} (step {steps[0]})"
+        return f"{result.verdict.value}{scored} (step {steps[0]})"
     if len(steps) <= _HINT_STEPS:
-        return f"{result.verdict.value} (steps {', '.join(str(s) for s in steps)})"
+        return f"{result.verdict.value}{scored} (steps {', '.join(str(s) for s in steps)})"
     shown = ", ".join(str(s) for s in steps[:_HINT_STEPS])
-    return f"{result.verdict.value} (steps {shown}, +{len(steps) - _HINT_STEPS} more)"
+    return (
+        f"{result.verdict.value}{scored} "
+        f"(steps {shown}, +{len(steps) - _HINT_STEPS} more)"
+    )
 
 
 def _task_text(report: Report) -> str:

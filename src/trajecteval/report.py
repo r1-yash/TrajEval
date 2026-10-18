@@ -229,8 +229,24 @@ def render_text(report: Report) -> str:
     # is never mistaken for a complete one.
     lines = [f"task {report.task_id} (trajectory {report.trajectory_task_id})"]
     for result in report.results:
-        lines.append(f"  {result.dimension.value} {result.verdict.value}: {result.reason}")
+        # The judge's 0-1 score rides in the verdict line, beside the
+        # verdict it belongs to -- so it gets no line of its own below.
+        score = next(
+            (
+                item.value
+                for item in result.evidence
+                if item.kind == "quality_score"
+            ),
+            None,
+        )
+        scored = f" {score:.2f}" if isinstance(score, (int, float)) else ""
+        lines.append(
+            f"  {result.dimension.value} {result.verdict.value}{scored}: "
+            f"{result.reason}"
+        )
         for item in result.evidence:
+            if item.kind == "quality_score":
+                continue
             where = f"step {item.step}" if item.step is not None else "no step"
             if item.field_name is not None:
                 where = f"{where}, {item.field_name}"

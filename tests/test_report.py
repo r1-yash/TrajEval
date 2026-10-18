@@ -561,6 +561,41 @@ def test_evaluate_with_judge_adds_the_quality_column():
     assert "not evaluated" not in text  # all four columns present now
 
 
+def _scored_judge() -> ScriptedJudge:
+    return ScriptedJudge(
+        [
+            JudgeResult(
+                verdict=Verdict.WARN,
+                reason="step 3 repeats step 2",
+                notes=(JudgeNote(step=3, kind="repeated_action", detail="same search"),),
+                score=0.72,
+            )
+        ]
+    )
+
+
+def test_score_renders_in_the_verdict_line_and_gets_no_line_of_its_own():
+    report = evaluate(_fixture("clean"), _spec(), judge=_scored_judge())
+    text = render_text(report)
+    assert "trajectory_quality WARN 0.72: step 3 repeats step 2" in text
+    assert "quality_score" not in text  # shown beside the verdict, not duplicated
+
+
+def test_a_pass_with_a_score_renders_it_too():
+    judge = ScriptedJudge(
+        [JudgeResult(verdict=Verdict.PASS, reason="clean path", score=0.95)]
+    )
+    report = evaluate(_fixture("clean"), _spec(), judge=judge)
+    assert "trajectory_quality PASS 0.95: clean path" in render_text(report)
+
+
+def test_no_score_renders_the_verdict_line_exactly_as_before():
+    # The empty-judge / no-score lane: byte-identical to the pre-score
+    # format (this test's judge returns no score at all).
+    report = evaluate(_fixture("clean"), _spec(), judge=_warn_judge())
+    assert "trajectory_quality WARN: step 3 repeats step 2" in render_text(report)
+
+
 def test_judge_appends_the_quality_grader_to_a_custom_grader_list():
     # No "not both" gate: judge= simply adds the quality grader to
     # whichever list is in use.
@@ -616,6 +651,16 @@ def test_crashing_judge_degrades_only_its_own_column():
 def test_judged_report_round_trips_through_json():
     report = evaluate(_fixture("wasteful"), _spec(), judge=_warn_judge())
     assert Report.from_dict(json.loads(render_json(report))) == report
+
+
+def test_score_survives_the_json_round_trip():
+    # The score rides as a JSON-native float in Evidence.value, so saved
+    # reports keep it exactly (0.72 is repr-stable through json).
+    report = evaluate(_fixture("wasteful"), _spec(), judge=_scored_judge())
+    reloaded = Report.from_dict(json.loads(render_json(report)))
+    quality = reloaded.results[-1]
+    assert quality.evidence[-1].kind == "quality_score"
+    assert quality.evidence[-1].value == 0.72
 
 
 def test_older_three_column_report_still_loads():

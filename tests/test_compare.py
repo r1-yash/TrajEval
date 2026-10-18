@@ -153,6 +153,55 @@ def test_error_cells_are_marked_and_hint_free():
     assert comparison.cell("a", Dimension.BOUNDS) == "!ERROR"
 
 
+# -- the judge's 0-1 score, rendered beside the verdict ---------------------
+
+
+def _quality(verdict: Verdict, *steps: int, score: float) -> GraderResult:
+    evidence = tuple(Evidence(kind="some_kind", step=step) for step in steps)
+    return GraderResult(
+        dimension=Dimension.TRAJECTORY_QUALITY,
+        verdict=verdict,
+        reason="because",
+        evidence=(*evidence, Evidence(kind="quality_score", value=score)),
+    )
+
+
+def test_score_renders_beside_the_verdict_word():
+    comparison = compare([("a", _report_with(_quality(Verdict.WARN, 2, score=0.72)))])
+    assert comparison.cell("a", Dimension.TRAJECTORY_QUALITY) == "WARN 0.72 (step 2)"
+
+
+def test_pass_cell_shows_the_score_when_one_exists():
+    comparison = compare([("a", _report_with(_quality(Verdict.PASS, score=0.91)))])
+    assert comparison.cell("a", Dimension.TRAJECTORY_QUALITY) == "PASS 0.91"
+
+
+def test_fail_cell_shows_the_score_and_the_step_hint_too():
+    comparison = compare(
+        [("a", _report_with(_quality(Verdict.FAIL, 2, 4, score=0.4)))]
+    )
+    assert comparison.cell("a", Dimension.TRAJECTORY_QUALITY) == "FAIL 0.40 (steps 2, 4)"
+    # The +N-more path keeps the score too (this exact branch once forgot it).
+    many = compare([("b", _report_with(_quality(Verdict.FAIL, 1, 2, 3, 4, 5, score=0.4)))])
+    assert many.cell("b", Dimension.TRAJECTORY_QUALITY) == "FAIL 0.40 (steps 1, 2, 3, +2 more)"
+
+
+def test_score_item_never_becomes_a_step_hint():
+    # quality_score cites no step; only real step numbers shape the hint.
+    comparison = compare([("a", _report_with(_quality(Verdict.WARN, score=0.6)))])
+    assert (
+        comparison.cell("a", Dimension.TRAJECTORY_QUALITY)
+        == "WARN 0.60 (no single step)"
+    )
+
+
+def test_cells_without_a_score_render_exactly_as_before():
+    # No quality_score evidence anywhere -> the pre-score strings, byte for
+    # byte (this is the empty/ERROR/no-judge lane).
+    comparison = compare([("a", _report_with(_result(Verdict.PASS, 3)))])
+    assert comparison.cell("a", Dimension.FINAL_STATE) == "PASS"
+
+
 # -- the gates: labels and pairs are the caller's responsibility -----------
 
 

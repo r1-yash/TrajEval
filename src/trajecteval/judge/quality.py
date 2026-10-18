@@ -113,14 +113,22 @@ class TrajectoryQualityGrader:
             raise TypeError(
                 f"judge returned {type(result).__name__}, expected JudgeResult"
             )
+        evidence = [
+            # Every note becomes evidence: kind is the open label, the step
+            # citation survives, and the detail rides in value (JSON-native).
+            Evidence(kind=note.kind, step=note.step, value={"detail": note.detail})
+            for note in result.notes
+        ]
+        if result.score is not None:
+            # Secondary and display-only: the verdict is the primary result.
+            # PASS may carry evidence (results.py only demands it for
+            # FAIL/WARN), so the score rides on every verdict's column.
+            evidence.append(
+                Evidence(kind="quality_score", step=None, value=result.score)
+            )
         return GraderResult(
             dimension=self.dimension,
             verdict=result.verdict,
             reason=result.reason,
-            # Every note becomes evidence: kind is the open label, the step
-            # citation survives, and the detail rides in value (JSON-native).
-            evidence=tuple(
-                Evidence(kind=note.kind, step=note.step, value={"detail": note.detail})
-                for note in result.notes
-            ),
+            evidence=tuple(evidence),
         )

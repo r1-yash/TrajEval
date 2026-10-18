@@ -82,6 +82,45 @@ def test_pass_with_no_notes_yields_no_evidence():
     assert result.evidence == ()
 
 
+def test_score_becomes_a_whole_episode_evidence_item():
+    # The score is secondary and display-only, but it still travels as
+    # typed evidence -- step None, the number itself in value.
+    scripted = _judge(
+        JudgeResult(
+            verdict=Verdict.WARN,
+            reason="one redundant step",
+            notes=(JudgeNote(step=2, kind="thrash", detail="repeated search"),),
+            score=0.72,
+        )
+    )
+    result = TrajectoryQualityGrader(scripted).grade(_spec(), _trajectory())
+    assert result.verdict is Verdict.WARN
+    score_item = result.evidence[-1]
+    assert score_item.kind == "quality_score"
+    assert score_item.step is None
+    assert score_item.value == 0.72
+
+
+def test_pass_may_carry_the_score_as_evidence():
+    # results.py demands evidence only for FAIL/WARN; a PASS with a score
+    # must survive construction (this is the score's main lane).
+    scripted = _judge(JudgeResult(verdict=Verdict.PASS, reason="clean", score=0.95))
+    result = TrajectoryQualityGrader(scripted).grade(_spec(), _trajectory())
+    assert result.verdict is Verdict.PASS
+    assert [item.kind for item in result.evidence] == ["quality_score"]
+
+
+def test_no_score_means_no_score_evidence():
+    # A judge that returns no score (the scripted default) adds nothing.
+    result = TrajectoryQualityGrader(_judge()).grade(_spec(), _trajectory())
+    assert all(item.kind != "quality_score" for item in result.evidence)
+
+
+def test_judge_result_score_must_be_in_range():
+    with pytest.raises(ValueError, match="score"):
+        JudgeResult(verdict=Verdict.PASS, reason="clean", score=1.5)
+
+
 def test_warn_keeps_its_note_as_evidence():
     scripted = _judge(
         JudgeResult(
