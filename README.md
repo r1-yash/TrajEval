@@ -167,6 +167,11 @@ poor recovery) — final state, bounds, and critical mistakes stay with the
 deterministic graders. A model answer that fails validation becomes an
 ERROR column with evidence, never a guessed verdict.
 
+Alongside the verdict the judge returns a `score` from 0 to 1, shown
+next to it (`WARN 0.72`). The score comes from the model, so it can vary
+between runs — the verdict is the primary result, and there is still no
+overall number across dimensions.
+
 **Compare traces**
 
 ```python

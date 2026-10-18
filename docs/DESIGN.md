@@ -118,9 +118,22 @@ The rules around it:
   the size budget (default 24,000 characters) `build_prompt()` refuses with
   `TrajectoryTooLongError` — the model is not called at all, and the column
   becomes ERROR with evidence `trajectory_too_long` (`size`, `limit`).
+- **The score is secondary and display-only.** The model returns one extra
+  field, `score` (a number 0–1, anchored in the prompt to roughly 0.85–1.0
+  for pass, 0.5–0.85 for warn, below 0.5 for fail, and required to agree
+  with its verdict). The verdict stays the primary result; the score rides
+  the quality result as one evidence item (`quality_score`, `step: null`,
+  the number in `value`) — so `GraderResult` and `results.py` are unchanged
+  (PASS may carry evidence; only FAIL/WARN are required to). Renderers show
+  it beside the verdict (`WARN 0.72 (step 2)`), and nothing extra when
+  there is no score (empty trace, ERROR, no judge). It comes from the
+  model, so it can vary between runs; there is still no number across
+  dimensions.
 - **Validation is strict and lives apart from the client.** Not-valid JSON
   (fences are not stripped), wrong keys, an unknown or uppercase verdict, a
-  note citing a step the trajectory does not have, WARN with no note, FAIL
+  missing or non-numeric or out-of-range `score` (a bool is not a number;
+  no clamping), a note citing a step the trajectory does not have, WARN
+  with no note, FAIL
   with no *citing* note → `JudgeOutputError` → the column becomes ERROR
   with evidence kind `judge_invalid_output` (the `problem`, plus `bad_step`
   and a short `output_excerpt` when they apply). Nothing is guessed,
