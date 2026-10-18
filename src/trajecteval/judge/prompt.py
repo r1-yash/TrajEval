@@ -25,12 +25,13 @@ Hard rules:
   - "fail": a clear, citable quality problem (a loop of repeated actions, a long detour that was undone). Use only for problems you can point at by step number.
   - "warn": mild inefficiency or a noteworthy path wart without a clear citable failure (for example one redundant step).
   - "pass": the path is efficient and coherent; notes may be empty.
-- Every "fail" needs at least one note citing a REAL step number from the trajectory. "warn" should normally carry at least one note. Never invent step numbers; a problem about the whole episode uses "step": null.
+- Every "fail" needs at least one note citing a REAL step number from the trajectory. "warn" needs at least one note. Never invent step numbers; a problem about the whole episode uses "step": null.
 - Each note is {"step": <1-based step number or null>, "kind": <short label, e.g. repeated_action, detour, thrash, poor_recovery>, "detail": <one short sentence>}.
 - "reason" is ONE sentence summarizing the verdict.
+- "score" is a number from 0 to 1 for path quality only: about 0.85-1.0 when the verdict is "pass", 0.5-0.85 for "warn", below 0.5 for "fail". It must agree with your verdict -- never give a "fail" a score of 0.85 or higher.
 
 Return ONLY a JSON object -- no markdown, no code fences, no commentary -- in exactly this shape:
-{"verdict": "pass" | "warn" | "fail", "reason": "<one sentence>", "notes": [{"step": <int or null>, "kind": "<label>", "detail": "<one sentence>"}]}"""
+{"verdict": "pass" | "warn" | "fail", "reason": "<one sentence>", "score": <number from 0 to 1>, "notes": [{"step": <int or null>, "kind": "<label>", "detail": "<one sentence>"}]}"""
 
 # The size budget for the whole prompt (system + user, characters). A
 # trajectory that does not fit is not judged -- no truncation, no silent

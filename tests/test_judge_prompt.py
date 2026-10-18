@@ -49,6 +49,16 @@ def test_system_prompt_fences_the_job():
     assert '"pass":' in SYSTEM_PROMPT
 
 
+def test_system_prompt_pins_the_score_contract():
+    # The shape must demand a score, and the anchors must tie it to the
+    # verdict -- validate.py enforces the shape, the model enforces the vibe.
+    assert '"score": <number from 0 to 1>' in SYSTEM_PROMPT
+    assert "0.85-1.0" in SYSTEM_PROMPT and "0.5-0.85" in SYSTEM_PROMPT
+    assert "must agree with your verdict" in SYSTEM_PROMPT
+    # The prompt no longer disagrees with validate.py: warn REQUIRES a note.
+    assert '"warn" needs at least one note' in SYSTEM_PROMPT
+
+
 def test_user_message_lists_every_step_with_states():
     _, user = build_prompt(_spec(), _trajectory(3))
     assert "Trajectory (3 steps):" in user

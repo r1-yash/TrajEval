@@ -32,14 +32,14 @@ def _trajectory(steps: int = STEPS) -> Trajectory:
 def _output(**overrides) -> str:
     # A well-formed answer, with any field overridable -- and removable by
     # passing None for notes or by using _raw_output for key deletion.
-    data = {"verdict": "pass", "reason": "clean run", "notes": []}
+    data = {"verdict": "pass", "reason": "clean run", "score": 0.9, "notes": []}
     data.update(overrides)
     return json.dumps(data)
 
 
 def _raw_output(**changes) -> str:
     # Same, but a None value deletes the key (for missing-key cases).
-    data = {"verdict": "pass", "reason": "clean run", "notes": []}
+    data = {"verdict": "pass", "reason": "clean run", "score": 0.9, "notes": []}
     for key, value in changes.items():
         if value is None:
             data.pop(key, None)
@@ -118,11 +118,38 @@ def test_missing_top_level_key_raises_naming_it():
         parse_judge_output(_raw_output(notes=None), _trajectory())
 
 
+def test_missing_score_raises_naming_it():
+    # The score is part of the closed shape; an answer without one is
+    # unusable, not something to default.
+    with pytest.raises(JudgeOutputError, match="missing score"):
+        parse_judge_output(_raw_output(score=None), _trajectory())
+
+
 def test_unknown_top_level_key_raises_naming_it():
-    # "score" would smuggle in the scalar this project rejects by design.
-    raw = _output(score=0.9)
-    with pytest.raises(JudgeOutputError, match="unknown score"):
+    # "confidence" is not in the closed shape; the score, by contrast, is.
+    raw = _output(confidence=0.9)
+    with pytest.raises(JudgeOutputError, match="unknown confidence"):
         parse_judge_output(raw, _trajectory())
+
+
+# ------------------------------------------------------------- score rules
+
+@pytest.mark.parametrize("score", [0, 1, 0.5, 0.9, 1.0])
+def test_valid_scores_are_kept(score):
+    result = parse_judge_output(_output(score=score), _trajectory())
+    assert result.score == score
+
+
+def test_score_is_normalized_to_float():
+    assert parse_judge_output(_output(score=1), _trajectory()).score == 1.0
+
+
+@pytest.mark.parametrize("score", [1.01, -0.1, True, "0.9", None, [0.9]])
+def test_bad_scores_make_the_answer_unusable(score):
+    # No clamping, no guessing: a bool is not a number here either, and a
+    # missing key (None) is caught by the missing-score rule.
+    with pytest.raises(JudgeOutputError, match="'score'"):
+        parse_judge_output(_output(score=score), _trajectory())
 
 
 # ------------------------------------------------------------ verdict violations

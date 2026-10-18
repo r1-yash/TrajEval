@@ -48,8 +48,10 @@ class JudgeNote:
             )
 
 
-# What a judge returns: a verdict, a one-sentence reason, and the notes that
-# back it. The quality grader converts this to a GraderResult in-process, so
+# What a judge returns: a verdict, a one-sentence reason, the notes that
+# back it, and -- when the judge produces one -- a 0-1 path-quality score
+# (secondary, display-only; the verdict is the primary result). The quality
+# grader converts this to a GraderResult in-process, so
 # -- unlike every other result type here -- it never crosses a file boundary
 # and carries no to_dict/from_dict.
 @dataclass(frozen=True)
@@ -57,6 +59,7 @@ class JudgeResult:
     verdict: Verdict
     reason: str
     notes: tuple[JudgeNote, ...] = ()
+    score: float | None = None
 
     def __post_init__(self) -> None:
         # Accept lists at construction, store tuples -- same rule as Report.
@@ -76,6 +79,17 @@ class JudgeResult:
                 raise ValueError(
                     f"judge notes must be JudgeNote items, got {note!r}"
                 )
+        # None means "this judge produces no score" (the scripted fake, or a
+        # custom judge). A bool is an int subclass; reject it explicitly.
+        if self.score is not None and (
+            isinstance(self.score, bool)
+            or not isinstance(self.score, (int, float))
+            or not 0 <= self.score <= 1
+        ):
+            raise ValueError(
+                f"judge score must be a number between 0 and 1 or None, "
+                f"got {self.score!r}"
+            )
 
 
 # Two failures the quality grader converts into ERROR results instead of

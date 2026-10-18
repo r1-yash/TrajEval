@@ -16,7 +16,7 @@ from trajecteval.results import Verdict
 _VERDICT_WORDS = {"pass": Verdict.PASS, "warn": Verdict.WARN, "fail": Verdict.FAIL}
 
 # The closed shape of the answer: exactly these keys, no more, no less.
-_TOP_KEYS = frozenset(("verdict", "reason", "notes"))
+_TOP_KEYS = frozenset(("verdict", "reason", "score", "notes"))
 _NOTE_KEYS = frozenset(("step", "kind", "detail"))
 
 # How much of the raw answer rides along in an error / evidence excerpt.
@@ -109,7 +109,7 @@ def parse_judge_output(raw: str, trajectory: Trajectory) -> JudgeResult:
             parts.append(f"unknown {', '.join(extra)}")
         raise _fail(
             f"judge output keys are wrong ({'; '.join(parts)}); "
-            "expected exactly verdict, reason, notes",
+            "expected exactly verdict, reason, score, notes",
             raw,
         )
     verdict = _VERDICT_WORDS.get(data["verdict"])
@@ -122,6 +122,16 @@ def parse_judge_output(raw: str, trajectory: Trajectory) -> JudgeResult:
     reason = data["reason"]
     if not isinstance(reason, str) or not reason.strip():
         raise _fail(f"judge 'reason' must be a non-empty string, got {reason!r}", raw)
+    score = data["score"]
+    # A bool is an int subclass; reject it explicitly (the same trap as a
+    # note's step). No repair, no clamping -- out-of-range is an unusable
+    # answer, not a number to fold back in.
+    if isinstance(score, bool) or not isinstance(score, (int, float)):
+        raise _fail(
+            f"judge 'score' must be a number between 0 and 1, got {score!r}", raw
+        )
+    if not 0 <= score <= 1:
+        raise _fail(f"judge 'score' must be between 0 and 1, got {score!r}", raw)
     raw_notes = data["notes"]
     if not isinstance(raw_notes, list):
         raise _fail(
@@ -150,4 +160,6 @@ def parse_judge_output(raw: str, trajectory: Trajectory) -> JudgeResult:
             "a 'fail' verdict needs at least one note citing a real step number",
             raw,
         )
-    return JudgeResult(verdict=verdict, reason=reason.strip(), notes=notes)
+    return JudgeResult(
+        verdict=verdict, reason=reason.strip(), notes=notes, score=float(score)
+    )

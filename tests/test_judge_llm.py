@@ -219,12 +219,14 @@ def test_llm_judge_parses_a_valid_answer_end_to_end(clean_env, monkeypatch):
         {
             "verdict": "fail",
             "reason": "steps 1-2 repeat",
+            "score": 0.2,
             "notes": [{"step": 1, "kind": "repeated_action", "detail": "loop"}],
         }
     )
     _capturing_urlopen(clean_env, reply=_content_response(answer))
     result = LLMJudge().judge(_spec(), _trajectory())
     assert result.verdict.value == "FAIL"
+    assert result.score == 0.2
     assert result.notes[0].step == 1
 
 
@@ -236,7 +238,7 @@ def test_llm_judge_passes_both_prompt_parts_to_the_client(clean_env):
 
         def complete(self, system: str, user: str) -> str:
             seen.append((system, user))
-            return '{"verdict": "pass", "reason": "clean", "notes": []}'
+            return '{"verdict": "pass", "reason": "clean", "score": 0.9, "notes": []}'
 
     LLMJudge(_StubClient()).judge(_spec(), _trajectory())
     system, user = seen[0]
@@ -280,7 +282,7 @@ def test_oversized_trajectory_never_reaches_the_client(clean_env):
 
         def complete(self, system: str, user: str) -> str:
             calls.append(user)
-            return '{"verdict": "pass", "reason": "x", "notes": []}'
+            return '{"verdict": "pass", "reason": "x", "score": 0.9, "notes": []}'
 
     huge = Trajectory.from_dict(
         {
