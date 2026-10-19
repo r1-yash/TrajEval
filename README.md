@@ -114,15 +114,18 @@ rule. Full verdict reference: [docs/DESIGN.md](docs/DESIGN.md).
 
 ## What works today
 
-**Steps 1–11 are done, including the real LLM judge, the CLI, and a
-simulated environment with a recorder**: contract, strict output validation,
-prompt builder, the quality-grader adapter, `evaluate(judge=...)` wiring,
-one real client (Groq over plain HTTP) — verified live on Groq
-(`openai/gpt-oss-120b`) on 18 Oct 2026 — the `uv run traject evaluate`
-command, verified live through the CLI on 19 Oct 2026, and a deterministic
-travel_booking world that records every action into a trajectory the CLI
-grades. An agent demo and everything after are planned — the
-[roadmap](#roadmap) says exactly what's next.
+**Steps 1–12 are done, including the real LLM judge, the CLI, a
+simulated environment with a recorder, and the LLM agent loop**: contract,
+strict output validation, prompt builder, the quality-grader adapter,
+`evaluate(judge=...)` wiring, one real client (Groq over plain HTTP) —
+verified live on Groq (`openai/gpt-oss-120b`) on 18 Oct 2026 — the
+`uv run traject evaluate` command, verified live through the CLI on
+19 Oct 2026, a deterministic travel_booking world that records every
+action into a trajectory the CLI grades, and an agent loop that drives a
+model through that world into a gradeable trajectory. The judge and the
+`evaluate` CLI are the live-verified parts; the agent loop is covered by
+the offline suite, with its live test behind `pytest -m live`. The
+[roadmap](#roadmap) says what's next.
 
 Works today, as a library:
 
@@ -136,14 +139,16 @@ Works today, as a library:
   reports to files;
 - line many reports up in one comparison table, as plain text or Markdown;
 - act in a small simulated world and record every action — accepted or
-  rejected — into a trajectory automatically.
+  rejected — into a trajectory automatically;
+- drive an LLM agent through a simulated world (`run_agent(...)`) and get
+  back a trajectory the same graders grade.
 
 Works today, from the command line: `uv run traject evaluate` grades one
-trace (a detailed report) or several (a comparison table); `--judge` opts
-into the paid model, and nothing else ever calls one.
-
-Planned: an agent demo on real traces (Step 12), a second toy task
-(Step 13).
+trace (a detailed report) or several (a comparison table), and `--judge`
+opts into the paid model; `uv run traject run TASK --model M --out DIR`
+drives an agent through a simulated world, one trajectory JSON per model.
+Those two are the only things that ever call a model, and each asks for a
+key from the environment when it runs.
 
 ## Install
 
@@ -216,6 +221,24 @@ traceback). There is no pass/fail exit code, because there is no overall
 score: a FAIL verdict is a result in the report, not a command failure. A
 judge that cannot reach the model is the same story — the table shows
 `!ERROR` in that cell and the command still exits 0.
+
+**Run an LLM agent in a simulated world** *(calls a paid model; the key
+comes from the environment, the same variable the judge uses)*
+
+```bash
+uv run --env-file .env traject run travel_booking \
+  --model openai/gpt-oss-120b \
+  --out runs/
+```
+
+`--model` is required and repeatable: one sequential run per model, each
+in its own fresh world, writing `runs/travel_booking__openai_gpt-oss-120b.json`
+— a trajectory the commands above then grade, with `--judge` if you want
+the quality column too. `--max-steps` (default 12) caps how long a model
+can go; a run stops when the model says it is done, hits the step limit,
+or turns in three unusable replies in a row, and the reason is saved in
+the trajectory's `stop_reason` metadata. No sample output is pasted here:
+a live run costs money and varies — run it with your own key.
 
 **Evaluate one trajectory** (from Python)
 
@@ -322,9 +345,10 @@ task travel_booking (trajectory travel_booking)
 ```
 
 `act()` returns the new state on success — the feedback an agent would see.
-The recorder is environment-agnostic: anything with a task id, a
-`current_state()`, and a `run_action()` can be recorded, so the second toy
-task (Step 13) reuses it unchanged.
+The recorder depends only on the `Environment` protocol: a task id, a
+`current_state()` snapshot, a `run_action()` that returns the new state,
+and an `actions()` description used in the agent's prompt — the interface
+another task's world would implement to be recorded by the same code.
 
 ## Task specs
 
@@ -372,8 +396,8 @@ rules — live in [docs/DESIGN.md](docs/DESIGN.md).
    WARN additionally cite typed evidence with step numbers. Evidence is
    neutral — the verdict, not the evidence, says whether it's good or bad.
 5. **ERROR ≠ FAIL.** A grader that can't judge says so; it never guesses.
-6. **Rules live in task specs, not grader code.** Graders stay domain-agnostic;
-   every rule in a spec list is applied.
+6. **Rules live in task specs, not grader code.** Grader code itself holds
+   no domain rules, and every rule in a spec list is applied.
 
 ## Testing & development
 
@@ -454,7 +478,7 @@ TrajEval/
 │   ├── report.py                # evaluate() + JSON/text/file renderers
 │   ├── compare.py               # cross-trace comparison table (text + markdown)
 │   ├── cli.py                   # the traject command — thin glue, no logic of its own
-│   ├── recorder.py              # Recorder — environment-agnostic action log
+│   ├── recorder.py              # Recorder — action log over the Environment protocol
 │   ├── envs/                    # simulated worlds (physics, never rules)
 │   │   ├── base.py              # Environment protocol + ActionRejected
 │   │   └── travel_booking.py    # task one's deterministic world
@@ -472,9 +496,8 @@ TrajEval/
         └── travel_booking/      # seven trajectories + expected_verdicts.json
 ```
 
-Planned, in roadmap order (not built): task two's fixtures, and — only if
-real attempt logs ever exist — a Debuggernaut adapter. The
-[roadmap](#roadmap) is the source of truth for what's next.
+Not built: a Debuggernaut adapter — only if real attempt logs ever exist.
+The [roadmap](#roadmap) is the source of truth for what's next.
 
 **Why `src/` layout?** It prevents a classic trap: Python silently importing
 your working directory instead of the installed package, so tests pass on your
@@ -484,10 +507,9 @@ installed — uv does that installation automatically.
 ## Toy tasks
 
 Task one is travel booking: seven fixture trajectories plus a
-machine-readable expected-verdict table beside them. Task two (support-ticket
-triage, Step 13) is smaller and shaped differently, and exists to prove the
-graders run unchanged on a new domain — same code, only the spec and
-fixtures change.
+machine-readable expected-verdict table beside them. The Recorder and the
+`Environment` interface are built so another task could be added without
+touching grader code (one registry entry, one spec file, its fixtures).
 
 ## Roadmap
 
@@ -504,13 +526,7 @@ fixtures change.
 | 9 | Real LLM judge: contract + strict output validation + prompt builder + `TrajectoryQualityGrader` adapter + `evaluate(judge=...)` + one real client (Groq default, stdlib HTTP) + `ScriptedJudge` for offline tests; live tests behind `pytest -m live` | **✅ done** — verified live on Groq (openai/gpt-oss-120b), 18 Oct 2026 |
 | 10 | CLI (`uv run traject evaluate ...`) | **✅ done** — no-judge table verified offline in tests; one live judged run on Groq (openai/gpt-oss-120b) through the CLI, 19 Oct 2026 |
 | 11 | Recorder + simulated environment for travel_booking | **✅ done** — deterministic world replays all seven fixtures byte-exact; rejected actions recorded; graded end-to-end by the CLI |
-| 12 | LLM-agent demo: agent → recorder → report, real traces (needs an API key) | ⏳ planned |
-| 13 | Toy task two — same graders, new domain, graders unchanged | ⏳ planned |
-
-**Later / maybe** (not scheduled, one line each):
-
-- Other judge backends (e.g. Jev — read about, not verified)
-- Debuggernaut adapter (only if real attempt logs exist)
+| 12 | LLM-agent demo: agent → recorder → report, real traces (needs an API key) | **✅ done** — agent loop (`agent.py`) + `traject run`; offline suite green, live agent test behind `pytest -m live` |
 
 ## Design notes & FAQ
 

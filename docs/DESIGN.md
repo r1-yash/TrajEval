@@ -180,11 +180,11 @@ How a trajectory gets *made* instead of hand-written (Step 11). The rules:
   undo), and its transitions mirror the seven travel_booking fixtures
   exactly — including `refund_payment` *clearing* `payment_method` to
   `null` (the key stays).
-- **The recorder is environment-agnostic.** It depends only on the
-  `Environment` protocol (`envs/base.py`): a `task_id`, a
-  `current_state()` snapshot, and a `run_action()` that returns the new
-  state or raises `ActionRejected`. A second task's world keeps the
-  promise and reuses the recorder unchanged.
+- **The recorder depends only on the `Environment` protocol.** The
+  protocol (`envs/base.py`) is a `task_id`, a `current_state()` snapshot,
+  a `run_action()` that returns the new state or raises `ActionRejected`,
+  and an `actions()` description for agent prompts — the interface a
+  second task's world would implement to reuse the recorder unchanged.
 - **Every action is recorded — even a rejected one.** A rejected action
   becomes a step whose `state_after` equals its `state_before`, and
   `ActionRejected` is then re-raised: wasted attempts stay visible to the
