@@ -41,3 +41,9 @@ class Environment(Protocol):
         # Apply one action and return the new state. Raises ActionRejected
         # (with the state guaranteed unchanged) when physically impossible.
         ...  # pragma: no cover - protocol body, never executed
+
+    def actions(self) -> dict[str, list[str]]:
+        # What this world supports: action name -> argument names (empty
+        # list = no arguments). Read-only description for prompts; the
+        # recorder never calls it and world behavior never depends on it.
+        ...  # pragma: no cover - protocol body, never executed

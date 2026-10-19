@@ -23,6 +23,15 @@ from trajecteval.models import Action
 # What every episode starts from (step 1's state_before in every fixture).
 _INITIAL_STATE: dict[str, Any] = {"status": "new"}
 
+# The task told to an LLM agent in plain words (Step 12): the goal and the
+# traveler's wishes, nothing the graders would check -- no hidden rules, no
+# traps. Shown verbatim in the README.
+TRAVEL_BOOKING_INSTRUCTION = (
+    "Book a flight for one traveler: one economy seat from SFO to NRT, "
+    "and pay for it by card. When the flight is booked and paid for, "
+    "you are done."
+)
+
 
 class TravelBookingEnvironment:
     # Implements the Environment protocol for task 'travel_booking'.
@@ -35,6 +44,18 @@ class TravelBookingEnvironment:
     def current_state(self) -> dict[str, Any]:
         # An independent copy: holding this can never mutate the world.
         return copy.deepcopy(self._state)
+
+    def actions(self) -> dict[str, list[str]]:
+        # The read-only description the agent loop puts in its prompt:
+        # action name -> argument names (empty list = no arguments). Fresh
+        # dict per call; world behavior never depends on this.
+        return {
+            "search_flights": ["origin", "destination"],
+            "book_flight": ["flight", "cabin", "passengers"],
+            "pay": ["method"],
+            "refund_payment": [],
+            "view_booking": [],
+        }
 
     def run_action(self, action: Action) -> dict[str, Any]:
         handler = _HANDLERS.get(action.name)

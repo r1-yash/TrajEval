@@ -8,7 +8,15 @@ state untouched when it does.
 
 from __future__ import annotations
 
-from trajecteval.envs import ActionRejected, TravelBookingEnvironment
+import pytest
+
+from trajecteval.envs import (
+    ActionRejected,
+    TravelBookingEnvironment,
+    agent_instruction,
+    make_environment,
+)
+from trajecteval.errors import SpecError
 from trajecteval.models import Action
 
 
@@ -42,3 +50,14 @@ def test_physically_impossible_actions_are_rejected_with_unchanged_state() -> No
         else:  # pragma: no cover - a missing raise is the bug this guards
             raise AssertionError(f"{action.name!r} should have been rejected")
         assert env.current_state() == before
+
+
+def test_environment_registry_resolves_task_ids() -> None:
+    # One lookup serves both halves of an agent run: a fresh world and the
+    # plain-text instruction. An unknown id is a one-line SpecError.
+    env = make_environment("travel_booking")
+    assert env.task_id == "travel_booking"
+    assert "book_flight" in env.actions()
+    assert agent_instruction("travel_booking").startswith("Book a flight")
+    with pytest.raises(SpecError):
+        make_environment("ghost_task")
