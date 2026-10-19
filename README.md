@@ -114,12 +114,14 @@ rule. Full verdict reference: [docs/DESIGN.md](docs/DESIGN.md).
 
 ## What works today
 
-**Steps 1–10 are done, including the real LLM judge and the CLI**: contract,
-strict output validation, prompt builder, the quality-grader adapter,
-`evaluate(judge=...)` wiring, one real client (Groq over plain HTTP) —
-verified live on Groq (`openai/gpt-oss-120b`) on 18 Oct 2026 — and the
-`uv run traject evaluate` command, verified live through the CLI on
-19 Oct 2026. Everything after the CLI is planned — the
+**Steps 1–11 are done, including the real LLM judge, the CLI, and a
+simulated environment with a recorder**: contract, strict output validation,
+prompt builder, the quality-grader adapter, `evaluate(judge=...)` wiring,
+one real client (Groq over plain HTTP) — verified live on Groq
+(`openai/gpt-oss-120b`) on 18 Oct 2026 — the `uv run traject evaluate`
+command, verified live through the CLI on 19 Oct 2026, and a deterministic
+travel_booking world that records every action into a trajectory the CLI
+grades. An agent demo and everything after are planned — the
 [roadmap](#roadmap) says exactly what's next.
 
 Works today, as a library:
@@ -132,14 +134,16 @@ Works today, as a library:
   environment;
 - render a single report as readable text or machine JSON, and save/load
   reports to files;
-- line many reports up in one comparison table, as plain text or Markdown.
+- line many reports up in one comparison table, as plain text or Markdown;
+- act in a small simulated world and record every action — accepted or
+  rejected — into a trajectory automatically.
 
 Works today, from the command line: `uv run traject evaluate` grades one
 trace (a detailed report) or several (a comparison table); `--judge` opts
 into the paid model, and nothing else ever calls one.
 
-Planned: a recorder with a simulated environment (Step 11), an agent demo
-on real traces (Step 12), a second toy task (Step 13).
+Planned: an agent demo on real traces (Step 12), a second toy task
+(Step 13).
 
 ## Install
 
@@ -282,6 +286,46 @@ column (a report missing one shows `not evaluated` — columns are never
 dropped), `discont` counts recorder discontinuities, and `!ERROR` marks a
 column that could not be judged.
 
+**Record a run in a simulated world**
+
+Until now every trajectory was hand-written. The recorder flips that: a
+small deterministic world (`TravelBookingEnvironment`) plays the
+travel_booking task, and the recorder watches every action and builds the
+trajectory — the state before, the action, the state after — automatically.
+The world models physics, not rules: booking first class or paying with
+points *works* here, because the graders are what judge those moves. An
+action the world rejects (paying before anything is booked, an unknown
+name) is still recorded as a step with unchanged state, then re-raised.
+
+```python
+from trajecteval import Recorder, TravelBookingEnvironment
+
+recorder = Recorder(TravelBookingEnvironment(), metadata={"agent": "demo"})
+recorder.act("search_flights", {"origin": "SFO", "destination": "NRT"})
+recorder.act("book_flight", {"flight": "TR420", "cabin": "economy", "passengers": 1})
+recorder.act("pay", {"method": "card"})
+recorder.trajectory().to_json_file("recorded_clean.json")
+```
+
+```bash
+uv run traject evaluate recorded_clean.json
+```
+
+Real output, pasted verbatim:
+
+```text
+task travel_booking (trajectory travel_booking)
+  final_state PASS: final state at step 3 matches expected_final_state (2 field(s))
+  bounds PASS: all 3 step(s) are within allowed_actions
+  critical PASS: no critical_error_patterns matched in 3 step(s)
+  not evaluated: trajectory_quality
+```
+
+`act()` returns the new state on success — the feedback an agent would see.
+The recorder is environment-agnostic: anything with a task id, a
+`current_state()`, and a `run_action()` can be recorded, so the second toy
+task (Step 13) reuses it unchanged.
+
 ## Task specs
 
 Graders know **how to check**, never **what to check**. All task-specific
@@ -410,6 +454,10 @@ TrajEval/
 │   ├── report.py                # evaluate() + JSON/text/file renderers
 │   ├── compare.py               # cross-trace comparison table (text + markdown)
 │   ├── cli.py                   # the traject command — thin glue, no logic of its own
+│   ├── recorder.py              # Recorder — environment-agnostic action log
+│   ├── envs/                    # simulated worlds (physics, never rules)
+│   │   ├── base.py              # Environment protocol + ActionRejected
+│   │   └── travel_booking.py    # task one's deterministic world
 │   └── judge/                    # judge code — never in graders/
 │       ├── base.py               # contract (protocol + JudgeResult/JudgeNote)
 │       ├── prompt.py             # exact system prompt + size cap (no truncation)
@@ -424,9 +472,8 @@ TrajEval/
         └── travel_booking/      # seven trajectories + expected_verdicts.json
 ```
 
-Planned, in roadmap order (not built): the simulated environment and
-recorder (`environment.py`, `recorder.py`), task two's fixtures, and —
-only if real attempt logs ever exist — a Debuggernaut adapter. The
+Planned, in roadmap order (not built): task two's fixtures, and — only if
+real attempt logs ever exist — a Debuggernaut adapter. The
 [roadmap](#roadmap) is the source of truth for what's next.
 
 **Why `src/` layout?** It prevents a classic trap: Python silently importing
@@ -456,7 +503,7 @@ fixtures change.
 | 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ✅ done |
 | 9 | Real LLM judge: contract + strict output validation + prompt builder + `TrajectoryQualityGrader` adapter + `evaluate(judge=...)` + one real client (Groq default, stdlib HTTP) + `ScriptedJudge` for offline tests; live tests behind `pytest -m live` | **✅ done** — verified live on Groq (openai/gpt-oss-120b), 18 Oct 2026 |
 | 10 | CLI (`uv run traject evaluate ...`) | **✅ done** — no-judge table verified offline in tests; one live judged run on Groq (openai/gpt-oss-120b) through the CLI, 19 Oct 2026 |
-| 11 | Recorder + simulated environment for travel_booking | ⏳ planned |
+| 11 | Recorder + simulated environment for travel_booking | **✅ done** — deterministic world replays all seven fixtures byte-exact; rejected actions recorded; graded end-to-end by the CLI |
 | 12 | LLM-agent demo: agent → recorder → report, real traces (needs an API key) | ⏳ planned |
 | 13 | Toy task two — same graders, new domain, graders unchanged | ⏳ planned |
 

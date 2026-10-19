@@ -167,3 +167,36 @@ The rules around it:
   fixture answer key (a real judge is not deterministic).
   `uv run pytest -m live` runs two loose sanity checks against the real API
   (verdicts from the closed set; never a fixed expected verdict).
+
+## The environment and recorder
+
+How a trajectory gets *made* instead of hand-written (Step 11). The rules:
+
+- **The world models physics, not rules.** `TravelBookingEnvironment`
+  never opens `tasks/` and never reads the spec: booking first class or
+  paying with points works on purpose — the graders are what judge those
+  moves. It rejects only what is physically impossible (an unknown action
+  name; `pay` before anything is booked; `refund_payment` with nothing to
+  undo), and its transitions mirror the seven travel_booking fixtures
+  exactly — including `refund_payment` *clearing* `payment_method` to
+  `null` (the key stays).
+- **The recorder is environment-agnostic.** It depends only on the
+  `Environment` protocol (`envs/base.py`): a `task_id`, a
+  `current_state()` snapshot, and a `run_action()` that returns the new
+  state or raises `ActionRejected`. A second task's world keeps the
+  promise and reuses the recorder unchanged.
+- **Every action is recorded — even a rejected one.** A rejected action
+  becomes a step whose `state_after` equals its `state_before`, and
+  `ActionRejected` is then re-raised: wasted attempts stay visible to the
+  graders and the judge, never silently dropped. `ActionRejected` is
+  deliberately not a `TrajEvalError` — that lane means "an input file is
+  broken", and a rejection is normal gameplay.
+- **Recorded states are independent copies.** The environment hands out
+  copies and the recorder deep-copies both snapshots per step, so neither
+  the world moving on nor a caller mutating a returned state can rewrite
+  a recorded step.
+- **The fixtures are the ground truth.** The replay test feeds every
+  fixture's actions through a fresh environment + recorder and requires
+  the recorded states to match the fixture's states exactly and the
+  deterministic verdicts to match `expected_verdicts.json` — if the world
+  and the fixtures ever disagree, the fixtures win and the test fails.
