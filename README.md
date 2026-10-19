@@ -240,6 +240,10 @@ or turns in three unusable replies in a row, and the reason is saved in
 the trajectory's `stop_reason` metadata. No sample output is pasted here:
 a live run costs money and varies — run it with your own key.
 
+Note: the first version of this task's instruction named no flight (only
+the route), and a real model looped — searching twelve times and never
+booking — so the instruction now names flight TR420 to book.
+
 **Evaluate one trajectory** (from Python)
 
 ```python

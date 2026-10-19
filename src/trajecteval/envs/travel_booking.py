@@ -27,8 +27,8 @@ _INITIAL_STATE: dict[str, Any] = {"status": "new"}
 # traveler's wishes, nothing the graders would check -- no hidden rules, no
 # traps. Shown verbatim in the README.
 TRAVEL_BOOKING_INSTRUCTION = (
-    "Book a flight for one traveler: one economy seat from SFO to NRT, "
-    "and pay for it by card. When the flight is booked and paid for, "
+    "Book a flight for one traveler: one economy seat on flight TR420 from SFO "
+    "to NRT, and pay for it by card. When the flight is booked and paid for, "
     "you are done."
 )
 
