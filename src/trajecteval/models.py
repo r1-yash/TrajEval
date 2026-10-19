@@ -294,3 +294,10 @@ class Trajectory:
 
     def to_json(self, *, indent: int = 2) -> str:
         return json.dumps(self.to_dict(), indent=indent, ensure_ascii=False)
+
+    def to_json_file(self, path: str | Path, *, indent: int = 2) -> None:
+        # Mirror of from_json_file (and of Report.to_json_file): to_json's
+        # bytes plus a trailing newline -- saved text files should end in
+        # one. What this writes is exactly what Trajectory.from_json_file
+        # and the `traject evaluate` CLI read back.
+        Path(path).write_text(self.to_json(indent=indent) + "\n", encoding="utf-8")
