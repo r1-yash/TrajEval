@@ -1,5 +1,7 @@
 # Real runs — full transcript
 
+These are the real runs, including the attempts that failed because of API access, rate limits, or an incomplete first instruction.
+
 one run per model, models qwen/qwen3.8-27b and openai/gpt-oss-120b via Groq, 19 Oct 2026; results vary between runs.
 
 Everything below is pasted verbatim and uncut, in order, including the
@@ -89,3 +91,32 @@ task travel_booking (trajectory travel_booking)
   trajectory_quality WARN 0.70: One redundant search action wasted effort.
     repeated_action (step 2): Repeated flight search with same parameters, adding no progress.
 ```
+
+--- Listing the models a key can use ---
+
+```bash
+$ uv run --env-file .env python - <<'PY'
+import json, os, urllib.request
+req = urllib.request.Request(
+    "https://api.groq.com/openai/v1/models",
+    headers={"Authorization": f"Bearer {os.environ['TRAJECTEVAL_JUDGE_API_KEY']}",
+             "User-Agent": "trajecteval"},
+)
+for m in json.load(urllib.request.urlopen(req))["data"]:
+    print(m["id"])
+PY
+openai/gpt-oss-20b
+openai/gpt-oss-120b
+meta-llama/llama-prompt-guard-2-86m
+canopylabs/orpheus-arabic-saudi
+whisper-large-v3-turbo
+meta-llama/llama-prompt-guard-2-22m
+whisper-large-v3
+allam-2-7b
+qwen/qwen3.8-27b
+openai/gpt-oss-safeguard-20b
+canopylabs/orpheus-v1-english
+```
+
+(The same list quoted in Attempt 1 above: the Llama chat models are not on
+this key.)

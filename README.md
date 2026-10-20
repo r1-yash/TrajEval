@@ -1,76 +1,95 @@
 # TrajEval
 
-**AI agents don't just finish tasks — they take paths. TrajEval grades the path.**
+> Grade how an AI agent completes a task, not just whether it finishes.
 
-An AI agent completes a task by taking actions one after another until it's
-done. Most evaluations look only at the ending: did the final answer pass?
-TrajEval records the whole episode — every action in order, with the state of
-the world before and after each one — and grades it on four separate
-questions, so a report tells you *why* a run was good or bad.
+TrajEval records an agent's whole episode — every action, with the state of
+the world before and after it — and grades the episode on four separate
+questions:
 
-## A run that looks fine — and isn't
+1. Did it end in the right state?
+2. Did it stay within the allowed actions?
+3. Did it ever make a critical mistake?
+4. Was effort wasted along the way?
 
-Here is a real recorded episode from this repository's test fixtures
-(`tests/fixtures/travel_booking/critical_recovered.json`). An agent has to
-book a flight and pay by card; the task's rules — a small JSON file — make
-paying with points a forbidden move:
+An agent can reach the right answer by a bad path: it makes a forbidden move,
+undoes it, and still ends correctly. A checker that only looks at the ending
+passes that run. TrajEval does not.
 
-1. `search_flights` — fine
-2. `book_flight` (economy) — fine
-3. `pay` with **points** — forbidden move
-4. `refund_payment` — undoes the mistake
-5. `pay` with **card** — the required ending
+---
 
-The final state is exactly right: confirmed, paid by card. A checker that only
-looks at the ending passes this run. TrajEval does not — the *critical
-mistakes* column says FAIL at step 3, and it stays FAIL: recovery doesn't
-erase what happened. The *final state* column says PASS. Same run, two
-columns, and the disagreement is the most useful thing on the page.
+## Why TrajEval?
 
-One number can't tell you this story. Four columns can.
+Task: *book one economy flight and pay by card.* The task's rules make paying
+with **points** a forbidden move.
 
-## Seven real runs, one table
-
-This is real output — the repository's seven hand-made fixture trajectories,
-graded by the shipped code (`evaluate()` → `compare()` → `render_table()`,
-now reachable as one command), pasted verbatim. Reproduce it yourself with:
-
-```bash
-uv run traject evaluate \
-  tests/fixtures/travel_booking/clean.json \
-  tests/fixtures/travel_booking/critical_recovered.json \
-  tests/fixtures/travel_booking/empty.json \
-  tests/fixtures/travel_booking/failed.json \
-  tests/fixtures/travel_booking/first_class_overlap.json \
-  tests/fixtures/travel_booking/unlisted_action.json \
-  tests/fixtures/travel_booking/wasteful.json
-```
+**Clean run**
 
 ```text
-trace                task            discont  final_state            bounds                 critical               trajectory_quality
-clean                travel_booking  -        PASS                   PASS                   PASS                   not evaluated
-critical_recovered   travel_booking  -        PASS                   PASS                   FAIL (step 3)          not evaluated
-empty                travel_booking  -        FAIL (no single step)  WARN (no single step)  WARN (no single step)  not evaluated
-failed               travel_booking  -        FAIL (step 3)          PASS                   PASS                   not evaluated
-first_class_overlap  travel_booking  -        PASS                   FAIL (step 2)          FAIL (step 2)          not evaluated
-unlisted_action      travel_booking  -        PASS                   FAIL (step 3)          PASS                   not evaluated
-wasteful             travel_booking  -        PASS                   PASS                   PASS                   not evaluated
-legend: !ERROR = could not judge (setup problem); FAIL/WARN = judged -- details in the full report
+search_flights → book_flight (economy) → pay (card)
 ```
 
-Reading it:
+**Recovered run**
 
-- `critical_recovered` is the story above: PASS and FAIL side by side, on one run.
-- `empty` warns in every column it could check — nothing was verified, so
-  nothing gets a silent PASS.
-- `first_class_overlap` shows one bad step breaking two columns at once.
-- `trajectory_quality` says **not evaluated**: this command passes no judge,
-  and `evaluate()` only ever calls a model when you hand it one. The table
-  marks what it doesn't know — it never guesses and never drops a column.
+```text
+search_flights → book_flight (economy) → pay (points)   ← forbidden
+              → refund_payment → pay (card)
+```
 
-The same seven traces, this time through the real judge — one run, model
-`openai/gpt-oss-120b` via Groq, 18 Oct 2026; judge output varies between
-runs:
+Both runs end in exactly the same state: confirmed, paid by card. A
+final-state checker scores them identically.
+
+TrajEval does not:
+
+```text
+trace                final_state  bounds  critical       trajectory_quality
+clean                PASS         PASS    PASS           PASS 0.96
+critical_recovered   PASS         PASS    FAIL (step 3)  WARN 0.70 (step 4)
+```
+
+The mistake at step 3 stays a FAIL even though the agent recovered.
+Recovery does not erase what happened. One number can't show this; four
+columns can.
+
+---
+
+## How it works
+
+```text
+Agent ──► Recorder ──► Environment
+              │
+              ▼
+         Trajectory (JSON)          Task spec (JSON)
+              │                          │
+              └────────────┬─────────────┘
+                           ▼
+        ┌──────────────┬───────────┬──────────────┐
+        │ Final state  │  Bounds   │   Critical   │   deterministic code
+        └──────┬───────┴─────┬─────┴──────┬───────┘
+               └─────────────┼────────────┘
+                             ▼
+                    LLM quality judge              one fuzzy question
+                             ▼
+                  Report  /  comparison table
+```
+
+| # | Dimension | Type | Question |
+|---|-----------|------|----------|
+| 1 | **Final state** | code | Did the episode end in the expected state? |
+| 2 | **Bounds** | code | Did every action use an allowed name and allowed argument values? |
+| 3 | **Critical mistakes** | code | Was a forbidden action ever taken — even if later undone? |
+| 4 | **Trajectory quality** | LLM judge | Was effort wasted: repeated actions, undone steps, steps that add nothing? |
+
+Every cell is a verdict — **PASS**, **WARN**, **FAIL**, or **ERROR** — with a
+one-sentence reason and the step numbers it is based on. `ERROR` means "could
+not judge", never "failed". There is no overall score, by design: one number
+hides *why* a run was good or bad.
+
+---
+
+## Seven runs, one table
+
+The repository ships seven hand-made trajectories for the travel-booking task.
+Each one is designed to trip a different check.
 
 ```text
 trace                task            discont  final_state            bounds                 critical               trajectory_quality
@@ -83,96 +102,29 @@ unlisted_action      travel_booking  -        PASS                   FAIL (step 
 wasteful             travel_booking  -        PASS                   PASS                   PASS                   FAIL 0.30 (step 3)
 ```
 
-Only `trajectory_quality` is model-judged; the other three columns are
-deterministic code. One corrected step is a `WARN`, and only a repeated
-loop is a `FAIL`. The score is coarse — differences under about 0.1 mean
-little — and the cited step can differ between runs.
+*Quality column: judged by `openai/gpt-oss-120b` via Groq, 18 Oct 2026. It is
+model-generated and can vary between runs; the other three columns are
+deterministic.*
 
-## The four questions, in plain words
+- `critical_recovered` — correct ending, critical mistake still flagged.
+- `wasteful` — every rule satisfied, but the same search runs five times. Only the judge catches this.
+- `failed` — wrong ending, yet an efficient path: the dimensions are independent.
+- `empty` — nothing happened, so nothing gets a silent PASS.
 
-A **trajectory** is one recorded episode. Each is graded against a **task
-spec** — a small JSON file holding that task's rules — on four separate
-questions:
+---
 
-| # | Dimension | Type | Question it answers |
-|---|-----------|------|---------------------|
-| 1 | **Final state** | Deterministic code | Did the episode end in the correct state? |
-| 2 | **Bounds** | Deterministic code | Did every action stay inside the allowed scope — allowed names, allowed argument values? |
-| 3 | **Critical mistakes** | Deterministic code | Did the agent ever commit a forbidden action — *even if it later recovered*? |
-| 4 | **Trajectory quality** | LLM judge | Was any effort wasted — identical actions repeated, steps undone or redone, steps that add nothing to the goal? |
+## Quick start
 
-Dimensions 1–3 are code that always gives the same answer. Dimension 4 is
-fuzzy by nature — "was this step necessary?" resists hard rules — so an LLM
-judges it; the two never mix inside one module. Mistakes are sticky: the
-critical column scans the whole history, so a forbidden move at step 3 is
-still FAIL at the end.
-
-Every cell holds a verdict — **PASS**, **WARN**, **FAIL**, or **ERROR** —
-with a one-sentence reason and evidence citing step numbers. ERROR means the
-grader could not judge (a setup problem), never that the trajectory broke a
-rule. Full verdict reference: [docs/DESIGN.md](docs/DESIGN.md).
-
-## What works today
-
-**Steps 1–12 are done, including the real LLM judge, the CLI, a
-simulated environment with a recorder, and the LLM agent loop**: contract,
-strict output validation, prompt builder, the quality-grader adapter,
-`evaluate(judge=...)` wiring, one real client (Groq over plain HTTP) —
-verified live on Groq (`openai/gpt-oss-120b`) on 18 Oct 2026 — the
-`uv run traject evaluate` command, verified live through the CLI on
-19 Oct 2026, a deterministic travel_booking world that records every
-action into a trajectory the CLI grades, and an agent loop that drives a
-model through that world into a gradeable trajectory. The judge (18 Oct
-2026), the `evaluate` CLI, and real agent runs (both 19 Oct 2026) were
-all verified live on Groq — transcript in
-[docs/RUNS.md](docs/RUNS.md) — and the agent loop's own live test sits
-behind `pytest -m live`. The [roadmap](#roadmap) says what's next.
-
-Works today, as a library:
-
-- load a trajectory or a task spec from JSON, validated structurally;
-- grade the three deterministic dimensions with `evaluate()` — one broken
-  grader degrades its own column to ERROR, never the whole run;
-- judge trajectory quality with a real LLM by passing `judge=` — a model is
-  only ever called when you pass one, and its key comes from the
-  environment;
-- render a single report as readable text or machine JSON, and save/load
-  reports to files;
-- line many reports up in one comparison table, as plain text or Markdown;
-- act in a small simulated world and record every action — accepted or
-  rejected — into a trajectory automatically;
-- drive an LLM agent through a simulated world (`run_agent(...)`) and get
-  back a trajectory the same graders grade.
-
-Works today, from the command line: `uv run traject evaluate` grades one
-trace (a detailed report) or several (a comparison table), and `--judge`
-opts into the paid model; `uv run traject run TASK --model M --out DIR`
-drives an agent through a simulated world, one trajectory JSON per model.
-Those two are the only things that ever call a model, and each asks for a
-key from the environment when it runs.
-
-## Install
-
-Requires [uv](https://docs.astral.sh/uv/) and **Python 3.14+**. Everything
-runs through `uv` — no pip, no virtualenv to activate, no Node.
+Requires [uv](https://docs.astral.sh/uv/) and Python 3.14+.
 
 ```bash
-git clone <repo-url> TrajEval
+git clone https://github.com/r1-yash/TrajEval.git
 cd TrajEval
-uv sync            # installs dependencies + the package itself (editable)
-uv run pytest      # run the test suite
+uv sync
+uv run pytest
 ```
 
-## Use
-
-Everything in this section runs today.
-
-**From the command line**
-
-`uv run traject evaluate` grades one trace (a detailed report) or several
-(a comparison table). The task rules come from each trace's own `task_id`
-— it loads `tasks/<task_id>.json` from the working directory. No model is
-ever called unless you pass `--judge`:
+Grade the seven trajectories (free, no model call):
 
 ```bash
 uv run traject evaluate \
@@ -185,26 +137,21 @@ uv run traject evaluate \
   tests/fixtures/travel_booking/wasteful.json
 ```
 
-Real output, pasted verbatim:
+The quality column reads `not evaluated` until you pass `--judge`.
 
-```text
-trace                task            discont  final_state            bounds                 critical               trajectory_quality
-clean                travel_booking  -        PASS                   PASS                   PASS                   not evaluated
-critical_recovered   travel_booking  -        PASS                   PASS                   FAIL (step 3)          not evaluated
-empty                travel_booking  -        FAIL (no single step)  WARN (no single step)  WARN (no single step)  not evaluated
-failed               travel_booking  -        FAIL (step 3)          PASS                   PASS                   not evaluated
-first_class_overlap  travel_booking  -        PASS                   FAIL (step 2)          FAIL (step 2)          not evaluated
-unlisted_action      travel_booking  -        PASS                   FAIL (step 3)          PASS                   not evaluated
-wasteful             travel_booking  -        PASS                   PASS                   PASS                   not evaluated
-legend: !ERROR = could not judge (setup problem); FAIL/WARN = judged -- details in the full report
+### Add the LLM judge
+
+Create a `.env` file (it is gitignored):
+
+```bash
+TRAJECTEVAL_JUDGE_API_KEY=<your Groq API key>
+TRAJECTEVAL_JUDGE_MODEL=openai/gpt-oss-120b     # optional; this is the default
 ```
 
-One trace prints the detailed report instead. Adding `--judge` opts into
-the paid model — the key comes from the environment, so the natural way to
-run it is `uv run --env-file .env traject evaluate trace.json --judge`.
-Real output, one run of `critical_recovered.json --judge` — model
-`openai/gpt-oss-120b` via Groq, 19 Oct 2026; judge output varies between
-runs:
+```bash
+uv run --env-file .env traject evaluate \
+  tests/fixtures/travel_booking/critical_recovered.json --judge
+```
 
 ```text
 task travel_booking (trajectory travel_booking)
@@ -216,172 +163,49 @@ task travel_booking (trajectory travel_booking)
     undo_action (step 4): Refund payment reverted the confirmed status, requiring a second payment.
 ```
 
-Exit codes mean one thing: **0 = the command ran, nonzero = it could not
-run** (broken input, an unknown task, a missing key — one clear line, no
-traceback). There is no pass/fail exit code, because there is no overall
-score: a FAIL verdict is a result in the report, not a command failure. A
-judge that cannot reach the model is the same story — the table shows
-`!ERROR` in that cell and the command still exits 0.
+A model is only ever called when you pass `--judge` (or run an agent). Exit
+code `0` means the command ran; nonzero means it could not run. A FAIL
+verdict is a result, not a command failure.
 
-**Run a real LLM agent** *(calls a paid model; the key comes from the
-environment, the same variable the judge uses)*
+---
 
-The task instruction the agent gets, verbatim:
+## Run an LLM agent
+
+TrajEval ships a small simulated travel-booking world. An LLM acts in it, a
+recorder writes down every step, and the same graders grade the result.
+
+The instruction the agent receives:
 
 > Book a flight for one traveler: one economy seat on flight TR420 from SFO to NRT, and pay for it by card. When the flight is booked and paid for, you are done.
 
-`--model` is required and repeatable: one sequential run per model, each
-in its own fresh world, writing one trajectory JSON per model.
-`--max-steps` (default 12) caps how long a model can go; a run stops when
-the model says it is done, hits the step limit, or turns in three
-unusable replies in a row, and the reason is saved in the trajectory's
-`stop_reason` metadata.
-
 ```bash
-# one run per model into runs/
 uv run --env-file .env traject run travel_booking \
   --model qwen/qwen3.8-27b \
   --model openai/gpt-oss-120b \
   --out runs/
 
-# grade them: free (deterministic) table, then with the paid judge
-uv run --env-file .env traject evaluate runs/*.json
 uv run --env-file .env traject evaluate runs/*.json --judge
-
-# the committed examples grade the same way, no key needed
-uv run traject evaluate examples/runs/*.json
 ```
-
-List the models your key can use:
-
-```bash
-uv run --env-file .env python - <<'PY'
-import json, os, urllib.request
-req = urllib.request.Request(
-    "https://api.groq.com/openai/v1/models",
-    headers={"Authorization": f"Bearer {os.environ['TRAJECTEVAL_JUDGE_API_KEY']}",
-             "User-Agent": "trajecteval"},
-)
-for m in json.load(urllib.request.urlopen(req))["data"]:
-    print(m["id"])
-PY
-```
-
-What happened, in order — every attempt, failures included (full uncut
-transcript in [docs/RUNS.md](docs/RUNS.md)):
-
-| # | Model | Outcome | Reason |
-|---|-------|---------|--------|
-| 1 | llama-3.3-70b-versatile | error, no run | HTTP 404: model not on this key (Llama is Enterprise-only) |
-| 2 | openai/gpt-oss-20b (twice) | error, no run | HTTP 400: API rejected the reply — "Tool choice is none, but model called a tool" |
-| 3 | allam-2-7b | error, no run | HTTP 429: free-tier rate limit (tokens per minute) |
-| 4 | qwen/qwen3.8-27b, first instruction | ran: 12 steps, `step_limit`, graded FAIL 0.30 | instruction named no flight (only the route) and search returns no flight list — the model searched 12 times and never booked |
-| 5 | qwen/qwen3.8-27b, fixed instruction | ran: 4 steps, `done`, graded PASS (quality WARN 0.70) | search → book → pay → done |
-| 6 | openai/gpt-oss-120b, fixed instruction | ran: 3 steps, `done`, graded PASS (quality PASS 0.96) | booked and paid, no wasted action |
-
-Final graded table for runs 5 and 6 (judge run twice, identical):
 
 ```text
 trace                                task            discont  final_state  bounds  critical  trajectory_quality
 travel_booking__openai_gpt-oss-120b  travel_booking  -        PASS         PASS    PASS      PASS 0.96
 travel_booking__qwen_qwen3.8-27b     travel_booking  -        PASS         PASS    PASS      WARN 0.72 (step 2)
-legend: !ERROR = could not judge (setup problem); FAIL/WARN = judged -- details in the full report
 ```
 
-Caveat: the 120b row was judged by the same model that produced it —
-read that PASS as same-model-graded.
+Both agents completed the task and broke no rule. Only the judge separates
+them: qwen searched twice. *Run 19 Oct 2026, one run per model. The
+`gpt-oss-120b` run was judged by the same model that produced it.*
 
-Known limitations:
+These two recorded runs are committed, so you can grade them for free:
 
-- free-tier rate limits (Groq 429s) can stop a run mid-list;
-- `openai/gpt-oss-20b` is rejected by the API with a function-call error;
-- the CLI's error line says "judge request failed" even for agent runs
-  (cosmetic — same client, same wording);
-- the judge's score varies slightly between runs (0.72, 0.72, 0.70 on the
-  same trace — same verdict, same cited step);
-- the 120b run is graded by the same model that acted as the agent (see
-  the caveat above);
-- only one task exists so far.
-
-**Evaluate one trajectory** (from Python)
-
-```python
-from trajecteval import Trajectory, evaluate, load_spec, render_text
-
-traj = Trajectory.from_json_file("trace.json")
-report = evaluate(traj, load_spec("travel_booking"))
-for result in report.results:
-    print(result.dimension, result.verdict, result.reason)
-print(render_text(report))     # or render_json(report) for the machine form
+```bash
+uv run traject evaluate examples/runs/*.json
 ```
 
-**Judge path quality with a real LLM** *(needs a Groq API key; without a
-judge the fourth column stays `not evaluated`, and the default test suite
-uses a scripted fake instead)*
+The full log of the real runs is in [docs/RUNS.md](docs/RUNS.md).
 
-```python
-from trajecteval import LLMJudge, Trajectory, evaluate, load_spec
-
-report = evaluate(
-    Trajectory.from_json_file("trace.json"),
-    load_spec("travel_booking"),
-    judge=LLMJudge(),  # reads TRAJECTEVAL_JUDGE_API_KEY; Groq model default
-)
-```
-
-The judge only judges *path quality*, meaning wasted effort: identical
-actions repeated, actions that were undone or reversed, and steps that add
-nothing to reaching the goal. Severity is a rule, not a mood — nothing
-wasted → `pass`; a single wasted, undone, or corrected step → `warn`,
-never `fail`; `fail` only when waste dominates the path (the same action
-three or more times, or several wasted steps forming a loop). Final state,
-bounds, and critical mistakes stay with the deterministic graders: a broken
-rule never lowers the quality verdict or score — only the effort it wasted
-counts here. A model answer that fails validation becomes an
-ERROR column with evidence, never a guessed verdict.
-
-Alongside the verdict the judge returns a `score` from 0 to 1, shown
-next to it (`WARN 0.72`). The score comes from the model, so it can vary
-between runs — the verdict is the primary result, and there is still no
-overall number across dimensions.
-
-**Compare traces**
-
-```python
-from pathlib import Path
-
-from trajecteval import (
-    Report, Trajectory, compare, evaluate, load_spec, render_table,
-)
-
-spec = load_spec("travel_booking")
-pairs = [
-    (path.stem, evaluate(Trajectory.from_json_file(path), spec))
-    for path in sorted(Path("reports").glob("*.json"))
-]
-print(render_table(compare(pairs)))          # plain aligned text
-# print(render_table_markdown(comparison))   # the same cells as Markdown
-
-report = evaluate(Trajectory.from_json_file("trace.json"), spec)
-report.to_json_file("reports/clean.json")            # save
-loaded = Report.from_json_file("reports/clean.json")  # load back, equal
-```
-
-Each row is one trace under a caller-supplied label; every dimension is a
-column (a report missing one shows `not evaluated` — columns are never
-dropped), `discont` counts recorder discontinuities, and `!ERROR` marks a
-column that could not be judged.
-
-**Record a run in a simulated world**
-
-Until now every trajectory was hand-written. The recorder flips that: a
-small deterministic world (`TravelBookingEnvironment`) plays the
-travel_booking task, and the recorder watches every action and builds the
-trajectory — the state before, the action, the state after — automatically.
-The world models physics, not rules: booking first class or paying with
-points *works* here, because the graders are what judge those moves. An
-action the world rejects (paying before anything is booked, an unknown
-name) is still recorded as a step with unchanged state, then re-raised.
+### Record your own run from Python
 
 ```python
 from trajecteval import Recorder, TravelBookingEnvironment
@@ -397,8 +221,6 @@ recorder.trajectory().to_json_file("recorded_clean.json")
 uv run traject evaluate recorded_clean.json
 ```
 
-Real output, pasted verbatim:
-
 ```text
 task travel_booking (trajectory travel_booking)
   final_state PASS: final state at step 3 matches expected_final_state (2 field(s))
@@ -407,17 +229,39 @@ task travel_booking (trajectory travel_booking)
   not evaluated: trajectory_quality
 ```
 
-`act()` returns the new state on success — the feedback an agent would see.
-The recorder depends only on the `Environment` protocol: a task id, a
-`current_state()` snapshot, a `run_action()` that returns the new state,
-and an `actions()` description used in the agent's prompt — the interface
-another task's world would implement to be recorded by the same code.
+The world models physics, not rules: booking first class or paying with points
+*works*, because the graders are what judge those moves. An action the world
+cannot perform (paying before booking) is still recorded as a step, then
+raised to the agent.
+
+---
+
+## Use as a library
+
+```python
+from trajecteval import LLMJudge, Trajectory, compare, evaluate, load_spec, render_table, render_text
+
+spec = load_spec("travel_booking")
+traj = Trajectory.from_json_file("trace.json")
+
+report = evaluate(traj, spec)                      # three deterministic dimensions
+report = evaluate(traj, spec, judge=LLMJudge())    # + LLM quality judge (opt-in)
+print(render_text(report))
+
+pairs = [("run_a", evaluate(traj, spec)), ("run_b", report)]
+print(render_table(compare(pairs)))                # comparison table
+```
+
+A grader that crashes becomes an `ERROR` in its own column; it never kills the
+run. A judge answer that fails validation (bad JSON, a cited step that doesn't
+exist) is an `ERROR` too, never a guessed verdict.
+
+---
 
 ## Task specs
 
-Graders know **how to check**, never **what to check**. All task-specific
-rules live in one plain JSON file per task. This is
-`tasks/travel_booking.json`, trimmed:
+Graders know *how* to check, never *what* to check. All task rules live in one
+JSON file per task — `tasks/travel_booking.json`, trimmed:
 
 ```json
 {
@@ -436,196 +280,96 @@ rules live in one plain JSON file per task. This is
 }
 ```
 
-- **`expected_final_state`** — the listed fields must equal the listed values
-  in the final state. Unlisted fields are not judged.
-- **`allowed_actions`** — action name → per-argument lists of permitted values.
-  `{}` means the action is allowed with any arguments; an unlisted action is
-  out of bounds.
-- **`critical_error_patterns`** — exact moves that count as critical mistakes:
-  the action name plus, if given, arguments that must all match exactly.
+- `expected_final_state` — listed fields must match the final state.
+- `allowed_actions` — action → permitted argument values. An unlisted action is out of bounds.
+- `critical_error_patterns` — moves that are mistakes even if later undone.
 
-Adding a new task means writing one JSON file — no new grader code. Deeper
-semantics — absent vs. empty sections, `null` handling, the full permit-list
-rules — live in [docs/DESIGN.md](docs/DESIGN.md).
+A new task means a new JSON file, not new grader code.
 
-## Design principles
+---
 
-1. **Per-dimension, not scalar.** No mega-score as the primary output; any
-   aggregate is clearly secondary to the breakdown.
-2. **Deterministic graders and the LLM judge never mix modules.** Same result
-   type, separate implementations, judge injectable.
-3. **Mistakes are sticky.** Recovery never downgrades a critical mistake.
-4. **Evidence or it didn't happen.** Every verdict carries a reason; FAIL and
-   WARN additionally cite typed evidence with step numbers. Evidence is
-   neutral — the verdict, not the evidence, says whether it's good or bad.
-5. **ERROR ≠ FAIL.** A grader that can't judge says so; it never guesses.
-6. **Rules live in task specs, not grader code.** Grader code itself holds
-   no domain rules, and every rule in a spec list is applied.
+## Trajectory format
 
-## Testing & development
-
-Every command goes through `uv`:
-
-```bash
-uv run pytest                          # full suite (offline by default)
-uv run pytest tests/test_models.py -v  # one file
-uv run pytest -k discontinu            # by name
-```
-
-Conventions:
-
-- One module = one responsibility; one test file per module.
-- The default suite is **offline and deterministic**: hand-made fixtures are
-  the ground truth, and unit tests use a small scripted fake judge
-  (`ScriptedJudge`) — no network, no API key, no spend.
-- Live tests exist behind a marker: `uv run pytest -m live` calls the real
-  Groq client with two loose sanity checks (allowed verdicts only — never a
-  fixed expected verdict) and needs `TRAJECTEVAL_JUDGE_API_KEY`. They are
-  deselected by default, so the default suite never touches the network.
-
-## The trajectory format
-
-One episode per JSON file — plain data, no database:
+One episode per JSON file:
 
 ```json
 {
-  "task_id": "<task-id>",
-  "metadata": {"agent": "example", "attempt": 1},
+  "task_id": "travel_booking",
+  "metadata": { "agent": "demo" },
   "steps": [
     {
       "index": 1,
-      "state_before": {"balance": 100, "cart": []},
-      "action": {"name": "add_to_cart", "args": {"item": "A1", "qty": 1}},
-      "state_after": {"balance": 100, "cart": ["A1"]}
-    },
-    {
-      "index": 2,
-      "state_before": {"balance": 100, "cart": ["A1"]},
-      "action": {"name": "checkout", "args": {"coupon": "NONE"}},
-      "state_after": {"balance": 90, "cart": []}
+      "state_before": { "status": "new" },
+      "action": { "name": "search_flights", "args": { "origin": "SFO", "destination": "NRT" } },
+      "state_after": { "status": "searching", "searches": 1 }
     }
   ]
 }
 ```
 
-Loading rules are enforced by the loaders: step indices must be sequential
-(gaps and duplicates are rejected, naming the step), only structural problems
-raise, and a state discontinuity between steps is *reported* — it never
-blocks loading. Full rules: [docs/DESIGN.md](docs/DESIGN.md).
+Step indices must be sequential. A gap between one step's `state_after` and the
+next step's `state_before` is reported as a discontinuity, not a crash.
+
+---
 
 ## Project structure
 
-What exists today:
-
 ```text
-TrajEval/
-├── pyproject.toml               # project metadata + dependencies (uv owns this)
-├── uv.lock                      # pinned versions (reproducible installs)
-├── README.md
-├── docs/
-│   └── DESIGN.md                # deep rules: verdicts, evidence, permits, loading
-├── tasks/
-│   └── travel_booking.json      # task one's rules — the only place rules live
-├── src/trajecteval/
-│   ├── __init__.py              # public API surface
-│   ├── errors.py                # TrajEvalError + TrajectoryError / SpecError / ReportError
-│   ├── models.py                # Step, Action, Trajectory, Discontinuity + JSON I/O
-│   ├── matching.py              # json_equal + the subset matcher
-│   ├── results.py               # Verdict, Dimension, Evidence, GraderResult
-│   ├── task_spec.py             # TaskSpec + load-by-task-id (no registry)
-│   ├── graders/                 # deterministic graders — one file per dimension
-│   │   ├── base.py              # Grader protocol: grade(spec, trajectory)
-│   │   ├── final_state.py
-│   │   ├── bounds.py
-│   │   └── critical.py
-│   ├── report.py                # evaluate() + JSON/text/file renderers
-│   ├── compare.py               # cross-trace comparison table (text + markdown)
-│   ├── cli.py                   # the traject command — thin glue, no logic of its own
-│   ├── recorder.py              # Recorder — action log over the Environment protocol
-│   ├── envs/                    # simulated worlds (physics, never rules)
-│   │   ├── base.py              # Environment protocol + ActionRejected
-│   │   └── travel_booking.py    # task one's deterministic world
-│   └── judge/                    # judge code — never in graders/
-│       ├── base.py               # contract (protocol + JudgeResult/JudgeNote)
-│       ├── prompt.py             # exact system prompt + size cap (no truncation)
-│       ├── validate.py           # strict parse of the model's answer
-│       ├── quality.py            # TrajectoryQualityGrader: Judge → Grader
-│       ├── llm.py                # OpenAI-compatible client (Groq) + LLMJudge
-│       └── fake.py               # ScriptedJudge — unit tests pay nothing
-└── tests/                       # one test file per module, plus fixtures:
-    └── fixtures/
-        ├── minimal.json         # loader fixture
-        ├── discontinuous.json   # discontinuity fixture
-        └── travel_booking/      # seven trajectories + expected_verdicts.json
+src/trajecteval/
+├── models.py          Trajectory, Step, Action
+├── results.py         Verdict, Dimension, Evidence, GraderResult
+├── task_spec.py       load a task's rules from tasks/<id>.json
+├── graders/           final_state.py · bounds.py · critical.py   (deterministic)
+├── judge/             prompt · validate · quality · llm client   (LLM, kept separate)
+├── report.py          evaluate() + text / JSON rendering
+├── compare.py         comparison table
+├── recorder.py        records an agent's actions into a Trajectory
+├── agent.py           LLM agent loop
+├── envs/              simulated worlds
+└── cli.py             the `traject` command
+tasks/                 task rules (JSON)
+tests/fixtures/        seven travel-booking trajectories + expected verdicts
+examples/runs/         two recorded LLM-agent runs
+docs/                  DESIGN.md (rules in depth) · RUNS.md (log of real runs)
 ```
 
-Not built: a Debuggernaut adapter — only if real attempt logs ever exist.
-The [roadmap](#roadmap) is the source of truth for what's next.
+---
 
-**Why `src/` layout?** It prevents a classic trap: Python silently importing
-your working directory instead of the installed package, so tests pass on your
-machine and break elsewhere. With `src/`, you only ever test what is properly
-installed — uv does that installation automatically.
+## Testing
 
-## Toy tasks
+```bash
+uv run pytest             # offline: no network, no API key, no cost
+uv run pytest -m live     # calls the real judge; needs TRAJECTEVAL_JUDGE_API_KEY
+```
 
-Task one is travel booking: seven fixture trajectories plus a
-machine-readable expected-verdict table beside them. The Recorder and the
-`Environment` interface are built so another task could be added without
-touching grader code (one registry entry, one spec file, its fixtures).
+The default suite uses hand-made fixtures as ground truth and a scripted fake
+judge. The seven fixtures replay byte-exact through the simulated world.
 
-## Roadmap
+---
 
-| # | Step | Status |
-|---|------|--------|
-| 1 | Project scaffold (`uv init`, src layout, first test) | ✅ done |
-| 2 | Models: `Step`, `Trajectory`, JSON loading | ✅ done |
-| 3 | Result types: `Verdict`, `Dimension`, `Evidence`, `GraderResult` | ✅ done |
-| 4 | Task spec + grader contract: data-file rules, load by task id, `Grader` protocol | ✅ done |
-| 5 | Fixtures for task one — seven trajectories (clean, wasteful, critical_recovered, first_class_overlap, failed, unlisted_action, empty) + the machine-readable expected-verdict table | ✅ done |
-| 6 | Three deterministic graders (final state, bounds, critical) — reproduce the fixture answer key exactly | ✅ done |
-| 7 | Report: `evaluate()` runs the three deterministic dimensions first (a crashed grader degrades its own column to ERROR, never the run), then renders JSON + readable text; the LLM judge is an optional `judge=` addition (Step 9) | ✅ done |
-| 8 | Comparison table across traces — a dimension with no result gets an explicit marker, the same honesty rule as `render_text`'s `not evaluated` lines, never a silently dropped column | ✅ done |
-| 9 | Real LLM judge: contract + strict output validation + prompt builder + `TrajectoryQualityGrader` adapter + `evaluate(judge=...)` + one real client (Groq default, stdlib HTTP) + `ScriptedJudge` for offline tests; live tests behind `pytest -m live` | **✅ done** — verified live on Groq (openai/gpt-oss-120b), 18 Oct 2026 |
-| 10 | CLI (`uv run traject evaluate ...`) | **✅ done** — no-judge table verified offline in tests; one live judged run on Groq (openai/gpt-oss-120b) through the CLI, 19 Oct 2026 |
-| 11 | Recorder + simulated environment for travel_booking | **✅ done** — deterministic world replays all seven fixtures byte-exact; rejected actions recorded; graded end-to-end by the CLI |
-| 12 | LLM-agent demo: agent → recorder → report, real traces (needs an API key) | **✅ done** — verified live on Groq, 19 Oct 2026 ([docs/RUNS.md](docs/RUNS.md)) |
+## Design principles
 
-## Design notes & FAQ
+1. **Per dimension, not one score.** The breakdown is the result.
+2. **Code checks facts; an LLM judges only what code can't.** The two never share a module.
+3. **Mistakes are sticky.** Recovery never downgrades a critical mistake.
+4. **Evidence or it didn't happen.** FAIL and WARN cite step numbers.
+5. **ERROR is not FAIL.** A grader that can't judge says so.
 
-**Why not one overall score?**
-Because a single number destroys information. Two traces can average to 0.8 for
-completely different reasons — one had a critical mistake it recovered from, the
-other was just slow. The report must let a human see that difference quickly. If
-you want a scalar, average the columns yourself and accept what you lose.
+---
 
-**Why is only one dimension LLM-judged?**
-Whether effort was genuinely wasted is fuzzy; "was this necessary?" resists hard
-rules. Everything else is a fact about recorded states and actions — code checks
-facts better than a language model does. Using an LLM where rules suffice adds
-cost, nondeterminism, and hallucination risk for no benefit.
+## Limitations
 
-**Why do rules live in task spec files?**
-Because otherwise every new task means editing grader code, and grader code is
-exactly what should stay boring and domain-agnostic. A spec file is reviewable,
-diffable, and testable as data. It also forces rules to be explicit: if
-something is graded, it's written down in the spec — not buried in a branch.
+- One task so far (travel booking), one simulated world.
+- The quality score comes from an LLM: verdicts were stable across repeated runs, but scores moved by a few hundredths.
+- Free-tier API rate limits can interrupt agent runs.
+- Agent and judge models can overlap; the table notes when they do.
 
-**Why is the judge injectable?**
-So the default tests never touch the network — a small scripted fake judge
-stands in — while the product runs a real one: `LLMJudge()` calls Groq over
-plain standard-library HTTP behind the committed contract
-(`src/trajecteval/judge/base.py`). Swapping judges is a one-line change at
-the call site, and API keys stay out of core logic: `evaluate()` only ever
-calls a model when you pass it a judge, and the key comes from
-`TRAJECTEVAL_JUDGE_API_KEY` — never a file in the repo, never printed.
+## Future directions
 
-**Why dataclasses instead of Pydantic?**
-The project parses its own well-defined JSON format rather than validating
-arbitrary external input at an API boundary. Stdlib dataclasses keep the core
-dependency-free and the mental model small. Revisiting later if needs grow is
-normal.
+- A second task in a different domain, to test the graders beyond travel booking.
+- Retry on provider rate limits.
+- Comparing the judge's verdicts with human labels.
 
 ## License
 
-TBD.
+TBD
