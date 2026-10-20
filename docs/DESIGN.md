@@ -200,3 +200,30 @@ How a trajectory gets *made* instead of hand-written (Step 11). The rules:
   the recorded states to match the fixture's states exactly and the
   deterministic verdicts to match `expected_verdicts.json` — if the world
   and the fixtures ever disagree, the fixtures win and the test fails.
+
+## The agent loop
+
+How an LLM plays the agent instead of a fixture (Step 12). `run_agent()`
+in `src/trajecteval/agent.py`:
+
+- **One prompt per turn, rebuilt from state we hold.** The task
+  instruction, the world's own `actions()` description, and the history
+  so far (each action with the world's reply) — nothing is remembered
+  between calls except that history; the model's own replies carry the
+  conversation.
+- **Replies are exactly one JSON object**, `{"action": name, "args":
+  {...}}` or `{"done": true}`, parsed strictly. An unusable reply is fed
+  back with the reason and never recorded as a step; three in a row stop
+  the run (`stop_reason: bad_output`).
+- **The loop never grades.** It only records through the Recorder —
+  rejected actions included — and stops on `done`, the step limit
+  (default 12; a looping model cannot run forever), or bad output; the
+  reason lands in the trajectory's `stop_reason` metadata. Grading stays
+  what `evaluate()` does afterwards, to the same trajectory a fixture
+  would produce.
+- **The same client, untouched judge.** The loop calls
+  `complete(system, user)` on the judge's `OpenAIChatClient` (JSON mode,
+  temperature 0); `judge/` was not changed for this. A provider failure
+  propagates and the CLI aborts that run with one line, exit 1, saving
+  nothing — a crashed API call is not agent behavior. A short pause
+  between calls paces the model, and is injectable so tests never sleep.

@@ -122,10 +122,11 @@ verified live on Groq (`openai/gpt-oss-120b`) on 18 Oct 2026 — the
 `uv run traject evaluate` command, verified live through the CLI on
 19 Oct 2026, a deterministic travel_booking world that records every
 action into a trajectory the CLI grades, and an agent loop that drives a
-model through that world into a gradeable trajectory. The judge and the
-`evaluate` CLI are the live-verified parts; the agent loop is covered by
-the offline suite, with its live test behind `pytest -m live`. The
-[roadmap](#roadmap) says what's next.
+model through that world into a gradeable trajectory. The judge (18 Oct
+2026), the `evaluate` CLI, and real agent runs (both 19 Oct 2026) were
+all verified live on Groq — transcript in
+[docs/RUNS.md](docs/RUNS.md) — and the agent loop's own live test sits
+behind `pytest -m live`. The [roadmap](#roadmap) says what's next.
 
 Works today, as a library:
 
@@ -222,27 +223,85 @@ score: a FAIL verdict is a result in the report, not a command failure. A
 judge that cannot reach the model is the same story — the table shows
 `!ERROR` in that cell and the command still exits 0.
 
-**Run an LLM agent in a simulated world** *(calls a paid model; the key
-comes from the environment, the same variable the judge uses)*
+**Run a real LLM agent** *(calls a paid model; the key comes from the
+environment, the same variable the judge uses)*
 
-```bash
-uv run --env-file .env traject run travel_booking \
-  --model openai/gpt-oss-120b \
-  --out runs/
-```
+The task instruction the agent gets, verbatim:
+
+> Book a flight for one traveler: one economy seat on flight TR420 from SFO to NRT, and pay for it by card. When the flight is booked and paid for, you are done.
 
 `--model` is required and repeatable: one sequential run per model, each
-in its own fresh world, writing `runs/travel_booking__openai_gpt-oss-120b.json`
-— a trajectory the commands above then grade, with `--judge` if you want
-the quality column too. `--max-steps` (default 12) caps how long a model
-can go; a run stops when the model says it is done, hits the step limit,
-or turns in three unusable replies in a row, and the reason is saved in
-the trajectory's `stop_reason` metadata. No sample output is pasted here:
-a live run costs money and varies — run it with your own key.
+in its own fresh world, writing one trajectory JSON per model.
+`--max-steps` (default 12) caps how long a model can go; a run stops when
+the model says it is done, hits the step limit, or turns in three
+unusable replies in a row, and the reason is saved in the trajectory's
+`stop_reason` metadata.
 
-Note: the first version of this task's instruction named no flight (only
-the route), and a real model looped — searching twelve times and never
-booking — so the instruction now names flight TR420 to book.
+```bash
+# one run per model into runs/
+uv run --env-file .env traject run travel_booking \
+  --model qwen/qwen3.8-27b \
+  --model openai/gpt-oss-120b \
+  --out runs/
+
+# grade them: free (deterministic) table, then with the paid judge
+uv run --env-file .env traject evaluate runs/*.json
+uv run --env-file .env traject evaluate runs/*.json --judge
+
+# the committed examples grade the same way, no key needed
+uv run traject evaluate examples/runs/*.json
+```
+
+List the models your key can use:
+
+```bash
+uv run --env-file .env python - <<'PY'
+import json, os, urllib.request
+req = urllib.request.Request(
+    "https://api.groq.com/openai/v1/models",
+    headers={"Authorization": f"Bearer {os.environ['TRAJECTEVAL_JUDGE_API_KEY']}",
+             "User-Agent": "trajecteval"},
+)
+for m in json.load(urllib.request.urlopen(req))["data"]:
+    print(m["id"])
+PY
+```
+
+What happened, in order — every attempt, failures included (full uncut
+transcript in [docs/RUNS.md](docs/RUNS.md)):
+
+| # | Model | Outcome | Reason |
+|---|-------|---------|--------|
+| 1 | llama-3.3-70b-versatile | error, no run | HTTP 404: model not on this key (Llama is Enterprise-only) |
+| 2 | openai/gpt-oss-20b (twice) | error, no run | HTTP 400: API rejected the reply — "Tool choice is none, but model called a tool" |
+| 3 | allam-2-7b | error, no run | HTTP 429: free-tier rate limit (tokens per minute) |
+| 4 | qwen/qwen3.8-27b, first instruction | ran: 12 steps, `step_limit`, graded FAIL 0.30 | instruction named no flight (only the route) and search returns no flight list — the model searched 12 times and never booked |
+| 5 | qwen/qwen3.8-27b, fixed instruction | ran: 4 steps, `done`, graded PASS (quality WARN 0.70) | search → book → pay → done |
+| 6 | openai/gpt-oss-120b, fixed instruction | ran: 3 steps, `done`, graded PASS (quality PASS 0.96) | booked and paid, no wasted action |
+
+Final graded table for runs 5 and 6 (judge run twice, identical):
+
+```text
+trace                                task            discont  final_state  bounds  critical  trajectory_quality
+travel_booking__openai_gpt-oss-120b  travel_booking  -        PASS         PASS    PASS      PASS 0.96
+travel_booking__qwen_qwen3.8-27b     travel_booking  -        PASS         PASS    PASS      WARN 0.72 (step 2)
+legend: !ERROR = could not judge (setup problem); FAIL/WARN = judged -- details in the full report
+```
+
+Caveat: the 120b row was judged by the same model that produced it —
+read that PASS as same-model-graded.
+
+Known limitations:
+
+- free-tier rate limits (Groq 429s) can stop a run mid-list;
+- `openai/gpt-oss-20b` is rejected by the API with a function-call error;
+- the CLI's error line says "judge request failed" even for agent runs
+  (cosmetic — same client, same wording);
+- the judge's score varies slightly between runs (0.72, 0.72, 0.70 on the
+  same trace — same verdict, same cited step);
+- the 120b run is graded by the same model that acted as the agent (see
+  the caveat above);
+- only one task exists so far.
 
 **Evaluate one trajectory** (from Python)
 
@@ -530,7 +589,7 @@ touching grader code (one registry entry, one spec file, its fixtures).
 | 9 | Real LLM judge: contract + strict output validation + prompt builder + `TrajectoryQualityGrader` adapter + `evaluate(judge=...)` + one real client (Groq default, stdlib HTTP) + `ScriptedJudge` for offline tests; live tests behind `pytest -m live` | **✅ done** — verified live on Groq (openai/gpt-oss-120b), 18 Oct 2026 |
 | 10 | CLI (`uv run traject evaluate ...`) | **✅ done** — no-judge table verified offline in tests; one live judged run on Groq (openai/gpt-oss-120b) through the CLI, 19 Oct 2026 |
 | 11 | Recorder + simulated environment for travel_booking | **✅ done** — deterministic world replays all seven fixtures byte-exact; rejected actions recorded; graded end-to-end by the CLI |
-| 12 | LLM-agent demo: agent → recorder → report, real traces (needs an API key) | **✅ done** — agent loop (`agent.py`) + `traject run`; offline suite green, live agent test behind `pytest -m live` |
+| 12 | LLM-agent demo: agent → recorder → report, real traces (needs an API key) | **✅ done** — verified live on Groq, 19 Oct 2026 ([docs/RUNS.md](docs/RUNS.md)) |
 
 ## Design notes & FAQ
 

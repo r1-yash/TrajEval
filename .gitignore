@@ -18,3 +18,7 @@ wheels/
 *.key
 secrets.*
 
+# Local run outputs and backups (examples/ is committed; root runs/ is not)
+/runs/
+*.bak
+
