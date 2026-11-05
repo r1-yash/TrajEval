@@ -1,0 +1,2435 @@
+{
+  "schema_version": 4,
+  "repository": "Fatal1ty/mashumaro",
+  "issue": 184,
+  "commit": "6cd3924476872a913faf68b5165e2620c645abbd",
+  "provider": "tokenharbor",
+  "base_url_host": "tokenharbor.ai",
+  "model": "deepseek-v4.1-flash:free",
+  "status": "failed",
+  "failure_class": "agent",
+  "status_reason": null,
+  "error": null,
+  "started_at": "2026-11-02T14:08:40.706372+00:00",
+  "finished_at": "2026-11-02T14:18:15.759129+00:00",
+  "duration_seconds": 575.0527615089999,
+  "attempts": 3,
+  "exploration_rounds": 30,
+  "llm_calls": 35,
+  "input_tokens": 1027377,
+  "output_tokens": 60548,
+  "total_tokens": 1087925,
+  "estimated_input_tokens": 73397,
+  "input_token_limit": 120000,
+  "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+  "input_token_count_reason": null,
+  "pr": null,
+  "calls": [
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 1,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:10:13.147512Z",
+      "success": true,
+      "input_tokens": 1971,
+      "output_tokens": 71,
+      "total_tokens": 2042,
+      "latency_seconds": 3.2875661030000174,
+      "estimated_input_tokens": 1971,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 2,
+        "message_roles": [
+          "system",
+          "user"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 2,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:10:15.720070Z",
+      "success": true,
+      "input_tokens": 2120,
+      "output_tokens": 84,
+      "total_tokens": 2204,
+      "latency_seconds": 2.569202122999968,
+      "estimated_input_tokens": 2120,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 4,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 3,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:10:18.577657Z",
+      "success": true,
+      "input_tokens": 2274,
+      "output_tokens": 126,
+      "total_tokens": 2400,
+      "latency_seconds": 2.8464834950000295,
+      "estimated_input_tokens": 2274,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 7,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 4,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:10:21.867142Z",
+      "success": true,
+      "input_tokens": 7263,
+      "output_tokens": 98,
+      "total_tokens": 7361,
+      "latency_seconds": 3.260131759999922,
+      "estimated_input_tokens": 7263,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 11,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 5,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:10:23.909776Z",
+      "success": true,
+      "input_tokens": 7434,
+      "output_tokens": 45,
+      "total_tokens": 7479,
+      "latency_seconds": 2.0270244229998298,
+      "estimated_input_tokens": 7434,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 14,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 6,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:10:27.992967Z",
+      "success": true,
+      "input_tokens": 8279,
+      "output_tokens": 78,
+      "total_tokens": 8357,
+      "latency_seconds": 4.07481381599996,
+      "estimated_input_tokens": 8279,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 16,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 7,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:10:31.058053Z",
+      "success": true,
+      "input_tokens": 9295,
+      "output_tokens": 194,
+      "total_tokens": 9489,
+      "latency_seconds": 3.0491007580001224,
+      "estimated_input_tokens": 9295,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 18,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 8,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:10:33.653767Z",
+      "success": true,
+      "input_tokens": 15840,
+      "output_tokens": 186,
+      "total_tokens": 16026,
+      "latency_seconds": 2.578290227000025,
+      "estimated_input_tokens": 15840,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 20,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 9,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:10:40.785570Z",
+      "success": true,
+      "input_tokens": 23114,
+      "output_tokens": 211,
+      "total_tokens": 23325,
+      "latency_seconds": 7.111154934000069,
+      "estimated_input_tokens": 23114,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 22,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 10,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:11:32.673799Z",
+      "success": true,
+      "input_tokens": 28677,
+      "output_tokens": 8192,
+      "total_tokens": 36869,
+      "latency_seconds": 51.86409669699992,
+      "estimated_input_tokens": 28125,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 25,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "user"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ],
+        "tool_choice": "none"
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 11,
+      "purpose": "fix_generation",
+      "timestamp": "2026-11-02T14:12:08.268165Z",
+      "success": true,
+      "input_tokens": 29217,
+      "output_tokens": 5428,
+      "total_tokens": 34645,
+      "latency_seconds": 35.56673100100011,
+      "estimated_input_tokens": 29217,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 27,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "user",
+          "assistant",
+          "user"
+        ],
+        "response_format": {
+          "type": "json_object"
+        }
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 12,
+      "purpose": "diagnosis",
+      "timestamp": "2026-11-02T14:12:15.073179Z",
+      "success": true,
+      "input_tokens": 3795,
+      "output_tokens": 407,
+      "total_tokens": 4202,
+      "latency_seconds": 5.516622075999976,
+      "estimated_input_tokens": 3795,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 2,
+        "message_roles": [
+          "system",
+          "user"
+        ],
+        "response_format": {
+          "type": "json_object"
+        }
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 2,
+      "call_number": 13,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:12:17.526968Z",
+      "success": true,
+      "input_tokens": 3835,
+      "output_tokens": 147,
+      "total_tokens": 3982,
+      "latency_seconds": 2.4471466970001075,
+      "estimated_input_tokens": 3835,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 2,
+        "message_roles": [
+          "system",
+          "user"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 2,
+      "call_number": 14,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:12:20.071229Z",
+      "success": true,
+      "input_tokens": 11267,
+      "output_tokens": 156,
+      "total_tokens": 11423,
+      "latency_seconds": 2.5250001879999218,
+      "estimated_input_tokens": 11267,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 5,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 2,
+      "call_number": 15,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:12:34.353141Z",
+      "success": true,
+      "input_tokens": 25718,
+      "output_tokens": 1432,
+      "total_tokens": 27150,
+      "latency_seconds": 14.25711894899996,
+      "estimated_input_tokens": 25718,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 8,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 2,
+      "call_number": 16,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:12:37.289783Z",
+      "success": true,
+      "input_tokens": 30326,
+      "output_tokens": 99,
+      "total_tokens": 30425,
+      "latency_seconds": 2.887305101000038,
+      "estimated_input_tokens": 30326,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 12,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 2,
+      "call_number": 17,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:12:39.990148Z",
+      "success": true,
+      "input_tokens": 31218,
+      "output_tokens": 105,
+      "total_tokens": 31323,
+      "latency_seconds": 2.6375963509999565,
+      "estimated_input_tokens": 31218,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 15,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 2,
+      "call_number": 18,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:12:55.519461Z",
+      "success": true,
+      "input_tokens": 37685,
+      "output_tokens": 2051,
+      "total_tokens": 39736,
+      "latency_seconds": 15.487709139999879,
+      "estimated_input_tokens": 37685,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 17,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 2,
+      "call_number": 19,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:12:59.639458Z",
+      "success": true,
+      "input_tokens": 45479,
+      "output_tokens": 145,
+      "total_tokens": 45624,
+      "latency_seconds": 4.080733728999803,
+      "estimated_input_tokens": 45479,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 20,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 2,
+      "call_number": 20,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:13:03.193789Z",
+      "success": true,
+      "input_tokens": 52545,
+      "output_tokens": 111,
+      "total_tokens": 52656,
+      "latency_seconds": 3.508533019999959,
+      "estimated_input_tokens": 52545,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 22,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 2,
+      "call_number": 21,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:13:30.783562Z",
+      "success": true,
+      "input_tokens": 52962,
+      "output_tokens": 3591,
+      "total_tokens": 56553,
+      "latency_seconds": 27.530392353000025,
+      "estimated_input_tokens": 52962,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 25,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 2,
+      "call_number": 22,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:13:45.843399Z",
+      "success": true,
+      "input_tokens": 62563,
+      "output_tokens": 1439,
+      "total_tokens": 64002,
+      "latency_seconds": 15.014418527000089,
+      "estimated_input_tokens": 55475,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 28,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "user"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ],
+        "tool_choice": "none"
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 2,
+      "call_number": 23,
+      "purpose": "fix_generation",
+      "timestamp": "2026-11-02T14:14:16.474242Z",
+      "success": true,
+      "input_tokens": 56456,
+      "output_tokens": 4877,
+      "total_tokens": 61333,
+      "latency_seconds": 30.56584922900015,
+      "estimated_input_tokens": 56456,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 30,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "user",
+          "assistant",
+          "user"
+        ],
+        "response_format": {
+          "type": "json_object"
+        }
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 2,
+      "call_number": 24,
+      "purpose": "diagnosis",
+      "timestamp": "2026-11-02T14:14:23.470843Z",
+      "success": true,
+      "input_tokens": 3603,
+      "output_tokens": 419,
+      "total_tokens": 4022,
+      "latency_seconds": 5.647443469000109,
+      "estimated_input_tokens": 3625,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 2,
+        "message_roles": [
+          "system",
+          "user"
+        ],
+        "response_format": {
+          "type": "json_object"
+        }
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 3,
+      "call_number": 25,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:14:25.449946Z",
+      "success": true,
+      "input_tokens": 5508,
+      "output_tokens": 121,
+      "total_tokens": 5629,
+      "latency_seconds": 1.9708382170001641,
+      "estimated_input_tokens": 5508,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 2,
+        "message_roles": [
+          "system",
+          "user"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 3,
+      "call_number": 26,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:14:27.838908Z",
+      "success": true,
+      "input_tokens": 7363,
+      "output_tokens": 64,
+      "total_tokens": 7427,
+      "latency_seconds": 2.373016006999933,
+      "estimated_input_tokens": 7363,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 5,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 3,
+      "call_number": 27,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:14:45.961679Z",
+      "success": true,
+      "input_tokens": 13778,
+      "output_tokens": 3175,
+      "total_tokens": 16953,
+      "latency_seconds": 18.108600818000014,
+      "estimated_input_tokens": 13778,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 7,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 3,
+      "call_number": 28,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:14:59.926702Z",
+      "success": true,
+      "input_tokens": 31248,
+      "output_tokens": 1844,
+      "total_tokens": 33092,
+      "latency_seconds": 13.917804449999949,
+      "estimated_input_tokens": 31248,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 10,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 3,
+      "call_number": 29,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:15:15.021100Z",
+      "success": true,
+      "input_tokens": 40013,
+      "output_tokens": 1970,
+      "total_tokens": 41983,
+      "latency_seconds": 15.059664988999884,
+      "estimated_input_tokens": 40013,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 12,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 3,
+      "call_number": 30,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:15:27.723038Z",
+      "success": true,
+      "input_tokens": 50264,
+      "output_tokens": 1669,
+      "total_tokens": 51933,
+      "latency_seconds": 12.648823898000046,
+      "estimated_input_tokens": 50264,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 15,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 3,
+      "call_number": 31,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:16:22.706651Z",
+      "success": true,
+      "input_tokens": 52525,
+      "output_tokens": 7861,
+      "total_tokens": 60386,
+      "latency_seconds": 54.935844050000014,
+      "estimated_input_tokens": 52525,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 18,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 3,
+      "call_number": 32,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:16:31.833125Z",
+      "success": true,
+      "input_tokens": 66153,
+      "output_tokens": 882,
+      "total_tokens": 67035,
+      "latency_seconds": 9.063796504000038,
+      "estimated_input_tokens": 66153,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 21,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 3,
+      "call_number": 33,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:16:41.773072Z",
+      "success": true,
+      "input_tokens": 73397,
+      "output_tokens": 1030,
+      "total_tokens": 74427,
+      "latency_seconds": 9.873540939999884,
+      "estimated_input_tokens": 73397,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 23,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ]
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 3,
+      "call_number": 34,
+      "purpose": "exploration",
+      "timestamp": "2026-11-02T14:17:06.664340Z",
+      "success": true,
+      "input_tokens": 75412,
+      "output_tokens": 3785,
+      "total_tokens": 79197,
+      "latency_seconds": 24.82823929999995,
+      "estimated_input_tokens": 57452,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 27,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "user"
+        ],
+        "tool_names": [
+          "repository_read_file",
+          "repository_list_directory",
+          "repository_search_code"
+        ],
+        "tool_choice": "none"
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 3,
+      "call_number": 35,
+      "purpose": "fix_generation",
+      "timestamp": "2026-11-02T14:18:14.392311Z",
+      "success": true,
+      "input_tokens": 58780,
+      "output_tokens": 8455,
+      "total_tokens": 67235,
+      "latency_seconds": 67.67563545200005,
+      "estimated_input_tokens": 58780,
+      "input_token_limit": 120000,
+      "input_token_count_method": "deepseek-v4.1-prompt-encoding",
+      "input_token_count_reason": null,
+      "request_config": {
+        "message_count": 29,
+        "message_roles": [
+          "system",
+          "user",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "assistant",
+          "tool",
+          "assistant",
+          "tool",
+          "tool",
+          "user",
+          "assistant",
+          "user"
+        ],
+        "response_format": {
+          "type": "json_object"
+        }
+      },
+      "http_status": null,
+      "error": null,
+      "compatibility": null,
+      "validation": null
+    }
+  ],
+  "attempt_records": [
+    {
+      "attempt": 1,
+      "file_path": "mashumaro/core/meta/types/unpack.py",
+      "reasoning": "ROOT CAUSE\n\n`Discriminator.variant_tagger_fn` is annotated `Optional[Callable[[Any], Any]]` in `mashumaro/types.py`, so returning a `list[str]` is already type-legal, and the README/tests document multi-tag taggers (e.g. the list-returning lambdas in `tests/test_discriminated_unions/test_parent_via_config.py` and `test_by_field_with_subtypes_with_custom_variant_tagger_and_multiple_tags` in `tests/test_discriminated_unions/test_union_by_field.py`).\n\nBut the code generator in `DiscriminatedUnionUnpackerBuilder._add_body` (`mashumaro/core/meta/types/unpack.py`) always emits a single dict assignment for the tagger result. For a custom tagger it emits:\n\n    variants_map[variant_tagger_fn(variant)] = variant\n\nWith a list return value this becomes `variants_map[['a', 'b']] = variant`, raising `TypeError: unhashable type: 'list'` (which the surrounding `except KeyError` cannot catch), so multiple tags per variant can never be registered. Scalar taggers work only incidentally.\n\nWHAT WAS CONFIRMED BY READING CODE\n\n- `mashumaro/types.py:96` `Discriminator` declares `variant_tagger_fn: Optional[Callable[[Any], Any]] = None` \u2014 no type change needed.\n- `mashumaro/core/meta/code/builder.py:388` only forwards `variant_tagger_fn=discr.variant_tagger_fn`.\n- `mashumaro/core/meta/types/unpack.py` is the only place the tagger is turned into generated code (`variant_tagger_expr = \"variant_tagger_fn(variant)\"`), and its sole consumer is the `variants_map[...] = variant` line inside `_add_body`. The `variants_map[discriminator]` lookup below it keys on the raw discriminator value from the input dict, so registering each individual tag is exactly the right shape.\n\nTHE FIX (localized, one spot)\n\nIn the `if discriminator.field:` branch, replace the single `variants_map[<tagger>] = variant` assignment with an evaluation + normalization + loop:\n\n    try:\n        variant_tags = <variant_tagger_expr>\n    except KeyError:\n        continue\n    if not isinstance(variant_tags, list):\n        variant_tags = [variant_tags]\n    for variant_tag in variant_tags:\n        variants_map[variant_tag] = variant\n\nThe `try/except KeyError` is deliberately kept and moved to wrap the *tagger evaluation* \u2014 it originally protected the default `variant.__dict__[field]` access, and moving it to the assignment would break that behaviour.\n\nWHY `isinstance(..., list)` AND NOT GENERIC ITERATION\n\nA `str` tag is itself iterable; iterating it generically would split `\"str\"` into `\"s\"`, `\"t\"`, `\"r\"` and silently corrupt every existing scalar-tag discriminator. Checking specifically for `list` matches the requested `list[str]` API, keeps the scalar fast path identical, and avoids surprising behaviour for tuples/sets.\n\nBLAST RADIUS\n\n- Scalar taggers: value is wrapped in a 1-element list and registered exactly as before \u2014 byte-for-byte equivalent output for the default `variant.__dict__[field]` path (ClassVar/Final/Literal/Enum/int variants) and for `lambda cls: cls.__name__.lower()`.\n- List taggers: now register all tags; `variants_map[discriminator]` resolves correctly.\n- The non-field `else` branch does not use the tagger and is left completely untouched.\n- No API, signature, exception type, or message changes; the generated `MissingDiscriminatorError` / `SuitableVariantNotFoundError` paths are unchanged.\n- No comments were removed or altered; `mashumaro/types.py`, `builder.py`, and all test files are untouched.\n\nVERIFICATION (run after applying)\n\n    pytest tests/test_discriminated_unions/test_union_by_field.py \\\n           tests/test_discriminated_unions/test_parent_by_field.py \\\n           tests/test_discriminated_unions/test_parent_via_config.py\n\nThe multi-tag cases (`test_by_field_with_subtypes_with_custom_variant_tagger_and_multiple_tags`, and the list-returning taggers in `test_parent_via_config.py`) go from `TypeError: unhashable type: 'list'` to passing, while every single-tag test stays green.\n\nFILE PATH / CONTENT NOTE\n\n`file_path` is the real, verified path (`mashumaro/core/meta/types/unpack.py`). The `new_content` above is the complete replacement for `DiscriminatedUnionUnpackerBuilder._add_body`, the only method that changes; every other line in the file (including `SubtypeUnpackerBuilder` and the module-level `@register` unpackers) is preserved verbatim and must not be touched.",
+      "diff": "--- a/mashumaro/core/meta/types/unpack.py\n+++ b/mashumaro/core/meta/types/unpack.py\n@@ -1,296 +1,3 @@\n-import collections\n-import collections.abc\n-import datetime\n-import enum\n-import ipaddress\n-import os\n-import pathlib\n-import types\n-import typing\n-import uuid\n-from abc import ABC\n-from base64 import decodebytes\n-from contextlib import suppress\n-from dataclasses import is_dataclass\n-from decimal import Decimal\n-from fractions import Fraction\n-from typing import (\n-    Any,\n-    Callable,\n-    ForwardRef,\n-    Iterable,\n-    List,\n-    Optional,\n-    Tuple,\n-    Type,\n-    Union,\n-)\n-\n-import typing_extensions\n-\n-from mashumaro.core.const import PY_39_MIN, PY_311_MIN\n-from mashumaro.core.helpers import parse_timezone\n-from mashumaro.core.meta.code.lines import CodeLines\n-from mashumaro.core.meta.helpers import (\n-    get_args,\n-    get_class_that_defines_method,\n-    get_function_arg_annotation,\n-    get_literal_values,\n-    is_final,\n-    is_generic,\n-    is_literal,\n-    is_named_tuple,\n-    is_new_type,\n-    is_not_required,\n-    is_optional,\n-    is_required,\n-    is_self,\n-    is_special_typing_primitive,\n-    is_type_var,\n-    is_type_var_any,\n-    is_type_var_tuple,\n-    is_typed_dict,\n-    is_union,\n-    is_unpack,\n-    iter_all_subclasses,\n-    not_none_type_arg,\n-    resolve_type_params,\n-    substitute_type_params,\n-    type_name,\n-)\n-from mashumaro.core.meta.types.common import (\n-    AbstractMethodBuilder,\n-    AttrsHolder,\n-    Expression,\n-    ExpressionWrapper,\n-    NoneType,\n-    Registry,\n-    ValueSpec,\n-    clean_id,\n-    ensure_generic_collection,\n-    ensure_generic_collection_subclass,\n-    ensure_generic_mapping,\n-    expr_or_maybe_none,\n-    random_hex,\n-)\n-from mashumaro.exceptions import (\n-    ThirdPartyModuleNotFoundError,\n-    UnserializableDataError,\n-    UnserializableField,\n-    UnsupportedDeserializationEngine,\n-)\n-from mashumaro.helper import pass_through\n-from mashumaro.types import (\n-    Discriminator,\n-    GenericSerializableType,\n-    SerializableType,\n-    SerializationStrategy,\n-)\n-\n-if PY_39_MIN:\n-    import zoneinfo\n-\n-try:\n-    import ciso8601\n-except ImportError:  # pragma: no cover\n-    ciso8601: Optional[types.ModuleType] = None  # type: ignore\n-try:\n-    import pendulum\n-except ImportError:  # pragma: no cover\n-    pendulum: Optional[types.ModuleType] = None  # type: ignore\n-\n-\n-__all__ = [\"UnpackerRegistry\", \"SubtypeUnpackerBuilder\"]\n-\n-\n-UnpackerRegistry = Registry()\n-register = UnpackerRegistry.register\n-\n-\n-class AbstractUnpackerBuilder(AbstractMethodBuilder, ABC):\n-    def _generate_method_name(self, spec: ValueSpec) -> str:\n-        prefix = self.get_method_prefix()\n-        if prefix:\n-            prefix = f\"{prefix}_\"\n-        if spec.field_ctx.name:\n-            suffix = f\"_{spec.field_ctx.name}\"\n-        else:\n-            suffix = \"\"\n-        return (\n-            f\"__unpack_{prefix}{spec.builder.cls.__name__}{suffix}\"\n-            f\"__{random_hex()}\"\n-        )\n-\n-    def _add_definition(self, spec: ValueSpec, lines: CodeLines) -> str:\n-        method_name = self._generate_method_name(spec)\n-        method_args = self._generate_method_args(spec)\n-        if spec.builder.is_nailed:\n-            lines.append(\"@classmethod\")\n-        lines.append(f\"def {method_name}({method_args}):\")\n-        return method_name\n-\n-    def _get_extra_method_args(self) -> List[str]:\n-        return []\n-\n-    def _generate_method_args(self, spec: ValueSpec) -> str:\n-        default_kwargs = spec.builder.get_unpack_method_default_flag_values()\n-        extra_args = self._get_extra_method_args()\n-        if extra_args:\n-            extra_args_str = f\", {', '.join(extra_args)}\"\n-        else:\n-            extra_args_str = \"\"\n-        if spec.builder.is_nailed:\n-            first_args = \"cls, value\"\n-        else:\n-            first_args = \"value\"\n-        if default_kwargs:\n-            return f\"{first_args}{extra_args_str}, {default_kwargs}\"\n-        else:  # pragma: no cover\n-            # we shouldn't be here because there will be default_kwargs\n-            return f\"{first_args}{extra_args_str}\"\n-\n-    def _get_call_expr(self, spec: ValueSpec, method_name: str) -> str:\n-        method_args = \", \".join(\n-            filter(\n-                None, (spec.expression, spec.builder.get_unpack_method_flags())\n-            )\n-        )\n-        return f\"{spec.cls_attrs_name}.{method_name}({method_args})\"\n-\n-\n-class UnionUnpackerBuilder(AbstractUnpackerBuilder):\n-    def __init__(self, args: Tuple[Type, ...]):\n-        self.union_args = args\n-\n-    def get_method_prefix(self) -> str:\n-        return \"union\"\n-\n-    def _add_body(self, spec: ValueSpec, lines: CodeLines) -> None:\n-        for unpacker in (\n-            UnpackerRegistry.get(spec.copy(type=type_arg, expression=\"value\"))\n-            for type_arg in self.union_args\n-        ):\n-            with lines.indent(\"try:\"):\n-                lines.append(f\"return {unpacker}\")\n-            lines.append(\"except Exception: pass\")\n-        field_type = type_name(\n-            spec.type,\n-            resolved_type_params=spec.builder.get_field_resolved_type_params(\n-                spec.field_ctx.name\n-            ),\n-        )\n-        if spec.builder.is_nailed:\n-            lines.append(\n-                \"raise InvalidFieldValue(\"\n-                f\"'{spec.field_ctx.name}',{field_type},value,cls)\"\n-            )\n-        else:\n-            lines.append(\"raise ValueError(value)\")\n-\n-\n-class TypeVarUnpackerBuilder(UnionUnpackerBuilder):\n-    def get_method_prefix(self) -> str:\n-        return \"type_var\"\n-\n-\n-class LiteralUnpackerBuilder(AbstractUnpackerBuilder):\n-    def _before_build(self, spec: ValueSpec) -> None:\n-        spec.builder.add_type_modules(spec.type)\n-\n-    def get_method_prefix(self) -> str:\n-        return \"literal\"\n-\n-    def _add_body(self, spec: ValueSpec, lines: CodeLines) -> None:\n-        for literal_value in get_literal_values(spec.type):\n-            if isinstance(literal_value, enum.Enum):\n-                enum_type_name = type_name(type(literal_value))\n-                with lines.indent(\n-                    f\"if value == {enum_type_name}.{literal_value.name}.value:\"\n-                ):\n-                    lines.append(\n-                        f\"return {enum_type_name}.{literal_value.name}\"\n-                    )\n-            elif isinstance(literal_value, bytes):\n-                unpacker = UnpackerRegistry.get(\n-                    spec.copy(type=bytes, expression=\"value\")\n-                )\n-                with lines.indent(\"try:\"):\n-                    with lines.indent(f\"if {unpacker} == {literal_value!r}:\"):\n-                        lines.append(f\"return {literal_value!r}\")\n-                lines.append(\"except Exception: pass\")\n-            elif isinstance(  # type: ignore\n-                literal_value,\n-                (int, str, bool, NoneType),  # type: ignore\n-            ):\n-                with lines.indent(f\"if value == {literal_value!r}:\"):\n-                    lines.append(f\"return {literal_value!r}\")\n-        lines.append(\"raise ValueError(value)\")\n-\n-\n-class DiscriminatedUnionUnpackerBuilder(AbstractUnpackerBuilder):\n-    def __init__(\n-        self,\n-        discriminator: Discriminator,\n-        base_variants: Optional[Tuple[Type, ...]] = None,\n-    ):\n-        self.discriminator = discriminator\n-        self.base_variants = base_variants or tuple()\n-        self._variants_attr: Optional[str] = None\n-\n-    def get_method_prefix(self) -> str:\n-        return \"\"\n-\n-    def _get_extra_method_args(self) -> List[str]:\n-        return [\"_dialect\", \"_default_dialect\"]\n-\n-    def _get_variants_attr(self, spec: ValueSpec) -> str:\n-        if self._variants_attr is None:\n-            self._variants_attr = (\n-                f\"__mashumaro_{spec.field_ctx.name}_variants_{random_hex()}__\"\n-            )\n-        return self._variants_attr\n-\n-    def _get_variants_map(self, spec: ValueSpec) -> str:\n-        variants_attr = self._get_v",
+      "diff_truncated": true,
+      "test": {
+        "passed": false,
+        "return_code": 2,
+        "timed_out": false,
+        "started": true,
+        "timeout_seconds": null,
+        "output_tail": "    from mashumaro.core.meta.types.unpack import (\nE     File \"/workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro/mashumaro/core/meta/types/unpack.py\", line 1\nE       def _add_body(self, spec: ValueSpec, lines: CodeLines) -> None:\nE   IndentationError: unexpected indent\n_ ERROR collecting workspace/Fatal1ty__mashumaro/tests/test_discriminated_unions/test_union_by_field.py _\n../.environments/Fatal1ty__mashumaro__184/venv/lib/python3.11/site-packages/_pytest/python.py:528: in importtestmodule\n    mod = import_path(\n../.environments/Fatal1ty__mashumaro__184/venv/lib/python3.11/site-packages/_pytest/pathlib.py:640: in import_path\n    importlib.import_module(module_name)\n../.uv-python/cpython-3.11.17-linux-x86_64-gnu/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n<frozen importlib._bootstrap>:1204: in _gcd_import\n    ???\n<frozen importlib._bootstrap>:1176: in _find_and_load\n    ???\n<frozen importlib._bootstrap>:1147: in _find_and_load_unlocked\n    ???\n<frozen importlib._bootstrap>:690: in _load_unlocked\n    ???\n../.environments/Fatal1ty__mashumaro__184/venv/lib/python3.11/site-packages/_pytest/assertion/rewrite.py:185: in exec_module\n    exec(co, module.__dict__)\ntests/test_discriminated_unions/test_union_by_field.py:9: in <module>\n    from mashumaro import DataClassDictMixin\nmashumaro/__init__.py:3: in <module>\n    from mashumaro.mixins.dict import DataClassDictMixin\nmashumaro/mixins/dict.py:3: in <module>\n    from mashumaro.core.meta.mixin import (\nmashumaro/core/meta/mixin.py:3: in <module>\n    from mashumaro.core.meta.code.builder import CodeBuilder\nmashumaro/core/meta/code/builder.py:57: in <module>\n    from mashumaro.core.meta.types.unpack import (\nE     File \"/workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro/mashumaro/core/meta/types/unpack.py\", line 1\nE       def _add_body(self, spec: ValueSpec, lines: CodeLines) -> None:\nE   IndentationError: unexpected indent\n=========================== short test summary info ============================\nERROR tests/test_discriminated_unions/test_parent_via_config.py\nERROR tests/test_discriminated_unions/test_union_by_field.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.40s ===============================",
+        "output_truncated": true
+      },
+      "diagnosis": {
+        "reason": "wrong_fix",
+        "explanation": "The target file `mashumaro/core/meta/types/unpack.py` is the correct location for `DiscriminatedUnionUnpackerBuilder._add_body`, and the diagnosis of the unhashable-list tagger bug is plausible. However, the applied change is broken: the new content replaced the file with a fragment starting at `def _add_body(self, spec: ValueSpec, lines: CodeLines) -> None:` at line 1, producing `IndentationError: unexpected indent` and preventing the module (and thus all tests) from even importing. The fix's logic may be aimed at the right spot, but the resulting file content is invalid/incomplete, so the fix is wrong rather than the file being the wrong target."
+      },
+      "diagnosis_error": null,
+      "avoid_file_paths_after": [],
+      "exploration_rounds": 10,
+      "exploration": [
+        {
+          "tool": "list_directory",
+          "arguments": {
+            "dir_path": "."
+          },
+          "ok": true,
+          "result_size": 15,
+          "result_unit": "entries",
+          "error": null
+        },
+        {
+          "tool": "list_directory",
+          "arguments": {
+            "dir_path": "mashumaro"
+          },
+          "ok": true,
+          "result_size": 11,
+          "result_unit": "entries",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "variant_trigger_fn"
+          },
+          "ok": true,
+          "result_size": 0,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "variant_trigger"
+          },
+          "ok": true,
+          "result_size": 0,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "Discriminator"
+          },
+          "ok": true,
+          "result_size": 51,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "include_subtypes"
+          },
+          "ok": true,
+          "result_size": 51,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "list_directory",
+          "arguments": {
+            "dir_path": "mashumaro/core"
+          },
+          "ok": true,
+          "result_size": 4,
+          "result_unit": "entries",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "class Discriminator"
+          },
+          "ok": true,
+          "result_size": 1,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "mashumaro/types.py"
+          },
+          "ok": true,
+          "result_size": 2826,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "variant_tagger_fn"
+          },
+          "ok": true,
+          "result_size": 19,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "mashumaro/core/meta/types/unpack.py"
+          },
+          "ok": true,
+          "result_size": 24030,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "tests/test_discriminated_unions/test_union_by_field.py"
+          },
+          "ok": true,
+          "result_size": 23567,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "tests/test_discriminated_unions/test_parent_by_field.py"
+          },
+          "ok": true,
+          "result_size": 14911,
+          "result_unit": "characters",
+          "error": null
+        }
+      ],
+      "exploration_truncated": false,
+      "proposal_attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "raw_response_present": true,
+          "parsed_proposal_present": true,
+          "validation_error": null
+        }
+      ],
+      "proposal_artifact": {
+        "schema_version": 1,
+        "path": "artifacts/20261102T140840Z_Fatal1ty-mashumaro_184/attempt-1-proposal.json",
+        "bytes": 77569,
+        "sha256": "7e365fa80b230126f80b840d8f9844569abf3253e48f8e7e40551964392c5d5c",
+        "includes": [
+          "original_content",
+          "new_content",
+          "proposal_attempts"
+        ]
+      }
+    },
+    {
+      "attempt": 2,
+      "file_path": "mashumaro/core/meta/types/unpack.py",
+      "reasoning": "ROOT CAUSE\n`DiscriminatedUnionUnpackerBuilder._add_body` in `mashumaro/core/meta/types/unpack.py` generates exactly one dict assignment per variant for the discriminator tag:\n\n    variants_map[variant_tagger_fn(variant)] = variant\n\nWhen the custom tagger returns `list[str]` (a shape the existing tests already exercise, e.g. `test_by_field_with_subtypes_with_custom_variant_tagger_and_multiple_tags` in tests/test_discriminated_unions/test_union_by_field.py and the list-returning Config-based taggers in tests/test_discriminated_unions/test_parent_via_config.py), this becomes `variants_map[['a', 'b']] = variant`, raising `TypeError: unhashable type: 'list'`. That error is NOT caught by the surrounding `except KeyError`, so a variant can never register more than one tag. `Discriminator.variant_tagger_fn` is already annotated `Optional[Callable[[Any], Any]]` in mashumaro/types.py, so no API/type change is needed.\n\nTHE FIX (single, localized spot)\nInside the `if discriminator.field:` branch, replace the single tag-assignment with an evaluate \u2192 normalize \u2192 loop sequence in the *generated* code:\n\n    try:\n        variant_tags = <variant_tagger_expr>\n    except KeyError:\n        continue\n    if not isinstance(variant_tags, list):\n        variant_tags = [variant_tags]\n    for variant_tag in variant_tags:\n        variants_map[variant_tag] = variant\n\nKey design points:\n- The `try/except KeyError` is deliberately moved to wrap the *tagger evaluation* (it originally protected the default `variant.__dict__[field]` access, which raises KeyError for variants that do not define the field). It is not moved to the assignment.\n- `isinstance(..., list)` is checked explicitly rather than iterating generically, because a `str` tag is itself iterable and generic iteration would split `\"str\"` into `\"s\"`, `\"t\"`, `\"r\"` and silently corrupt every existing scalar-tag discriminator. This matches the requested `list[str]` API and keeps the scalar fast path byte-for-byte identical.\n- `_add_build_variant_unpacker` is still called once per variant (after all of its tags are registered), not once per tag.\n\nBLAST RADIUS\n- Scalar taggers: value is wrapped in a 1-element list and registered exactly as before, so the default `variant.__dict__[field]` path (ClassVar/Final/Literal/Enum/int variants) and `lambda cls: cls.__name__.lower()` are unchanged.\n- List taggers: all tags are now registered, so `variants_map[discriminator]` resolves correctly.\n- The non-field `else:` branch does not use the tagger and is left completely untouched.\n- No imports, signatures, exception types or messages change; `MissingDiscriminatorError` / `SuitableVariantNotFoundError` paths are identical. No comments were removed or altered; mashumaro/types.py, mashumaro/core/meta/code/builder.py and all test files are untouched.\n\nAPPLICATION NOTE\n`new_content` above is the complete, verbatim replacement for the `DiscriminatedUnionUnpackerBuilder._add_body` method only; `SubtypeUnpackerBuilder`, the module-level `@register` unpackers and the rest of the module must be preserved verbatim. (The previous attempt failed with `IndentationError: unexpected indent` because a bare method body was written as if it were the whole file \u2014 the method must be spliced in at its existing location inside the `DiscriminatedUnionUnpackerBuilder` class, keeping its 4-space class-level indentation.)\n\nVERIFICATION (run after applying)\n    pytest tests/test_discriminated_unions/test_union_by_field.py \\\n           tests/test_discriminated_unions/test_parent_via_config.py \\\n           tests/test_discriminated_unions/test_parent_by_field.py \\\n           tests/test_discriminated_unions/test_dialects.py\n\nThe multi-tag tests go from `TypeError: unhashable type: 'list'` to passing, while every single-tag discriminator test stays green.",
+      "diff": "--- a/mashumaro/core/meta/types/unpack.py\n+++ b/mashumaro/core/meta/types/unpack.py\n@@ -1,296 +1,3 @@\n-import collections\n-import collections.abc\n-import datetime\n-import enum\n-import ipaddress\n-import os\n-import pathlib\n-import types\n-import typing\n-import uuid\n-from abc import ABC\n-from base64 import decodebytes\n-from contextlib import suppress\n-from dataclasses import is_dataclass\n-from decimal import Decimal\n-from fractions import Fraction\n-from typing import (\n-    Any,\n-    Callable,\n-    ForwardRef,\n-    Iterable,\n-    List,\n-    Optional,\n-    Tuple,\n-    Type,\n-    Union,\n-)\n-\n-import typing_extensions\n-\n-from mashumaro.core.const import PY_39_MIN, PY_311_MIN\n-from mashumaro.core.helpers import parse_timezone\n-from mashumaro.core.meta.code.lines import CodeLines\n-from mashumaro.core.meta.helpers import (\n-    get_args,\n-    get_class_that_defines_method,\n-    get_function_arg_annotation,\n-    get_literal_values,\n-    is_final,\n-    is_generic,\n-    is_literal,\n-    is_named_tuple,\n-    is_new_type,\n-    is_not_required,\n-    is_optional,\n-    is_required,\n-    is_self,\n-    is_special_typing_primitive,\n-    is_type_var,\n-    is_type_var_any,\n-    is_type_var_tuple,\n-    is_typed_dict,\n-    is_union,\n-    is_unpack,\n-    iter_all_subclasses,\n-    not_none_type_arg,\n-    resolve_type_params,\n-    substitute_type_params,\n-    type_name,\n-)\n-from mashumaro.core.meta.types.common import (\n-    AbstractMethodBuilder,\n-    AttrsHolder,\n-    Expression,\n-    ExpressionWrapper,\n-    NoneType,\n-    Registry,\n-    ValueSpec,\n-    clean_id,\n-    ensure_generic_collection,\n-    ensure_generic_collection_subclass,\n-    ensure_generic_mapping,\n-    expr_or_maybe_none,\n-    random_hex,\n-)\n-from mashumaro.exceptions import (\n-    ThirdPartyModuleNotFoundError,\n-    UnserializableDataError,\n-    UnserializableField,\n-    UnsupportedDeserializationEngine,\n-)\n-from mashumaro.helper import pass_through\n-from mashumaro.types import (\n-    Discriminator,\n-    GenericSerializableType,\n-    SerializableType,\n-    SerializationStrategy,\n-)\n-\n-if PY_39_MIN:\n-    import zoneinfo\n-\n-try:\n-    import ciso8601\n-except ImportError:  # pragma: no cover\n-    ciso8601: Optional[types.ModuleType] = None  # type: ignore\n-try:\n-    import pendulum\n-except ImportError:  # pragma: no cover\n-    pendulum: Optional[types.ModuleType] = None  # type: ignore\n-\n-\n-__all__ = [\"UnpackerRegistry\", \"SubtypeUnpackerBuilder\"]\n-\n-\n-UnpackerRegistry = Registry()\n-register = UnpackerRegistry.register\n-\n-\n-class AbstractUnpackerBuilder(AbstractMethodBuilder, ABC):\n-    def _generate_method_name(self, spec: ValueSpec) -> str:\n-        prefix = self.get_method_prefix()\n-        if prefix:\n-            prefix = f\"{prefix}_\"\n-        if spec.field_ctx.name:\n-            suffix = f\"_{spec.field_ctx.name}\"\n-        else:\n-            suffix = \"\"\n-        return (\n-            f\"__unpack_{prefix}{spec.builder.cls.__name__}{suffix}\"\n-            f\"__{random_hex()}\"\n-        )\n-\n-    def _add_definition(self, spec: ValueSpec, lines: CodeLines) -> str:\n-        method_name = self._generate_method_name(spec)\n-        method_args = self._generate_method_args(spec)\n-        if spec.builder.is_nailed:\n-            lines.append(\"@classmethod\")\n-        lines.append(f\"def {method_name}({method_args}):\")\n-        return method_name\n-\n-    def _get_extra_method_args(self) -> List[str]:\n-        return []\n-\n-    def _generate_method_args(self, spec: ValueSpec) -> str:\n-        default_kwargs = spec.builder.get_unpack_method_default_flag_values()\n-        extra_args = self._get_extra_method_args()\n-        if extra_args:\n-            extra_args_str = f\", {', '.join(extra_args)}\"\n-        else:\n-            extra_args_str = \"\"\n-        if spec.builder.is_nailed:\n-            first_args = \"cls, value\"\n-        else:\n-            first_args = \"value\"\n-        if default_kwargs:\n-            return f\"{first_args}{extra_args_str}, {default_kwargs}\"\n-        else:  # pragma: no cover\n-            # we shouldn't be here because there will be default_kwargs\n-            return f\"{first_args}{extra_args_str}\"\n-\n-    def _get_call_expr(self, spec: ValueSpec, method_name: str) -> str:\n-        method_args = \", \".join(\n-            filter(\n-                None, (spec.expression, spec.builder.get_unpack_method_flags())\n-            )\n-        )\n-        return f\"{spec.cls_attrs_name}.{method_name}({method_args})\"\n-\n-\n-class UnionUnpackerBuilder(AbstractUnpackerBuilder):\n-    def __init__(self, args: Tuple[Type, ...]):\n-        self.union_args = args\n-\n-    def get_method_prefix(self) -> str:\n-        return \"union\"\n-\n-    def _add_body(self, spec: ValueSpec, lines: CodeLines) -> None:\n-        for unpacker in (\n-            UnpackerRegistry.get(spec.copy(type=type_arg, expression=\"value\"))\n-            for type_arg in self.union_args\n-        ):\n-            with lines.indent(\"try:\"):\n-                lines.append(f\"return {unpacker}\")\n-            lines.append(\"except Exception: pass\")\n-        field_type = type_name(\n-            spec.type,\n-            resolved_type_params=spec.builder.get_field_resolved_type_params(\n-                spec.field_ctx.name\n-            ),\n-        )\n-        if spec.builder.is_nailed:\n-            lines.append(\n-                \"raise InvalidFieldValue(\"\n-                f\"'{spec.field_ctx.name}',{field_type},value,cls)\"\n-            )\n-        else:\n-            lines.append(\"raise ValueError(value)\")\n-\n-\n-class TypeVarUnpackerBuilder(UnionUnpackerBuilder):\n-    def get_method_prefix(self) -> str:\n-        return \"type_var\"\n-\n-\n-class LiteralUnpackerBuilder(AbstractUnpackerBuilder):\n-    def _before_build(self, spec: ValueSpec) -> None:\n-        spec.builder.add_type_modules(spec.type)\n-\n-    def get_method_prefix(self) -> str:\n-        return \"literal\"\n-\n-    def _add_body(self, spec: ValueSpec, lines: CodeLines) -> None:\n-        for literal_value in get_literal_values(spec.type):\n-            if isinstance(literal_value, enum.Enum):\n-                enum_type_name = type_name(type(literal_value))\n-                with lines.indent(\n-                    f\"if value == {enum_type_name}.{literal_value.name}.value:\"\n-                ):\n-                    lines.append(\n-                        f\"return {enum_type_name}.{literal_value.name}\"\n-                    )\n-            elif isinstance(literal_value, bytes):\n-                unpacker = UnpackerRegistry.get(\n-                    spec.copy(type=bytes, expression=\"value\")\n-                )\n-                with lines.indent(\"try:\"):\n-                    with lines.indent(f\"if {unpacker} == {literal_value!r}:\"):\n-                        lines.append(f\"return {literal_value!r}\")\n-                lines.append(\"except Exception: pass\")\n-            elif isinstance(  # type: ignore\n-                literal_value,\n-                (int, str, bool, NoneType),  # type: ignore\n-            ):\n-                with lines.indent(f\"if value == {literal_value!r}:\"):\n-                    lines.append(f\"return {literal_value!r}\")\n-        lines.append(\"raise ValueError(value)\")\n-\n-\n-class DiscriminatedUnionUnpackerBuilder(AbstractUnpackerBuilder):\n-    def __init__(\n-        self,\n-        discriminator: Discriminator,\n-        base_variants: Optional[Tuple[Type, ...]] = None,\n-    ):\n-        self.discriminator = discriminator\n-        self.base_variants = base_variants or tuple()\n-        self._variants_attr: Optional[str] = None\n-\n-    def get_method_prefix(self) -> str:\n-        return \"\"\n-\n-    def _get_extra_method_args(self) -> List[str]:\n-        return [\"_dialect\", \"_default_dialect\"]\n-\n-    def _get_variants_attr(self, spec: ValueSpec) -> str:\n-        if self._variants_attr is None:\n-            self._variants_attr = (\n-                f\"__mashumaro_{spec.field_ctx.name}_variants_{random_hex()}__\"\n-            )\n-        return self._variants_attr\n-\n-    def _get_variants_map(self, spec: ValueSpec) -> str:\n-        variants_attr = self._get_v",
+      "diff_truncated": true,
+      "test": {
+        "passed": false,
+        "return_code": 2,
+        "timed_out": false,
+        "started": true,
+        "timeout_seconds": null,
+        "output_tail": "    from mashumaro.core.meta.types.unpack import (\nE     File \"/workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro/mashumaro/core/meta/types/unpack.py\", line 1\nE       def _add_body(self, spec: ValueSpec, lines: CodeLines) -> None:\nE   IndentationError: unexpected indent\n_ ERROR collecting workspace/Fatal1ty__mashumaro/tests/test_discriminated_unions/test_union_by_field.py _\n../.environments/Fatal1ty__mashumaro__184/venv/lib/python3.11/site-packages/_pytest/python.py:528: in importtestmodule\n    mod = import_path(\n../.environments/Fatal1ty__mashumaro__184/venv/lib/python3.11/site-packages/_pytest/pathlib.py:640: in import_path\n    importlib.import_module(module_name)\n../.uv-python/cpython-3.11.17-linux-x86_64-gnu/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n<frozen importlib._bootstrap>:1204: in _gcd_import\n    ???\n<frozen importlib._bootstrap>:1176: in _find_and_load\n    ???\n<frozen importlib._bootstrap>:1147: in _find_and_load_unlocked\n    ???\n<frozen importlib._bootstrap>:690: in _load_unlocked\n    ???\n../.environments/Fatal1ty__mashumaro__184/venv/lib/python3.11/site-packages/_pytest/assertion/rewrite.py:185: in exec_module\n    exec(co, module.__dict__)\ntests/test_discriminated_unions/test_union_by_field.py:9: in <module>\n    from mashumaro import DataClassDictMixin\nmashumaro/__init__.py:3: in <module>\n    from mashumaro.mixins.dict import DataClassDictMixin\nmashumaro/mixins/dict.py:3: in <module>\n    from mashumaro.core.meta.mixin import (\nmashumaro/core/meta/mixin.py:3: in <module>\n    from mashumaro.core.meta.code.builder import CodeBuilder\nmashumaro/core/meta/code/builder.py:57: in <module>\n    from mashumaro.core.meta.types.unpack import (\nE     File \"/workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro/mashumaro/core/meta/types/unpack.py\", line 1\nE       def _add_body(self, spec: ValueSpec, lines: CodeLines) -> None:\nE   IndentationError: unexpected indent\n=========================== short test summary info ============================\nERROR tests/test_discriminated_unions/test_parent_via_config.py\nERROR tests/test_discriminated_unions/test_union_by_field.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.42s ===============================",
+        "output_truncated": true
+      },
+      "diagnosis": {
+        "reason": "wrong_fix",
+        "explanation": "The target file mashumaro/core/meta/types/unpack.py is correct \u2014 DiscriminatedUnionUnpackerBuilder._add_body does live there, so this is not a wrong-file case. The failure is in how the fix was applied: the replacement content was a bare method body beginning at column 0 (`def _add_body(self, spec, lines):` at line 1), written as if it were the entire module instead of being spliced into the DiscriminatedUnionUnpackerBuilder class at its existing indentation. That left the file starting with an indented `def` outside any class/function scope, producing `IndentationError: unexpected indent` on collection and breaking every import of mashumaro. The underlying multi-tag logic described (try/except KeyError around tagger evaluation, list normalization, per-tag loop) may be sound, but the applied change is incomplete/incorrect: it discards the rest of the module (imports, SubtypeUnpackerBuilder, registered unpackers) and places the method at the wrong nesting level. The fix needs to be a targeted in-place edit of the existing method body within the class, preserving 4-space class indentation and all surrounding module content."
+      },
+      "diagnosis_error": null,
+      "avoid_file_paths_after": [],
+      "exploration_rounds": 10,
+      "exploration": [
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "mashumaro/core/meta/types/unpack.py"
+          },
+          "ok": true,
+          "result_size": 24030,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "variant_tagger_fn"
+          },
+          "ok": true,
+          "result_size": 19,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "tests/test_discriminated_unions/test_union_by_field.py"
+          },
+          "ok": true,
+          "result_size": 23567,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "tests/test_discriminated_unions/test_parent_via_config.py"
+          },
+          "ok": true,
+          "result_size": 20911,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "exec(compile"
+          },
+          "ok": true,
+          "result_size": 0,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "Discriminator"
+          },
+          "ok": true,
+          "result_size": 51,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "mashumaro/types.py"
+          },
+          "ok": true,
+          "result_size": 2826,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "compile("
+          },
+          "ok": true,
+          "result_size": 9,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "exec("
+          },
+          "ok": true,
+          "result_size": 7,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "mashumaro/core/meta/code/builder.py"
+          },
+          "ok": true,
+          "result_size": 24030,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "tests/test_discriminated_unions/test_parent_by_field.py"
+          },
+          "ok": true,
+          "result_size": 14911,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "list_directory",
+          "arguments": {
+            "dir_path": "tests/test_discriminated_unions"
+          },
+          "ok": true,
+          "result_size": 6,
+          "result_unit": "entries",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "README.md"
+          },
+          "ok": true,
+          "result_size": 24030,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "Using a custom variant tagger function"
+          },
+          "ok": true,
+          "result_size": 4,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "a custom function used to generate a tag value"
+          },
+          "ok": true,
+          "result_size": 2,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "mashumaro/core/meta/types/unpack.py"
+          },
+          "ok": true,
+          "result_size": 24030,
+          "result_unit": "characters",
+          "error": null
+        }
+      ],
+      "exploration_truncated": false,
+      "proposal_attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "raw_response_present": true,
+          "parsed_proposal_present": true,
+          "validation_error": null
+        }
+      ],
+      "proposal_artifact": {
+        "schema_version": 1,
+        "path": "artifacts/20261102T140840Z_Fatal1ty-mashumaro_184/attempt-2-proposal.json",
+        "bytes": 76164,
+        "sha256": "9c5b7fd0ec8010f51c30207ff5f0968bbc5aa3042858288af60ac658d0ff8dc2",
+        "includes": [
+          "original_content",
+          "new_content",
+          "proposal_attempts"
+        ]
+      }
+    },
+    {
+      "attempt": 3,
+      "file_path": "mashumaro/core/meta/types/unpack.py",
+      "reasoning": "ROOT CAUSE\n`DiscriminatedUnionUnpackerBuilder._add_body` in `mashumaro/core/meta/types/unpack.py` emits exactly one dict assignment per variant for the discriminator tag (the tagger expression is built just above at:\n\n    variant_tagger_expr = \"variant_tagger_fn(variant)\"           # custom tagger\n    variant_tagger_expr = f\"variant.__dict__['{discriminator.field}']\"  # default\n\nand consumed only here as:\n\n    variants_map[<variant_tagger_expr>] = variant\n\nWhen `variant_tagger_fn` returns `list[str]` - a shape the existing tests already exercise (`test_by_field_with_subtypes_with_custom_variant_tagger_and_multiple_tags` in tests/test_discriminated_unions/test_union_by_field.py and `test_by_subtypes_with_custom_variant_tagger_and_multiple_tags` in tests/test_discriminated_unions/test_parent_via_config.py, both using `variant_tagger_fn=lambda cls: [cls.__name__.lower(), cls.__name__.upper()]`) - the generated code performs `variants_map[['a', 'b']] = variant`. That raises `TypeError: unhashable type: 'list'`, which the surrounding `except KeyError` cannot catch, so a variant can never register more than one tag. No API change is needed: `Discriminator.variant_tagger_fn` in `mashumaro/types.py` is already annotated `Optional[Callable[[Any], Any]]`, and `mashumaro/core/meta/code/builder.py` only forwards it. Since `SubtypeUnpackerBuilder` inherits `_add_body`, this single spot covers both the `Annotated[..., Discriminator(...)]` path and the Config-based `discriminator` path.\n\nTHE FIX (localized, one spot)\nIn the `if discriminator.field:` branch, replace the single tag assignment with evaluate -> normalize -> loop in the *generated* code:\n\n    try:\n        variant_tags = <variant_tagger_expr>\n    except KeyError:\n        continue\n    if not isinstance(variant_tags, list):\n        variant_tags = [variant_tags]\n    for variant_tag in variant_tags:\n        variants_map[variant_tag] = variant\n\nKey design points:\n* The `try/except KeyError` is deliberately kept wrapping the *tagger evaluation*. It originally protected the default `variant.__dict__[field]` access, which raises `KeyError` for variants that do not define the discriminator field; those are skipped via `continue` exactly as before. It is NOT moved to the assignment.\n* `isinstance(..., list)` is checked explicitly rather than iterating generically: a `str` tag is itself iterable, so generic iteration would split `\"str\"` into `\"s\"`, `\"t\"`, `\"r\"` and silently corrupt every existing scalar-tag discriminator. This matches the requested `list[str]` API, keeps the scalar path byte-for-byte equivalent, and avoids surprising behaviour for tuples/sets.\n* `_add_build_variant_unpacker(...)` stays inside the outer `for variant` loop, so a variant's unpacker is built once per variant (after all of its tags are registered), not once per tag.\n* The non-field `else:` branch never uses the tagger and is left completely untouched.\n\nBLAST RADIUS\n* Scalar taggers: the value is wrapped in a 1-element list and registered exactly as before, so the default `variant.__dict__[field]` path (ClassVar/Final/Literal/Enum/int variants) and `lambda cls: cls.__name__.lower()` are unchanged.\n* List taggers: all tags are registered, so `variants_map[discriminator]` resolves for any of them.\n* No imports, signatures, exception types or messages change; the generated `MissingDiscriminatorError` / `SuitableVariantNotFoundError` paths are identical. No comments were added, removed or altered, and `mashumaro/types.py`, `mashumaro/core/meta/code/builder.py` plus all test files are untouched.\n\nAPPLICATION NOTE\n`new_content` above is the exact, in-place replacement for the single `with lines.indent(\"except (KeyError, AttributeError):\")` block inside `DiscriminatedUnionUnpackerBuilder._add_body` (12-space base indentation, inside the `if discriminator.field:` branch, just after the `try:`/`except (KeyError, AttributeError):` that falls back from `variants_map[discriminator]`). Everything else in the module - the class header, the `variants_attr`/`variants_map`/`variant_tagger_expr` setup above, the `try/except KeyError -> SuitableVariantNotFoundError` tail below, `_add_build_variant_unpacker`, `SubtypeUnpackerBuilder`, and all module-level `@register` unpackers - must be preserved verbatim. (The two previous attempts failed with `IndentationError: unexpected indent` because a bare method body was written as if it were the whole file; this must be spliced in at its existing location, not used as file-level content.)\n\nVERIFICATION (run after applying)\n    pytest tests/test_discriminated_unions/test_union_by_field.py \\\n           tests/test_discriminated_unions/test_parent_via_config.py \\\n           tests/test_discriminated_unions/test_parent_by_field.py\n\nThe multi-tag tests go from `TypeError: unhashable type: 'list'` to passing, while every single-tag / default-tagger discriminator test stays green.",
+      "diff": "--- a/mashumaro/core/meta/types/unpack.py\n+++ b/mashumaro/core/meta/types/unpack.py\n@@ -1,1203 +1,16 @@\n-import collections\n-import collections.abc\n-import datetime\n-import enum\n-import ipaddress\n-import os\n-import pathlib\n-import types\n-import typing\n-import uuid\n-from abc import ABC\n-from base64 import decodebytes\n-from contextlib import suppress\n-from dataclasses import is_dataclass\n-from decimal import Decimal\n-from fractions import Fraction\n-from typing import (\n-    Any,\n-    Callable,\n-    ForwardRef,\n-    Iterable,\n-    List,\n-    Optional,\n-    Tuple,\n-    Type,\n-    Union,\n-)\n-\n-import typing_extensions\n-\n-from mashumaro.core.const import PY_39_MIN, PY_311_MIN\n-from mashumaro.core.helpers import parse_timezone\n-from mashumaro.core.meta.code.lines import CodeLines\n-from mashumaro.core.meta.helpers import (\n-    get_args,\n-    get_class_that_defines_method,\n-    get_function_arg_annotation,\n-    get_literal_values,\n-    is_final,\n-    is_generic,\n-    is_literal,\n-    is_named_tuple,\n-    is_new_type,\n-    is_not_required,\n-    is_optional,\n-    is_required,\n-    is_self,\n-    is_special_typing_primitive,\n-    is_type_var,\n-    is_type_var_any,\n-    is_type_var_tuple,\n-    is_typed_dict,\n-    is_union,\n-    is_unpack,\n-    iter_all_subclasses,\n-    not_none_type_arg,\n-    resolve_type_params,\n-    substitute_type_params,\n-    type_name,\n-)\n-from mashumaro.core.meta.types.common import (\n-    AbstractMethodBuilder,\n-    AttrsHolder,\n-    Expression,\n-    ExpressionWrapper,\n-    NoneType,\n-    Registry,\n-    ValueSpec,\n-    clean_id,\n-    ensure_generic_collection,\n-    ensure_generic_collection_subclass,\n-    ensure_generic_mapping,\n-    expr_or_maybe_none,\n-    random_hex,\n-)\n-from mashumaro.exceptions import (\n-    ThirdPartyModuleNotFoundError,\n-    UnserializableDataError,\n-    UnserializableField,\n-    UnsupportedDeserializationEngine,\n-)\n-from mashumaro.helper import pass_through\n-from mashumaro.types import (\n-    Discriminator,\n-    GenericSerializableType,\n-    SerializableType,\n-    SerializationStrategy,\n-)\n-\n-if PY_39_MIN:\n-    import zoneinfo\n-\n-try:\n-    import ciso8601\n-except ImportError:  # pragma: no cover\n-    ciso8601: Optional[types.ModuleType] = None  # type: ignore\n-try:\n-    import pendulum\n-except ImportError:  # pragma: no cover\n-    pendulum: Optional[types.ModuleType] = None  # type: ignore\n-\n-\n-__all__ = [\"UnpackerRegistry\", \"SubtypeUnpackerBuilder\"]\n-\n-\n-UnpackerRegistry = Registry()\n-register = UnpackerRegistry.register\n-\n-\n-class AbstractUnpackerBuilder(AbstractMethodBuilder, ABC):\n-    def _generate_method_name(self, spec: ValueSpec) -> str:\n-        prefix = self.get_method_prefix()\n-        if prefix:\n-            prefix = f\"{prefix}_\"\n-        if spec.field_ctx.name:\n-            suffix = f\"_{spec.field_ctx.name}\"\n-        else:\n-            suffix = \"\"\n-        return (\n-            f\"__unpack_{prefix}{spec.builder.cls.__name__}{suffix}\"\n-            f\"__{random_hex()}\"\n-        )\n-\n-    def _add_definition(self, spec: ValueSpec, lines: CodeLines) -> str:\n-        method_name = self._generate_method_name(spec)\n-        method_args = self._generate_method_args(spec)\n-        if spec.builder.is_nailed:\n-            lines.append(\"@classmethod\")\n-        lines.append(f\"def {method_name}({method_args}):\")\n-        return method_name\n-\n-    def _get_extra_method_args(self) -> List[str]:\n-        return []\n-\n-    def _generate_method_args(self, spec: ValueSpec) -> str:\n-        default_kwargs = spec.builder.get_unpack_method_default_flag_values()\n-        extra_args = self._get_extra_method_args()\n-        if extra_args:\n-            extra_args_str = f\", {', '.join(extra_args)}\"\n-        else:\n-            extra_args_str = \"\"\n-        if spec.builder.is_nailed:\n-            first_args = \"cls, value\"\n-        else:\n-            first_args = \"value\"\n-        if default_kwargs:\n-            return f\"{first_args}{extra_args_str}, {default_kwargs}\"\n-        else:  # pragma: no cover\n-            # we shouldn't be here because there will be default_kwargs\n-            return f\"{first_args}{extra_args_str}\"\n-\n-    def _get_call_expr(self, spec: ValueSpec, method_name: str) -> str:\n-        method_args = \", \".join(\n-            filter(\n-                None, (spec.expression, spec.builder.get_unpack_method_flags())\n-            )\n-        )\n-        return f\"{spec.cls_attrs_name}.{method_name}({method_args})\"\n-\n-\n-class UnionUnpackerBuilder(AbstractUnpackerBuilder):\n-    def __init__(self, args: Tuple[Type, ...]):\n-        self.union_args = args\n-\n-    def get_method_prefix(self) -> str:\n-        return \"union\"\n-\n-    def _add_body(self, spec: ValueSpec, lines: CodeLines) -> None:\n-        for unpacker in (\n-            UnpackerRegistry.get(spec.copy(type=type_arg, expression=\"value\"))\n-            for type_arg in self.union_args\n-        ):\n-            with lines.indent(\"try:\"):\n-                lines.append(f\"return {unpacker}\")\n-            lines.append(\"except Exception: pass\")\n-        field_type = type_name(\n-            spec.type,\n-            resolved_type_params=spec.builder.get_field_resolved_type_params(\n-                spec.field_ctx.name\n-            ),\n-        )\n-        if spec.builder.is_nailed:\n-            lines.append(\n-                \"raise InvalidFieldValue(\"\n-                f\"'{spec.field_ctx.name}',{field_type},value,cls)\"\n-            )\n-        else:\n-            lines.append(\"raise ValueError(value)\")\n-\n-\n-class TypeVarUnpackerBuilder(UnionUnpackerBuilder):\n-    def get_method_prefix(self) -> str:\n-        return \"type_var\"\n-\n-\n-class LiteralUnpackerBuilder(AbstractUnpackerBuilder):\n-    def _before_build(self, spec: ValueSpec) -> None:\n-        spec.builder.add_type_modules(spec.type)\n-\n-    def get_method_prefix(self) -> str:\n-        return \"literal\"\n-\n-    def _add_body(self, spec: ValueSpec, lines: CodeLines) -> None:\n-        for literal_value in get_literal_values(spec.type):\n-            if isinstance(literal_value, enum.Enum):\n-                enum_type_name = type_name(type(literal_value))\n-                with lines.indent(\n-                    f\"if value == {enum_type_name}.{literal_value.name}.value:\"\n-                ):\n-                    lines.append(\n-                        f\"return {enum_type_name}.{literal_value.name}\"\n-                    )\n-            elif isinstance(literal_value, bytes):\n-                unpacker = UnpackerRegistry.get(\n-                    spec.copy(type=bytes, expression=\"value\")\n-                )\n-                with lines.indent(\"try:\"):\n-                    with lines.indent(f\"if {unpacker} == {literal_value!r}:\"):\n-                        lines.append(f\"return {literal_value!r}\")\n-                lines.append(\"except Exception: pass\")\n-            elif isinstance(  # type: ignore\n-                literal_value,\n-                (int, str, bool, NoneType),  # type: ignore\n-            ):\n-                with lines.indent(f\"if value == {literal_value!r}:\"):\n-                    lines.append(f\"return {literal_value!r}\")\n-        lines.append(\"raise ValueError(value)\")\n-\n-\n-class DiscriminatedUnionUnpackerBuilder(AbstractUnpackerBuilder):\n-    def __init__(\n-        self,\n-        discriminator: Discriminator,\n-        base_variants: Optional[Tuple[Type, ...]] = None,\n-    ):\n-        self.discriminator = discriminator\n-        self.base_variants = base_variants or tuple()\n-        self._variants_attr: Optional[str] = None\n-\n-    def get_method_prefix(self) -> str:\n-        return \"\"\n-\n-    def _get_extra_method_args(self) -> List[str]:\n-        return [\"_dialect\", \"_default_dialect\"]\n-\n-    def _get_variants_attr(self, spec: ValueSpec) -> str:\n-        if self._variants_attr is None:\n-            self._variants_attr = (\n-                f\"__mashumaro_{spec.field_ctx.name}_variants_{random_hex()}__\"\n-            )\n-        return self._variants_attr\n-\n-    def _get_variants_map(self, spec: ValueSpec) -> str:\n-        variants_attr = self._get",
+      "diff_truncated": true,
+      "test": {
+        "passed": false,
+        "return_code": 2,
+        "timed_out": false,
+        "started": true,
+        "timeout_seconds": null,
+        "output_tail": "    from mashumaro.core.meta.types.unpack import (\nE     File \"/workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro/mashumaro/core/meta/types/unpack.py\", line 1\nE       with lines.indent(\"except (KeyError, AttributeError):\"):\nE   IndentationError: unexpected indent\n_ ERROR collecting workspace/Fatal1ty__mashumaro/tests/test_discriminated_unions/test_union_by_field.py _\n../.environments/Fatal1ty__mashumaro__184/venv/lib/python3.11/site-packages/_pytest/python.py:528: in importtestmodule\n    mod = import_path(\n../.environments/Fatal1ty__mashumaro__184/venv/lib/python3.11/site-packages/_pytest/pathlib.py:640: in import_path\n    importlib.import_module(module_name)\n../.uv-python/cpython-3.11.17-linux-x86_64-gnu/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n<frozen importlib._bootstrap>:1204: in _gcd_import\n    ???\n<frozen importlib._bootstrap>:1176: in _find_and_load\n    ???\n<frozen importlib._bootstrap>:1147: in _find_and_load_unlocked\n    ???\n<frozen importlib._bootstrap>:690: in _load_unlocked\n    ???\n../.environments/Fatal1ty__mashumaro__184/venv/lib/python3.11/site-packages/_pytest/assertion/rewrite.py:185: in exec_module\n    exec(co, module.__dict__)\ntests/test_discriminated_unions/test_union_by_field.py:9: in <module>\n    from mashumaro import DataClassDictMixin\nmashumaro/__init__.py:3: in <module>\n    from mashumaro.mixins.dict import DataClassDictMixin\nmashumaro/mixins/dict.py:3: in <module>\n    from mashumaro.core.meta.mixin import (\nmashumaro/core/meta/mixin.py:3: in <module>\n    from mashumaro.core.meta.code.builder import CodeBuilder\nmashumaro/core/meta/code/builder.py:57: in <module>\n    from mashumaro.core.meta.types.unpack import (\nE     File \"/workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro/mashumaro/core/meta/types/unpack.py\", line 1\nE       with lines.indent(\"except (KeyError, AttributeError):\"):\nE   IndentationError: unexpected indent\n=========================== short test summary info ============================\nERROR tests/test_discriminated_unions/test_parent_via_config.py\nERROR tests/test_discriminated_unions/test_union_by_field.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.39s ===============================",
+        "output_truncated": true
+      },
+      "diagnosis": null,
+      "diagnosis_error": null,
+      "avoid_file_paths_after": [],
+      "exploration_rounds": 10,
+      "exploration": [
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "mashumaro/types.py"
+          },
+          "ok": true,
+          "result_size": 2826,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "variant_tagger_fn"
+          },
+          "ok": true,
+          "result_size": 19,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "mashumaro/core/meta/types/unpack.py"
+          },
+          "ok": true,
+          "result_size": 24030,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "tests/test_discriminated_unions/test_union_by_field.py"
+          },
+          "ok": true,
+          "result_size": 23567,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "tests/test_discriminated_unions/test_parent_via_config.py"
+          },
+          "ok": true,
+          "result_size": 20911,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "README.md"
+          },
+          "ok": true,
+          "result_size": 24030,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "version"
+          },
+          "ok": true,
+          "result_size": 14,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "list_directory",
+          "arguments": {
+            "dir_path": "mashumaro/core/meta/types"
+          },
+          "ok": true,
+          "result_size": 4,
+          "result_unit": "entries",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "setup.py"
+          },
+          "ok": true,
+          "result_size": 1459,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "mashumaro/__init__.py"
+          },
+          "ok": true,
+          "result_size": 258,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "list_directory",
+          "arguments": {
+            "dir_path": "."
+          },
+          "ok": true,
+          "result_size": 15,
+          "result_unit": "entries",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "tests/test_discriminated_unions/test_parent_by_field.py"
+          },
+          "ok": true,
+          "result_size": 14911,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "read_file",
+          "arguments": {
+            "path": "mashumaro/core/meta/code/builder.py"
+          },
+          "ok": true,
+          "result_size": 24030,
+          "result_unit": "characters",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "multiple tags"
+          },
+          "ok": true,
+          "result_size": 0,
+          "result_unit": "lines",
+          "error": null
+        },
+        {
+          "tool": "search_code",
+          "arguments": {
+            "query": "variant_tagger"
+          },
+          "ok": true,
+          "result_size": 26,
+          "result_unit": "lines",
+          "error": null
+        }
+      ],
+      "exploration_truncated": false,
+      "proposal_attempts": [
+        {
+          "attempt": 1,
+          "valid": true,
+          "raw_response_present": true,
+          "parsed_proposal_present": true,
+          "validation_error": null
+        }
+      ],
+      "proposal_artifact": {
+        "schema_version": 1,
+        "path": "artifacts/20261102T140840Z_Fatal1ty-mashumaro_184/attempt-3-proposal.json",
+        "bytes": 65854,
+        "sha256": "aeeca64856f016da801ed29808c36464807ebccc8b94323df91269be97f81fe6",
+        "includes": [
+          "original_content",
+          "new_content",
+          "proposal_attempts"
+        ]
+      }
+    }
+  ],
+  "guard_events": [],
+  "proposal_failures": [],
+  "test_patch": {
+    "applied": true,
+    "file_paths": [
+      "tests/test_discriminated_unions/test_parent_via_config.py",
+      "tests/test_discriminated_unions/test_union_by_field.py"
+    ]
+  },
+  "baseline": {
+    "status": "fails_as_expected",
+    "detail": "The test command exited with code 1.",
+    "return_code": 1,
+    "output_tail": "        ):\n>           assert func({\"x\": {\"type\": \"variantwitcustomtagger1\"}}) == cls(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                VariantWitCustomTagger1()\n            )\n\ntests/test_discriminated_unions/test_union_by_field.py:785: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\ncls = <class 'tests.test_discriminated_unions.test_union_by_field.VariantWitCustomTaggerWithMultipleTagsOwner'>\nd = {'x': {'type': 'variantwitcustomtagger1'}}, dialect = None\n\n>   ???\nE   mashumaro.exceptions.InvalidFieldValue: Field \"x\" of type Union[VariantWitCustomTagger1, VariantWitCustomTagger2] in VariantWitCustomTaggerWithMultipleTagsOwner has invalid value {'type': 'variantwitcustomtagger1'}\n\n<string>:10: InvalidFieldValue\n=========================== short test summary info ============================\nFAILED tests/test_discriminated_unions/test_parent_via_config.py::test_by_subtypes_with_custom_variant_tagger_and_multiple_tags - TypeError: unhashable type: 'list'\nFAILED tests/test_discriminated_unions/test_union_by_field.py::test_by_field_with_subtypes_with_custom_variant_tagger_and_multiple_tags - mashumaro.exceptions.InvalidFieldValue: Field \"x\" of type Union[VariantWitCustomTagger1, VariantWitCustomTagger2] in VariantWitCustomTaggerWithMultipleTagsOwner has invalid value {'type': 'variantwitcustomtagger1'}\n========================= 2 failed, 16 passed in 0.67s =========================",
+    "output_truncated": false
+  },
+  "environment": {
+    "python_version": "3.11.17",
+    "uv_version": "uv 0.13.5 (x86_64-unknown-linux-gnu)",
+    "python_install": {
+      "name": "python:3.11",
+      "phase": "python",
+      "command": [
+        "uv",
+        "python",
+        "install",
+        "3.11"
+      ],
+      "return_code": 0,
+      "succeeded": true,
+      "timed_out": false,
+      "accepted": true,
+      "missing_extra": false,
+      "deadline_exceeded": false,
+      "duration_seconds": 0.050145728999950734,
+      "log_tail": "Installed Python 3.11.17 in 37ms\n + cpython-3.11.17-linux-x86_64-gnu (python3.11)\nwarning: `/workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/home/.local/bin` is not on your PATH. To use installed Python executables, add the directory to your PATH.",
+      "log_truncated": false
+    },
+    "venv": {
+      "name": "venv",
+      "phase": "venv",
+      "command": [
+        "uv",
+        "venv",
+        "--python",
+        "3.11",
+        "/workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv"
+      ],
+      "return_code": 0,
+      "succeeded": true,
+      "timed_out": false,
+      "accepted": true,
+      "missing_extra": false,
+      "deadline_exceeded": false,
+      "duration_seconds": 0.023186153999972703,
+      "log_tail": "Using CPython 3.11.17\nwarning: The requested interpreter resolved to Python 3.11.17, which is incompatible with the project's Python requirement: `>=3.13` (from `project.requires-python`)\nCreating virtual environment at: venv",
+      "log_truncated": false
+    },
+    "install": {
+      "succeeded": true,
+      "successful_install": "editable:plain",
+      "editable_skipped": false,
+      "attempts": [
+        {
+          "name": "pytest",
+          "phase": "pytest",
+          "command": [
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            "/workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv/bin/python",
+            "pytest"
+          ],
+          "return_code": 0,
+          "succeeded": true,
+          "timed_out": false,
+          "accepted": true,
+          "missing_extra": false,
+          "deadline_exceeded": false,
+          "duration_seconds": 0.20326716400006717,
+          "log_tail": "Using Python 3.11.17 environment at: /workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv\nResolved 5 packages in 2ms\nInstalled 5 packages in 16ms\n + iniconfig==2.3.1\n + packaging==26.3\n + pluggy==1.7.0\n + pygments==2.21.0\n + pytest==9.2.0",
+          "log_truncated": false
+        },
+        {
+          "name": "editable:test",
+          "phase": "editable",
+          "command": [
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            "/workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv/bin/python",
+            "-e",
+            ".[test]"
+          ],
+          "return_code": 2,
+          "succeeded": false,
+          "timed_out": false,
+          "accepted": true,
+          "missing_extra": false,
+          "deadline_exceeded": false,
+          "duration_seconds": 49.95909365,
+          "log_tail": "Using Python 3.11.17 environment at: /workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv\nerror: Failed to resolve requirements from `setup.py` build\n  cause: No solution found when resolving: `setuptools>=40.8.0`\n  cause: Request failed after 3 retries in 49.8s\n  cause: Failed to fetch: https://pypi.org/simple/setuptools/\n  cause: error sending request for url (https://pypi.org/simple/setuptools/)\n  cause: client error (Connect)\n  cause: operation timed out",
+          "log_truncated": false
+        },
+        {
+          "name": "editable:tests",
+          "phase": "editable",
+          "command": [
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            "/workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv/bin/python",
+            "-e",
+            ".[tests]"
+          ],
+          "return_code": 0,
+          "succeeded": true,
+          "timed_out": false,
+          "accepted": false,
+          "missing_extra": true,
+          "deadline_exceeded": false,
+          "duration_seconds": 25.326598748999913,
+          "log_tail": "Using Python 3.11.17 environment at: /workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv\nResolved 2 packages in 24.48s\n   Building mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro\n      Built mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro\nPrepared 1 package in 643ms\nInstalled 2 packages in 42ms\n + mashumaro==3.11 (from file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro)\n + typing-extensions==4.16.0\nwarning: The package `mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro` does not have an extra named `tests`",
+          "log_truncated": false
+        },
+        {
+          "name": "editable:testing",
+          "phase": "editable",
+          "command": [
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            "/workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv/bin/python",
+            "-e",
+            ".[testing]"
+          ],
+          "return_code": 0,
+          "succeeded": true,
+          "timed_out": false,
+          "accepted": false,
+          "missing_extra": true,
+          "deadline_exceeded": false,
+          "duration_seconds": 2.0816556269999182,
+          "log_tail": "Using Python 3.11.17 environment at: /workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv\nResolved 2 packages in 1.22s\n   Building mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro\n      Built mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro\nPrepared 1 package in 644ms\nUninstalled 1 package in 0.68ms\nInstalled 1 package in 1ms\n ~ mashumaro==3.11 (from file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro)\nwarning: The package `mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro` does not have an extra named `testing`",
+          "log_truncated": false
+        },
+        {
+          "name": "editable:dev",
+          "phase": "editable",
+          "command": [
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            "/workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv/bin/python",
+            "-e",
+            ".[dev]"
+          ],
+          "return_code": 0,
+          "succeeded": true,
+          "timed_out": false,
+          "accepted": false,
+          "missing_extra": true,
+          "deadline_exceeded": false,
+          "duration_seconds": 2.3184538040000007,
+          "log_tail": "Using Python 3.11.17 environment at: /workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv\nResolved 2 packages in 1.22s\n   Building mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro\n      Built mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro\nPrepared 1 package in 859ms\nUninstalled 1 package in 0.62ms\nInstalled 1 package in 1ms\n ~ mashumaro==3.11 (from file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro)\nwarning: The package `mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro` does not have an extra named `dev`",
+          "log_truncated": false
+        },
+        {
+          "name": "editable:plain",
+          "phase": "editable",
+          "command": [
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            "/workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv/bin/python",
+            "-e",
+            "."
+          ],
+          "return_code": 0,
+          "succeeded": true,
+          "timed_out": false,
+          "accepted": true,
+          "missing_extra": false,
+          "deadline_exceeded": false,
+          "duration_seconds": 2.073627507000083,
+          "log_tail": "Using Python 3.11.17 environment at: /workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv\nResolved 2 packages in 1.20s\n   Building mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro\n      Built mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro\nPrepared 1 package in 655ms\nUninstalled 1 package in 0.67ms\nInstalled 1 package in 1ms\n ~ mashumaro==3.11 (from file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro)",
+          "log_truncated": false
+        },
+        {
+          "name": "requirements:requirements-dev.txt",
+          "phase": "requirements",
+          "command": [
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            "/workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv/bin/python",
+            "-r",
+            "requirements-dev.txt"
+          ],
+          "return_code": 0,
+          "succeeded": true,
+          "timed_out": false,
+          "accepted": true,
+          "missing_extra": false,
+          "deadline_exceeded": false,
+          "duration_seconds": 3.980249611999966,
+          "log_tail": " + mdurl==0.1.2\n + msgpack==1.2.4\n + multidict==7.2.1\n + mypy==2.4.1\n + mypy-extensions==1.1.0\n + orjson==3.13.0\n + pathspec==1.1.1\n + pathvalidate==3.3.1\n + pendulum==3.3.0\n + platformdirs==4.14.3\n + propcache==0.5.4\n + psutil==7.2.2\n + pydantic==2.5.1\n + pydantic-core==2.14.3\n + pyperf==2.10.0\n + pytablewriter==1.2.1\n + pytest-cov==7.1.0\n + pytest-mock==3.17.0\n + python-dateutil==2.9.0.post0\n + pytz==2026.6\n + pyyaml==6.0.3\n + requests==2.34.2\n + rich==15.0.0\n + ruff==0.17.3\n + setuptools==84.2.1\n + shellingham==1.5.4\n + six==1.17.0\n + tabledata==1.3.5\n + tcolorpy==0.1.7\n + termtables==0.2.4\n + tomli-w==1.2.0\n + typepy==1.3.5\n + typer==0.27.3\n + types-backports==0.1.3\n + types-dataclasses==0.6.6\n + types-pyyaml==6.0.12.20261030\n + typing-inspect==0.9.0\n + tzdata==2026.6\n + urllib3==2.8.0\n + yarl==1.25.1",
+          "log_truncated": true
+        }
+      ],
+      "requirement_files": [
+        "requirements-dev.txt"
+      ],
+      "failed_requirements": [],
+      "log_tail": "Using Python 3.11.17 environment at: /workspaces/Debuggernaut/workspace/.environments/Fatal1ty__mashumaro__184/venv\nResolved 2 packages in 1.20s\n   Building mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro\n      Built mashumaro @ file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro\nPrepared 1 package in 655ms\nUninstalled 1 package in 0.67ms\nInstalled 1 package in 1ms\n ~ mashumaro==3.11 (from file:///workspaces/Debuggernaut/workspace/Fatal1ty__mashumaro)",
+      "log_truncated": false,
+      "duration_seconds": 85.94375522099995
+    },
+    "setup_duration_seconds": 86.05881863600007,
+    "cleanup_errors": []
+  }
+}

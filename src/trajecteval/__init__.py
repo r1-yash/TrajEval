@@ -1,6 +1,7 @@
 """TrajEval -- evaluate AI agents on *how* they work, not just whether they finished."""
 
 from trajecteval.adapters import (
+    DebuggernautAdapter,
     ExternalStep,
     OfflineRunAdapter,
     UNAVAILABLE_STATE_KEY,
@@ -49,6 +50,7 @@ __all__ = [
     "Comparison",
     "CriticalGrader",
     "CriticalPattern",
+    "DebuggernautAdapter",
     "Dimension",
     "Discontinuity",
     "Environment",

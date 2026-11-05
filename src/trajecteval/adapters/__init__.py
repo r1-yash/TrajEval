@@ -3,6 +3,7 @@
 # in a later milestone) live beside this foundation; this package knows no
 # external field names and performs no evaluation.
 
+from trajecteval.adapters.debuggernaut import DebuggernautAdapter
 from trajecteval.adapters.offline import (
     UNAVAILABLE_STATE_KEY,
     ExternalStep,
@@ -12,6 +13,7 @@ from trajecteval.adapters.offline import (
 )
 
 __all__ = [
+    "DebuggernautAdapter",
     "ExternalStep",
     "OfflineRunAdapter",
     "UNAVAILABLE_STATE_KEY",

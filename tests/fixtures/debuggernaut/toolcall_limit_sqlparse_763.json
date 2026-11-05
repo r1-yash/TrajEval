@@ -1,0 +1,201 @@
+{
+  "schema_version": 4,
+  "repository": "andialbrecht/sqlparse",
+  "issue": 763,
+  "commit": "f101546dafa921edfea5b3107731504665b758ea",
+  "provider": "tokenharbor",
+  "base_url_host": "tokenharbor.ai",
+  "model": "deepseek-v4.1-flash:free",
+  "status": "failed",
+  "failure_class": "agent",
+  "status_reason": "Model exhausted the repository tool-call limit without a final response.",
+  "error": "Model exhausted the repository tool-call limit without a final response.",
+  "started_at": "2026-10-26T13:11:09.027673+00:00",
+  "finished_at": "2026-10-26T13:11:52.852697+00:00",
+  "duration_seconds": 43.825029618999906,
+  "attempts": 0,
+  "llm_calls": 4,
+  "input_tokens": 57801,
+  "output_tokens": 2836,
+  "total_tokens": 60637,
+  "estimated_input_tokens": 41811,
+  "input_token_limit": 120000,
+  "pr": null,
+  "calls": [
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 1,
+      "purpose": "exploration",
+      "timestamp": "2026-10-26T13:11:26.809866Z",
+      "success": true,
+      "input_tokens": 1476,
+      "output_tokens": 94,
+      "total_tokens": 1570,
+      "latency_seconds": 2.3586334510000597,
+      "estimated_input_tokens": 2723,
+      "input_token_limit": 120000
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 2,
+      "purpose": "exploration",
+      "timestamp": "2026-10-26T13:11:29.854340Z",
+      "success": true,
+      "input_tokens": 12236,
+      "output_tokens": 89,
+      "total_tokens": 12325,
+      "latency_seconds": 3.0370427620000555,
+      "estimated_input_tokens": 19409,
+      "input_token_limit": 120000
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 3,
+      "purpose": "exploration",
+      "timestamp": "2026-10-26T13:11:34.771233Z",
+      "success": true,
+      "input_tokens": 18674,
+      "output_tokens": 415,
+      "total_tokens": 19089,
+      "latency_seconds": 4.9158846120003545,
+      "estimated_input_tokens": 29653,
+      "input_token_limit": 120000
+    },
+    {
+      "provider": "tokenharbor",
+      "model": "deepseek-v4.1-flash:free",
+      "attempt": 1,
+      "call_number": 4,
+      "purpose": "exploration",
+      "timestamp": "2026-10-26T13:11:52.778203Z",
+      "success": true,
+      "input_tokens": 25415,
+      "output_tokens": 2238,
+      "total_tokens": 27653,
+      "latency_seconds": 18.00556939099988,
+      "estimated_input_tokens": 41811,
+      "input_token_limit": 120000
+    }
+  ],
+  "attempt_records": [],
+  "guard_events": [],
+  "test_patch": {
+    "applied": true,
+    "file_paths": [
+      "tests/test_parse.py"
+    ]
+  },
+  "baseline": {
+    "status": "fails_as_expected",
+    "detail": "The test command exited with code 1.",
+    "return_code": 1,
+    "output_tail": "        t = sqlparse.split(\"\"\"\n        CREATE OR REPLACE FUNCTION testfunc1(integer) RETURNS integer AS $PROC_1$\n              ....\n        $PROC_1$ LANGUAGE plpgsql;\n        CREATE OR REPLACE FUNCTION testfunc2(integer) RETURNS integer AS $PROC_2$\n              ....\n        $PROC_2$ LANGUAGE plpgsql;\"\"\")\n        assert len(t) == 2\n    \n        # operators are valid infront of dollar quoted strings\n        t = sqlparse.split(\"\"\"UPDATE SET foo =$$bar;SELECT bar$$\"\"\")\n>       assert len(t) == 1\nE       AssertionError: assert 2 == 1\nE        +  where 2 = len(['UPDATE SET foo =$$bar;', 'SELECT bar$$'])\n\ntests/test_parse.py:185: AssertionError\n=========================== short test summary info ============================\nFAILED tests/test_parse.py::test_psql_quotation_marks - AssertionError: assert 2 == 1\n +  where 2 = len(['UPDATE SET foo =$$bar;', 'SELECT bar$$'])\n========================= 1 failed, 74 passed in 0.22s =========================",
+    "output_truncated": false
+  },
+  "environment": {
+    "python_version": "3.11.17",
+    "uv_version": "uv 0.13.5 (x86_64-unknown-linux-gnu)",
+    "python_install": {
+      "name": "python:3.11",
+      "phase": "python",
+      "command": [
+        "uv",
+        "python",
+        "install",
+        "3.11"
+      ],
+      "return_code": 0,
+      "succeeded": true,
+      "timed_out": false,
+      "accepted": true,
+      "missing_extra": false,
+      "deadline_exceeded": false,
+      "duration_seconds": 0.08127466099995218,
+      "log_tail": "Installed Python 3.11.17 in 63ms\n + cpython-3.11.17-linux-x86_64-gnu (python3.11)\nwarning: `/workspaces/Debuggernaut/workspace/.environments/andialbrecht__sqlparse__763/home/.local/bin` is not on your PATH. To use installed Python executables, add the directory to your PATH.",
+      "log_truncated": false
+    },
+    "venv": {
+      "name": "venv",
+      "phase": "venv",
+      "command": [
+        "uv",
+        "venv",
+        "--python",
+        "3.11",
+        "/workspaces/Debuggernaut/workspace/.environments/andialbrecht__sqlparse__763/venv"
+      ],
+      "return_code": 0,
+      "succeeded": true,
+      "timed_out": false,
+      "accepted": true,
+      "missing_extra": false,
+      "deadline_exceeded": false,
+      "duration_seconds": 0.017221668000274803,
+      "log_tail": "Using CPython 3.11.17\nwarning: The requested interpreter resolved to Python 3.11.17, which is incompatible with the project's Python requirement: `>=3.13` (from `project.requires-python`)\nCreating virtual environment at: venv",
+      "log_truncated": false
+    },
+    "install": {
+      "succeeded": true,
+      "successful_install": "editable:test",
+      "editable_skipped": false,
+      "attempts": [
+        {
+          "name": "pytest",
+          "phase": "pytest",
+          "command": [
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            "/workspaces/Debuggernaut/workspace/.environments/andialbrecht__sqlparse__763/venv/bin/python",
+            "pytest"
+          ],
+          "return_code": 0,
+          "succeeded": true,
+          "timed_out": false,
+          "accepted": true,
+          "missing_extra": false,
+          "deadline_exceeded": false,
+          "duration_seconds": 11.553281217999938,
+          "log_tail": "Using Python 3.11.17 environment at: /workspaces/Debuggernaut/workspace/.environments/andialbrecht__sqlparse__763/venv\nResolved 5 packages in 11.52s\nInstalled 5 packages in 18ms\n + iniconfig==2.3.1\n + packaging==26.3\n + pluggy==1.7.0\n + pygments==2.21.0\n + pytest==9.1.1",
+          "log_truncated": false
+        },
+        {
+          "name": "editable:test",
+          "phase": "editable",
+          "command": [
+            "uv",
+            "pip",
+            "install",
+            "--python",
+            "/workspaces/Debuggernaut/workspace/.environments/andialbrecht__sqlparse__763/venv/bin/python",
+            "-e",
+            ".[test]"
+          ],
+          "return_code": 0,
+          "succeeded": true,
+          "timed_out": false,
+          "accepted": true,
+          "missing_extra": false,
+          "deadline_exceeded": false,
+          "duration_seconds": 1.4302689020000798,
+          "log_tail": "Using Python 3.11.17 environment at: /workspaces/Debuggernaut/workspace/.environments/andialbrecht__sqlparse__763/venv\nResolved 8 packages in 947ms\n   Building sqlparse @ file:///workspaces/Debuggernaut/workspace/andialbrecht__sqlparse\n      Built sqlparse @ file:///workspaces/Debuggernaut/workspace/andialbrecht__sqlparse\nPrepared 1 package in 327ms\nInstalled 3 packages in 4ms\n + coverage==7.17.0\n + pytest-cov==7.1.0\n + sqlparse==0.5.0.dev0 (from file:///workspaces/Debuggernaut/workspace/andialbrecht__sqlparse)",
+          "log_truncated": false
+        }
+      ],
+      "requirement_files": [],
+      "failed_requirements": [],
+      "log_tail": "Using Python 3.11.17 environment at: /workspaces/Debuggernaut/workspace/.environments/andialbrecht__sqlparse__763/venv\nResolved 8 packages in 947ms\n   Building sqlparse @ file:///workspaces/Debuggernaut/workspace/andialbrecht__sqlparse\n      Built sqlparse @ file:///workspaces/Debuggernaut/workspace/andialbrecht__sqlparse\nPrepared 1 package in 327ms\nInstalled 3 packages in 4ms\n + coverage==7.17.0\n + pytest-cov==7.1.0\n + sqlparse==0.5.0.dev0 (from file:///workspaces/Debuggernaut/workspace/andialbrecht__sqlparse)",
+      "log_truncated": false,
+      "duration_seconds": 12.983706843000164
+    },
+    "setup_duration_seconds": 13.083472747000087,
+    "cleanup_errors": []
+  }
+}

@@ -254,3 +254,31 @@ The translation boundary for agent runs captured outside TrajEval
   the reserved key is rejected rather than confused with "unavailable".
   Callers can test the marker with `is_unavailable_state()`.
 
+### Debuggernaut adapter
+
+`DebuggernautAdapter` (`src/trajecteval/adapters/debuggernaut.py`) targets the
+real schema-version-4 records written by Debuggernaut's benchmark runner:
+
+- **Only `attempt_records[*].exploration` becomes steps.** Each structured
+  entry (`tool`, `arguments`, `ok`, `result_size`, `result_unit`, `error`)
+  is an actual tool action, preserved in source order. `calls[]` is provider
+  accounting and is never converted into a tool action.
+- **Attempt boundaries live in metadata.** `metadata["attempt_records"]`
+  keeps each source attempt's fields and adds `step_indices`; its
+  `exploration` entries gain the matching `step_index`. This distinguishes
+  attempt 1 exploration/proposal/test/diagnosis from attempt 2 without
+  inventing proposal or test steps.
+- **Outcomes are evidence, not actions.** Test results, diagnoses,
+  proposal/reasoning/diff data, proposal validation attempts, artifacts,
+  `guard_events`, and `proposal_failures` stay at trajectory level under the
+  source field names. Provider calls, token counts, timing, repository,
+  issue, commit, test-patch paths, baseline, and environment metadata are
+  preserved there too.
+- **Missing state stays missing.** Debuggernaut records tool metadata, not
+  repository snapshots, so every step uses the explicit unavailable-state
+  marker. Nothing is reconstructed from tool names, results, diffs, or test
+  output.
+- **Incomplete historical records still load.** Records with
+  `attempt_records: []`, no `exploration_rounds`, or proposal-schema failures
+  convert successfully with zero steps and full available metadata; absent
+  exploration fields are never fabricated from `calls[]`.
