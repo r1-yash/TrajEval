@@ -1,8 +1,21 @@
 """TrajEval -- evaluate AI agents on *how* they work, not just whether they finished."""
 
+from trajecteval.adapters import (
+    ExternalStep,
+    OfflineRunAdapter,
+    UNAVAILABLE_STATE_KEY,
+    is_unavailable_state,
+    unavailable_state,
+)
 from trajecteval.compare import Comparison, compare, render_table, render_table_markdown
 from trajecteval.envs import ActionRejected, Environment, TravelBookingEnvironment
-from trajecteval.errors import ReportError, SpecError, TrajectoryError, TrajEvalError
+from trajecteval.errors import (
+    AdapterError,
+    ReportError,
+    SpecError,
+    TrajectoryError,
+    TrajEvalError,
+)
 from trajecteval.graders import (
     BoundsGrader,
     CriticalGrader,
@@ -31,6 +44,7 @@ from trajecteval.task_spec import CriticalPattern, RULE_SECTIONS, TaskSpec, load
 __all__ = [
     "Action",
     "ActionRejected",
+    "AdapterError",
     "BoundsGrader",
     "Comparison",
     "CriticalGrader",
@@ -39,6 +53,7 @@ __all__ = [
     "Discontinuity",
     "Environment",
     "Evidence",
+    "ExternalStep",
     "FinalStateGrader",
     "Grader",
     "GraderResult",
@@ -47,6 +62,7 @@ __all__ = [
     "JudgeResult",
     "LLMClientError",
     "LLMJudge",
+    "OfflineRunAdapter",
     "OpenAIChatClient",
     "RULE_SECTIONS",
     "Recorder",
@@ -62,9 +78,11 @@ __all__ = [
     "TrajectoryTooLongError",
     "TrajEvalError",
     "TravelBookingEnvironment",
+    "UNAVAILABLE_STATE_KEY",
     "Verdict",
     "compare",
     "evaluate",
+    "is_unavailable_state",
     "load_spec",
     "missing_section_result",
     "render_json",
@@ -72,4 +90,5 @@ __all__ = [
     "render_table_markdown",
     "render_text",
     "task_id_mismatch_result",
+    "unavailable_state",
 ]

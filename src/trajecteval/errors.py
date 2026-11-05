@@ -2,10 +2,11 @@
 
 Two lanes, kept apart on purpose:
 
-- ``TrajectoryError`` / ``SpecError`` / ``ReportError`` -- *the input files
-  are broken* (structural problems found while loading a trajectory, a task
-  spec, or a saved report). All subclass ``TrajEvalError`` so a caller can
-  catch "some file I was given is malformed" with one ``except``.
+- ``TrajectoryError`` / ``SpecError`` / ``ReportError`` / ``AdapterError`` --
+  *the input files are broken* (structural problems found while loading a
+  trajectory, a task spec, a saved report, or an already-loaded external run
+  record). All subclass ``TrajEvalError`` so a caller can catch "some file I
+  was given is malformed" with one ``except``.
 - ``ValueError`` -- *the grader code is broken* (a GraderResult built with
   a blank reason, an unknown verdict, ...). Results never raise file errors,
   and file loaders never raise ValueError for data shape.
@@ -45,3 +46,13 @@ class ReportError(TrajEvalError):
     # Same job as the other two, for the JSON form of a Report: a broken
     # results/discontinuities entry inside a saved report surfaces here too
     # (Report.from_dict wraps the nested ValueError/TrajectoryError).
+
+
+class AdapterError(TrajEvalError):
+    """Raised when an external run record cannot be translated into a trajectory.
+
+    The record has already been loaded (this is the offline boundary), so an
+    AdapterError means its structure does not match what the format-specific
+    adapter promised -- not that the source agent did something wrong. The
+    adapter never grades and never interprets the run.
+    """

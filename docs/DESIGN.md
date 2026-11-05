@@ -227,3 +227,30 @@ in `src/trajecteval/agent.py`:
   propagates and the CLI aborts that run with one line, exit 1, saving
   nothing — a crashed API call is not agent behavior. A short pause
   between calls paces the model, and is injectable so tests never sleep.
+
+## Offline external-run adapters
+
+The translation boundary for agent runs captured outside TrajEval
+(`src/trajecteval/adapters/offline.py`). The rules:
+
+- **Input is already-loaded data.** `OfflineRunAdapter.to_trajectory(record)`
+  takes a mapping that the caller already read; the adapter performs no
+  HTTP, model, agent, or external-repository access and never executes the
+  source agent.
+- **One trajectory model, one validator.** Format-specific subclasses
+  implement `extract_task_id`, `extract_steps`, and (optionally)
+  `extract_metadata`. They return `ExternalStep` values; the base class
+  assigns canonical gapless 1-based indices in sequence order and builds the
+  result through `Trajectory.from_dict`. External numbering is not trusted,
+  and the adapter creates no second trajectory type.
+- **Translation, not evaluation.** No adapter reads a `TaskSpec`, decides
+  PASS/FAIL, or interprets whether an action was good. Those stay in
+  `evaluate()` and its graders.
+- **Unavailable state is explicit.** `ExternalStep.state_before` /
+  `state_after` are `None` when the source recorded no snapshot. Since the
+  existing `Step` requires dicts, the converted trajectory uses a reserved
+  one-key marker, `{"__trajecteval_unavailable_state__": "unavailable"}`.
+  `{}` remains a genuinely empty recorded state. A source state containing
+  the reserved key is rejected rather than confused with "unavailable".
+  Callers can test the marker with `is_unavailable_state()`.
+
