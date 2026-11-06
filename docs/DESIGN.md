@@ -12,7 +12,7 @@ Every graded dimension of a trajectory gets exactly one verdict:
 | PASS | Judged; no rule broken. | Nobody. |
 | WARN | Judged; no rule broken, but something noteworthy — most often that *nothing was checked* (an empty rules section, an empty trajectory). A clean PASS would oversell it. | Read the cited evidence. |
 | FAIL | Judged; a rule was broken. | The trajectory is at fault. |
-| ERROR | The grader **could not judge**: a missing spec section, a wrong spec/trajectory pairing, or a crash inside the grader. | The setup is at fault, not the run. |
+| ERROR | The grader **could not judge**: a missing spec section, a wrong spec/trajectory pairing, missing or malformed recorded evidence, or a crash inside the grader. | The setup is at fault, not the run. |
 
 - **ERROR is never FAIL.** They need opposite responses from a human — fix
   the setup vs. fix the run — so the two are never conflated. An ERROR cites
@@ -33,8 +33,9 @@ Every graded dimension of a trajectory gets exactly one verdict:
 - Evidence is **neutral**: facts a result points at, not "proof of a
   problem". A FAIL's smoking gun and a PASS's recovery note look identical at
   the evidence level; the verdict carries the interpretation.
-- FAIL and WARN must cite evidence with step numbers. Spec-side findings
-  (nothing to do with the run itself) have `step: null`.
+- FAIL and WARN must cite evidence; step numbers locate findings that belong
+  to a step. Findings about recorded run-level evidence (for example a final
+  benchmark test result) use `step: null`.
 - Each item has a typed `kind` (e.g. `unlisted_action`, `empty_section`,
   `grader_crash`), an optional `field_name`, and a JSON-native `value`.
 
@@ -282,3 +283,38 @@ real schema-version-4 records written by Debuggernaut's benchmark runner:
   `attempt_records: []`, no `exploration_rounds`, or proposal-schema failures
   convert successfully with zero steps and full available metadata; absent
   exploration fields are never fabricated from `calls[]`.
+
+### Debuggernaut final-state grading
+
+`DebuggernautFinalStateGrader`
+(`src/trajecteval/graders/debuggernaut_final_state.py`) judges the
+`final_state` dimension for a converted Debuggernaut trajectory.
+
+- **The recorded benchmark test is the final state.** Debuggernaut does not
+  snapshot repository files around tool calls, so `Step.state_before/after`
+  are intentionally unavailable. The last attempt's recorded `test` block is
+  the source of truth; no state is reconstructed and pytest is never run.
+- **PASS** when the final attempt's test has `started: true`,
+  `timed_out: false`, `passed: true`, and a consistent return code.
+  **FAIL** when the same execution record has `passed: false`. The FAIL
+  evidence names the final attempt and carries the test summary, not a
+  fabricated step.
+- **ERROR never becomes FAIL.** No `attempt_records`, no final test record,
+  missing/non-boolean flags, `started: false`, `timed_out: true`, malformed
+  fields, or contradictory `passed`/`return_code` values all produce ERROR.
+  A provider or infrastructure failure with no reliable final test result is
+  therefore ERROR, not an accusation that the agent's fix was wrong. A
+  reliable final test result still decides the benchmark outcome even if the
+  run later stopped for an unrelated reason.
+- **Only the final attempt is judged.** Earlier attempt results remain
+  historical evidence; a later attempt without a test does not inherit an
+  earlier verdict.
+- **Spec integration.** A task uses the new optional
+  `expected_final_outcome: "benchmark_tests_pass"` section instead of the
+  dictionary-based `expected_final_state`. The two sections are mutually
+  exclusive. When this section is present, `evaluate()` uses
+  `DebuggernautFinalStateGrader` for the `final_state` column; existing
+  state-based tasks keep `FinalStateGrader`, `BoundsGrader`, and
+  `CriticalGrader` unchanged. This differs from travel booking, where the
+  expected final state is matched against the last step's recorded state:
+  Debuggernaut's final state is an externally recorded test outcome.

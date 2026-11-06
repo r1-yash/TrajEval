@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from trajecteval import (
+    BENCHMARK_TESTS_PASS,
     Action,
     CriticalPattern,
     RULE_SECTIONS,
@@ -119,6 +120,8 @@ def test_unknown_top_level_key_rejected():
 def test_wrong_section_types_rejected():
     with pytest.raises(SpecError, match="spec 'expected_final_state': expected an object"):
         TaskSpec(task_id="x", expected_final_state=["status"])
+    with pytest.raises(SpecError, match="spec 'expected_final_outcome'"):
+        TaskSpec(task_id="x", expected_final_outcome={"kind": "tests_pass"})
     with pytest.raises(SpecError, match="spec 'allowed_actions': expected an object"):
         TaskSpec(task_id="x", allowed_actions="everything goes")
     with pytest.raises(SpecError, match="spec 'metadata': expected an object"):
@@ -158,6 +161,7 @@ def test_patterns_must_be_a_list():
 def test_absent_sections_are_none_empty_sections_stay_empty():
     absent = TaskSpec(task_id="t")
     assert absent.expected_final_state is None
+    assert absent.expected_final_outcome is None
     assert absent.allowed_actions is None
     assert absent.critical_error_patterns is None
 
@@ -172,6 +176,34 @@ def test_absent_sections_are_none_empty_sections_stay_empty():
     assert empty.expected_final_state == {}
     assert empty.allowed_actions == {}
     assert empty.critical_error_patterns == ()
+
+
+def test_expected_final_outcome_round_trips():
+    spec = TaskSpec(
+        task_id="owner__repo__1",
+        expected_final_outcome=BENCHMARK_TESTS_PASS,
+    )
+    assert spec.to_dict()["expected_final_outcome"] == BENCHMARK_TESTS_PASS
+    assert TaskSpec.from_dict(spec.to_dict()) == spec
+
+
+def test_expected_final_state_and_outcome_are_mutually_exclusive():
+    with pytest.raises(SpecError, match="mutually exclusive"):
+        TaskSpec(
+            task_id="t",
+            expected_final_state={"status": "done"},
+            expected_final_outcome=BENCHMARK_TESTS_PASS,
+        )
+
+
+def test_unknown_expected_final_outcome_is_rejected():
+    with pytest.raises(SpecError, match="unsupported value"):
+        TaskSpec(task_id="t", expected_final_outcome="tests_maybe_pass")
+
+
+def test_expected_final_outcome_must_be_a_non_empty_string():
+    with pytest.raises(SpecError, match="expected_final_outcome"):
+        TaskSpec(task_id="t", expected_final_outcome="")
 
 
 def test_pattern_list_is_coerced_to_tuple():

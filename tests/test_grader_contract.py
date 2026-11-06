@@ -131,10 +131,11 @@ def test_missing_section_rejects_non_string_section():
         missing_section_result(spec, Dimension.BOUNDS, None)
 
 
-def test_missing_section_accepts_all_three_rule_sections():
+def test_missing_section_accepts_all_rule_sections():
     spec = TaskSpec(task_id="t")
     for section, dimension in (
         ("expected_final_state", Dimension.FINAL_STATE),
+        ("expected_final_outcome", Dimension.FINAL_STATE),
         ("allowed_actions", Dimension.BOUNDS),
         ("critical_error_patterns", Dimension.CRITICAL),
     ):

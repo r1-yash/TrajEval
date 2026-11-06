@@ -17,12 +17,19 @@ from trajecteval.matching import contains_failures, json_contains, json_equal
 # trajecteval.task_spec import json_equal` working unchanged).
 from trajecteval.models import Step
 
-# The rule sections -- the three things a spec can be missing. ``_KNOWN_KEYS``
+# The one benchmark outcome the Debuggernaut final-state grader understands.
+# It is a named expectation rather than a repository-state dictionary: the
+# source records a test result, not a filesystem snapshot.
+BENCHMARK_TESTS_PASS = "benchmark_tests_pass"
+EXPECTED_FINAL_OUTCOMES = frozenset({BENCHMARK_TESTS_PASS})
+
+# The rule sections -- the things a spec can be missing. ``_KNOWN_KEYS``
 # below derives from this, and graders validate section names against it
 # (a typo'd section must raise ValueError, not crash getattr or silently
 # judge nothing).
 RULE_SECTIONS = (
     "expected_final_state",
+    "expected_final_outcome",
     "allowed_actions",
     "critical_error_patterns",
 )
@@ -111,12 +118,35 @@ class TaskSpec:
     allowed_actions: dict[str, dict[str, list[Any]]] | None = None
     critical_error_patterns: tuple[CriticalPattern, ...] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    # Appended keyword-only so every pre-existing positional TaskSpec call
+    # keeps its original meaning.
+    expected_final_outcome: str | None = field(default=None, kw_only=True)
 
     def __post_init__(self) -> None:
         _require_task_id(self.task_id)
 
         if self.expected_final_state is not None:
             _require_object(self.expected_final_state, "spec 'expected_final_state'")
+
+        if self.expected_final_outcome is not None:
+            _require_non_empty_str(
+                self.expected_final_outcome, "spec 'expected_final_outcome'"
+            )
+            if self.expected_final_outcome not in EXPECTED_FINAL_OUTCOMES:
+                raise SpecError(
+                    f"spec 'expected_final_outcome': unsupported value "
+                    f"{self.expected_final_outcome!r}; expected one of "
+                    f"{', '.join(sorted(EXPECTED_FINAL_OUTCOMES))}"
+                )
+
+        if (
+            self.expected_final_state is not None
+            and self.expected_final_outcome is not None
+        ):
+            raise SpecError(
+                "spec: 'expected_final_state' and 'expected_final_outcome' "
+                "are mutually exclusive -- a task has one final-state contract"
+            )
 
         if self.allowed_actions is not None:
             _require_object(self.allowed_actions, "spec 'allowed_actions'")
@@ -191,6 +221,8 @@ class TaskSpec:
         data: dict[str, Any] = {"task_id": self.task_id}
         if self.expected_final_state is not None:
             data["expected_final_state"] = dict(self.expected_final_state)
+        if self.expected_final_outcome is not None:
+            data["expected_final_outcome"] = self.expected_final_outcome
         if self.allowed_actions is not None:
             data["allowed_actions"] = {
                 action: dict(permits) for action, permits in self.allowed_actions.items()
@@ -209,7 +241,8 @@ class TaskSpec:
         if unknown:
             raise SpecError(
                 f"spec: unknown key(s) {', '.join(repr(k) for k in unknown)} -- "
-                "known keys are task_id, expected_final_state, allowed_actions, "
+                "known keys are task_id, expected_final_state, "
+                "expected_final_outcome, allowed_actions, "
                 "critical_error_patterns, metadata"
             )
 
@@ -233,6 +266,7 @@ class TaskSpec:
         return cls(
             task_id=data["task_id"],
             expected_final_state=data.get("expected_final_state"),
+            expected_final_outcome=data.get("expected_final_outcome"),
             allowed_actions=data.get("allowed_actions"),
             critical_error_patterns=patterns,
             metadata=metadata,

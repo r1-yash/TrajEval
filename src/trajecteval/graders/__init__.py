@@ -7,11 +7,13 @@ from trajecteval.graders.base import (
 )
 from trajecteval.graders.bounds import BoundsGrader
 from trajecteval.graders.critical import CriticalGrader
+from trajecteval.graders.debuggernaut_final_state import DebuggernautFinalStateGrader
 from trajecteval.graders.final_state import FinalStateGrader
 
 __all__ = [
     "BoundsGrader",
     "CriticalGrader",
+    "DebuggernautFinalStateGrader",
     "FinalStateGrader",
     "Grader",
     "missing_section_result",

@@ -20,6 +20,7 @@ from trajecteval.errors import (
 from trajecteval.graders import (
     BoundsGrader,
     CriticalGrader,
+    DebuggernautFinalStateGrader,
     FinalStateGrader,
     Grader,
     missing_section_result,
@@ -40,17 +41,25 @@ from trajecteval.models import Action, Discontinuity, Step, Trajectory
 from trajecteval.recorder import Recorder
 from trajecteval.report import Report, evaluate, render_json, render_text
 from trajecteval.results import Dimension, Evidence, GraderResult, Verdict
-from trajecteval.task_spec import CriticalPattern, RULE_SECTIONS, TaskSpec, load_spec
+from trajecteval.task_spec import (
+    BENCHMARK_TESTS_PASS,
+    CriticalPattern,
+    RULE_SECTIONS,
+    TaskSpec,
+    load_spec,
+)
 
 __all__ = [
     "Action",
     "ActionRejected",
     "AdapterError",
+    "BENCHMARK_TESTS_PASS",
     "BoundsGrader",
     "Comparison",
     "CriticalGrader",
     "CriticalPattern",
     "DebuggernautAdapter",
+    "DebuggernautFinalStateGrader",
     "Dimension",
     "Discontinuity",
     "Environment",

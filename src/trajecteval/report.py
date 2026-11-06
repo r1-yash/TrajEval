@@ -8,7 +8,13 @@ from pathlib import Path
 from typing import Any, Sequence
 
 from trajecteval.errors import ReportError, TrajectoryError
-from trajecteval.graders import BoundsGrader, CriticalGrader, FinalStateGrader, Grader
+from trajecteval.graders import (
+    BoundsGrader,
+    CriticalGrader,
+    DebuggernautFinalStateGrader,
+    FinalStateGrader,
+    Grader,
+)
 from trajecteval.judge.base import Judge
 from trajecteval.judge.quality import TrajectoryQualityGrader
 from trajecteval.models import Discontinuity, Trajectory
@@ -119,8 +125,14 @@ class Report:
         )
 
 
-def _default_graders() -> tuple[Grader, ...]:
-    # The three deterministic columns, in dimension order.
+def _default_graders(spec: TaskSpec) -> tuple[Grader, ...]:
+    # A spec with a recorded benchmark outcome uses the Debuggernaut
+    # final-state grader; existing state-based tasks keep the three
+    # deterministic columns unchanged. Bounds and critical graders are not
+    # meaningful for a benchmark-outcome spec yet, so they are left as
+    # "not evaluated" rather than guessed.
+    if spec.expected_final_outcome is not None:
+        return (DebuggernautFinalStateGrader(),)
     return (FinalStateGrader(), BoundsGrader(), CriticalGrader())
 
 
@@ -185,7 +197,7 @@ def evaluate(
             f"judge must provide a judge(spec, trajectory) method; "
             f"got {type(judge).__name__}"
         )
-    chosen = _default_graders() if graders is None else tuple(graders)
+    chosen = _default_graders(spec) if graders is None else tuple(graders)
     if judge is not None:
         chosen = (*chosen, TrajectoryQualityGrader(judge))
     dimensions = _require_judgeable(chosen)
