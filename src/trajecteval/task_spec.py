@@ -23,6 +23,14 @@ from trajecteval.models import Step
 BENCHMARK_TESTS_PASS = "benchmark_tests_pass"
 EXPECTED_FINAL_OUTCOMES = frozenset({BENCHMARK_TESTS_PASS})
 
+# Declarative argument constraints. A permit value is normally a list of
+# exact permitted values; a constraint object describes a predicate that
+# cannot be expressed as a finite list. It lives under the same
+# ``allowed_actions`` section, so both kinds of rule are applied together.
+# TaskSpec owns the schema; the bounds grader owns the predicate.
+REPOSITORY_RELATIVE_PATH = "repository_relative_path"
+ARGUMENT_CONSTRAINTS = frozenset({REPOSITORY_RELATIVE_PATH})
+
 # The rule sections -- the things a spec can be missing. ``_KNOWN_KEYS``
 # below derives from this, and graders validate section names against it
 # (a typo'd section must raise ValueError, not crash getattr or silently
@@ -115,7 +123,7 @@ class TaskSpec:
 
     task_id: str
     expected_final_state: dict[str, Any] | None = None
-    allowed_actions: dict[str, dict[str, list[Any]]] | None = None
+    allowed_actions: dict[str, dict[str, list[Any] | dict[str, str]]] | None = None
     critical_error_patterns: tuple[CriticalPattern, ...] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
     # Appended keyword-only so every pre-existing positional TaskSpec call
@@ -153,13 +161,34 @@ class TaskSpec:
             for action, permits in self.allowed_actions.items():
                 _require_non_empty_str(action, "spec 'allowed_actions' key")
                 _require_object(permits, f"spec 'allowed_actions'[{action!r}]")
-                for arg, allowed in permits.items():
+                for arg, permitted in permits.items():
                     _require_non_empty_str(arg, f"spec 'allowed_actions'[{action!r}] key")
-                    if not isinstance(allowed, list):
-                        raise SpecError(
-                            f"spec 'allowed_actions'[{action!r}][{arg!r}]: "
-                            f"expected a list of permitted values, got {type(allowed).__name__}"
+                    if isinstance(permitted, list):
+                        continue
+                    if isinstance(permitted, dict):
+                        if set(permitted) != {"constraint"}:
+                            raise SpecError(
+                                f"spec 'allowed_actions'[{action!r}][{arg!r}]: "
+                                "a constraint object must contain exactly one "
+                                "'constraint' key"
+                            )
+                        constraint = permitted["constraint"]
+                        _require_non_empty_str(
+                            constraint,
+                            f"spec 'allowed_actions'[{action!r}][{arg!r}] constraint",
                         )
+                        if constraint not in ARGUMENT_CONSTRAINTS:
+                            raise SpecError(
+                                f"spec 'allowed_actions'[{action!r}][{arg!r}]: "
+                                f"unsupported constraint {constraint!r}; expected "
+                                f"one of {', '.join(sorted(ARGUMENT_CONSTRAINTS))}"
+                            )
+                        continue
+                    raise SpecError(
+                        f"spec 'allowed_actions'[{action!r}][{arg!r}]: "
+                        "expected a list of permitted values or a 'constraint' "
+                        f"object, got {type(permitted).__name__}"
+                    )
 
         if self.critical_error_patterns is not None:
             if not isinstance(self.critical_error_patterns, (list, tuple)):
@@ -193,6 +222,8 @@ class TaskSpec:
         self, action: str, args: dict[str, Any]
     ) -> tuple[tuple[str, Any], ...]:
         # Supplied arguments the action's permit lists forbid: ((arg, value), ...); needs the section present and the action listed.
+        # Declarative constraint descriptors are skipped here; they are
+        # predicates, evaluated by argument_constraints().
         if self.allowed_actions is None:
             raise ValueError(
                 f"allowed_actions section is absent for task {self.task_id!r}; "
@@ -209,12 +240,35 @@ class TaskSpec:
             allowed_values = permits.get(arg)
             if allowed_values is None:  # arg not in the permit map -> unconstrained
                 continue
+            if isinstance(allowed_values, dict):
+                continue  # declarative constraint, not a finite permit list
             # Membership through the shared matcher, not `in`/`==`: in
             # Python ``True in [1]`` is True, which would let a boolean
             # sneak past a numeric permit list.
             if not any(json_equal(value, allowed) for allowed in allowed_values):
                 violations.append((arg, value))
         return tuple(violations)
+
+    def argument_constraints(
+        self, action: str
+    ) -> tuple[tuple[str, str], ...]:
+        # Declarative (argument, constraint) descriptors for a listed action,
+        # in spec order. Value-permit lists are excluded.
+        if self.allowed_actions is None:
+            raise ValueError(
+                f"allowed_actions section is absent for task {self.task_id!r}; "
+                "call missing_section_result(...) first"
+            )
+        if action not in self.allowed_actions:
+            raise ValueError(
+                f"action {action!r} is not listed in allowed_actions; "
+                "check action_allowed(...) first"
+            )
+        return tuple(
+            (arg, permitted["constraint"])
+            for arg, permitted in self.allowed_actions[action].items()
+            if isinstance(permitted, dict)
+        )
 
     def to_dict(self) -> dict[str, Any]:
         # Round-trippable plain dict; absent sections stay absent (omitted).

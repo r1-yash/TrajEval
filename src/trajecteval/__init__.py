@@ -43,6 +43,7 @@ from trajecteval.report import Report, evaluate, render_json, render_text
 from trajecteval.results import Dimension, Evidence, GraderResult, Verdict
 from trajecteval.task_spec import (
     BENCHMARK_TESTS_PASS,
+    REPOSITORY_RELATIVE_PATH,
     CriticalPattern,
     RULE_SECTIONS,
     TaskSpec,
@@ -75,6 +76,7 @@ __all__ = [
     "LLMJudge",
     "OfflineRunAdapter",
     "OpenAIChatClient",
+    "REPOSITORY_RELATIVE_PATH",
     "RULE_SECTIONS",
     "Recorder",
     "Report",

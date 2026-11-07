@@ -127,12 +127,15 @@ class Report:
 
 def _default_graders(spec: TaskSpec) -> tuple[Grader, ...]:
     # A spec with a recorded benchmark outcome uses the Debuggernaut
-    # final-state grader; existing state-based tasks keep the three
-    # deterministic columns unchanged. Bounds and critical graders are not
-    # meaningful for a benchmark-outcome spec yet, so they are left as
-    # "not evaluated" rather than guessed.
+    # final-state grader. When the same spec also supplies allowed_actions,
+    # the shared bounds grader adds the second column; critical evaluation is
+    # a later milestone. A benchmark spec without allowed_actions keeps the
+    # pre-bounds behavior: final_state only.
     if spec.expected_final_outcome is not None:
-        return (DebuggernautFinalStateGrader(),)
+        graders: list[Grader] = [DebuggernautFinalStateGrader()]
+        if spec.allowed_actions is not None:
+            graders.append(BoundsGrader())
+        return tuple(graders)
     return (FinalStateGrader(), BoundsGrader(), CriticalGrader())
 
 

@@ -7,6 +7,7 @@ import pytest
 
 from trajecteval import (
     BENCHMARK_TESTS_PASS,
+    REPOSITORY_RELATIVE_PATH,
     Action,
     CriticalPattern,
     RULE_SECTIONS,
@@ -262,6 +263,62 @@ def test_argument_violations_requires_a_listed_action():
     spec = TaskSpec(task_id="t", allowed_actions={"pay": {}})
     with pytest.raises(ValueError, match="action_allowed"):
         spec.argument_violations("search", {"q": "x"})
+
+
+def test_argument_constraints_returns_declarative_descriptors():
+    spec = TaskSpec(
+        task_id="t",
+        allowed_actions={
+            "read_file": {
+                "path": {"constraint": REPOSITORY_RELATIVE_PATH},
+                "mode": ["text"],
+            }
+        },
+    )
+    assert spec.argument_constraints("read_file") == (
+        ("path", REPOSITORY_RELATIVE_PATH),
+    )
+    # Value-permit lists still report their violations; the constraint
+    # descriptor is skipped by the exact-value predicate.
+    assert spec.argument_violations(
+        "read_file", {"path": "a.py", "mode": "binary"}
+    ) == (("mode", "binary"),)
+
+
+def test_argument_constraints_requires_a_listed_action():
+    spec = TaskSpec(task_id="t", allowed_actions={"read_file": {}})
+    with pytest.raises(ValueError, match="action_allowed"):
+        spec.argument_constraints("list_directory")
+
+
+def test_constraint_descriptor_round_trips():
+    spec = TaskSpec(
+        task_id="t",
+        allowed_actions={
+            "read_file": {"path": {"constraint": REPOSITORY_RELATIVE_PATH}}
+        },
+    )
+    assert TaskSpec.from_dict(spec.to_dict()) == spec
+
+
+@pytest.mark.parametrize(
+    "permit",
+    [
+        pytest.param({"constraint": ""}, id="empty-name"),
+        pytest.param({"constraint": 3}, id="non-string-name"),
+        pytest.param({"constraint": "unknown"}, id="unknown-name"),
+        pytest.param(
+            {"constraint": REPOSITORY_RELATIVE_PATH, "extra": 1},
+            id="extra-key",
+        ),
+        pytest.param(
+            {"other": REPOSITORY_RELATIVE_PATH}, id="missing-constraint-key"
+        ),
+    ],
+)
+def test_malformed_constraint_descriptors_are_rejected(permit):
+    with pytest.raises(SpecError, match="allowed_actions"):
+        TaskSpec(task_id="t", allowed_actions={"read_file": {"path": permit}})
 
 
 def test_json_null_section_equals_omitted():
