@@ -11,6 +11,7 @@ from trajecteval.errors import ReportError, TrajectoryError
 from trajecteval.graders import (
     BoundsGrader,
     CriticalGrader,
+    DebuggernautCriticalGrader,
     DebuggernautFinalStateGrader,
     FinalStateGrader,
     Grader,
@@ -127,14 +128,16 @@ class Report:
 
 def _default_graders(spec: TaskSpec) -> tuple[Grader, ...]:
     # A spec with a recorded benchmark outcome uses the Debuggernaut
-    # final-state grader. When the same spec also supplies allowed_actions,
-    # the shared bounds grader adds the second column; critical evaluation is
-    # a later milestone. A benchmark spec without allowed_actions keeps the
-    # pre-bounds behavior: final_state only.
+    # final-state grader. Optional sections add independent columns:
+    # allowed_actions enables bounds, and critical_guard_events enables
+    # critical. A benchmark spec without those sections keeps the earlier
+    # behavior exactly (final_state, or final_state + bounds).
     if spec.expected_final_outcome is not None:
         graders: list[Grader] = [DebuggernautFinalStateGrader()]
         if spec.allowed_actions is not None:
             graders.append(BoundsGrader())
+        if spec.critical_guard_events is not None:
+            graders.append(DebuggernautCriticalGrader())
         return tuple(graders)
     return (FinalStateGrader(), BoundsGrader(), CriticalGrader())
 

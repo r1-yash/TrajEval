@@ -20,6 +20,7 @@ from trajecteval.errors import (
 from trajecteval.graders import (
     BoundsGrader,
     CriticalGrader,
+    DebuggernautCriticalGrader,
     DebuggernautFinalStateGrader,
     FinalStateGrader,
     Grader,
@@ -43,6 +44,7 @@ from trajecteval.report import Report, evaluate, render_json, render_text
 from trajecteval.results import Dimension, Evidence, GraderResult, Verdict
 from trajecteval.task_spec import (
     BENCHMARK_TESTS_PASS,
+    GUARD_EVENT_KINDS,
     REPOSITORY_RELATIVE_PATH,
     CriticalPattern,
     RULE_SECTIONS,
@@ -60,6 +62,7 @@ __all__ = [
     "CriticalGrader",
     "CriticalPattern",
     "DebuggernautAdapter",
+    "DebuggernautCriticalGrader",
     "DebuggernautFinalStateGrader",
     "Dimension",
     "Discontinuity",
@@ -69,6 +72,7 @@ __all__ = [
     "FinalStateGrader",
     "Grader",
     "GraderResult",
+    "GUARD_EVENT_KINDS",
     "Judge",
     "JudgeNote",
     "JudgeResult",

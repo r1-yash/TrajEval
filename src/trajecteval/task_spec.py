@@ -31,6 +31,11 @@ EXPECTED_FINAL_OUTCOMES = frozenset({BENCHMARK_TESTS_PASS})
 REPOSITORY_RELATIVE_PATH = "repository_relative_path"
 ARGUMENT_CONSTRAINTS = frozenset({REPOSITORY_RELATIVE_PATH})
 
+# The closed guard-event vocabulary from Debuggernaut's GuardEvent.kind.
+# ``test_file`` and ``test_patch_file`` are proposals to modify protected
+# test files; ``nonexistent_path`` is a retryable path-validation miss.
+GUARD_EVENT_KINDS = frozenset({"test_file", "nonexistent_path", "test_patch_file"})
+
 # The rule sections -- the things a spec can be missing. ``_KNOWN_KEYS``
 # below derives from this, and graders validate section names against it
 # (a typo'd section must raise ValueError, not crash getattr or silently
@@ -40,6 +45,7 @@ RULE_SECTIONS = (
     "expected_final_outcome",
     "allowed_actions",
     "critical_error_patterns",
+    "critical_guard_events",
 )
 
 # The full key vocabulary. Anything else at the top level of a spec file is a
@@ -129,6 +135,12 @@ class TaskSpec:
     # Appended keyword-only so every pre-existing positional TaskSpec call
     # keeps its original meaning.
     expected_final_outcome: str | None = field(default=None, kw_only=True)
+    # Guard-event kinds that are permanently disqualifying for a recorded
+    # Debuggernaut run. Absent means the critical dimension is not evaluated
+    # for a benchmark-outcome spec; an empty tuple means "no rules".
+    critical_guard_events: tuple[str, ...] | None = field(
+        default=None, kw_only=True
+    )
 
     def __post_init__(self) -> None:
         _require_task_id(self.task_id)
@@ -205,6 +217,30 @@ class TaskSpec:
                     )
                 coerced.append(item)
             object.__setattr__(self, "critical_error_patterns", tuple(coerced))
+
+        if self.critical_guard_events is not None:
+            if not isinstance(self.critical_guard_events, (list, tuple)):
+                raise SpecError(
+                    "spec 'critical_guard_events': expected a list of guard event "
+                    f"kinds, got {type(self.critical_guard_events).__name__}"
+                )
+            coerced_kinds: list[str] = []
+            for position, kind in enumerate(self.critical_guard_events):
+                if not isinstance(kind, str) or not kind:
+                    raise SpecError(
+                        f"spec 'critical_guard_events[{position}]': expected a "
+                        f"non-empty string, got {kind!r}"
+                    )
+                if kind not in GUARD_EVENT_KINDS:
+                    raise SpecError(
+                        f"spec 'critical_guard_events[{position}]': unsupported "
+                        f"guard event kind {kind!r}; expected one of "
+                        f"{', '.join(sorted(GUARD_EVENT_KINDS))}"
+                    )
+                coerced_kinds.append(kind)
+            object.__setattr__(
+                self, "critical_guard_events", tuple(coerced_kinds)
+            )
 
         if not isinstance(self.metadata, dict):
             raise SpecError(f"spec 'metadata': expected an object, got {type(self.metadata).__name__}")
@@ -283,6 +319,8 @@ class TaskSpec:
             }
         if self.critical_error_patterns is not None:
             data["critical_error_patterns"] = [p.to_dict() for p in self.critical_error_patterns]
+        if self.critical_guard_events is not None:
+            data["critical_guard_events"] = list(self.critical_guard_events)
         data["metadata"] = dict(self.metadata)
         return data
 
@@ -297,7 +335,7 @@ class TaskSpec:
                 f"spec: unknown key(s) {', '.join(repr(k) for k in unknown)} -- "
                 "known keys are task_id, expected_final_state, "
                 "expected_final_outcome, allowed_actions, "
-                "critical_error_patterns, metadata"
+                "critical_error_patterns, critical_guard_events, metadata"
             )
 
         patterns: tuple[CriticalPattern, ...] | None = None
@@ -323,6 +361,7 @@ class TaskSpec:
             expected_final_outcome=data.get("expected_final_outcome"),
             allowed_actions=data.get("allowed_actions"),
             critical_error_patterns=patterns,
+            critical_guard_events=data.get("critical_guard_events"),
             metadata=metadata,
         )
 

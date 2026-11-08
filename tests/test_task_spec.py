@@ -7,6 +7,7 @@ import pytest
 
 from trajecteval import (
     BENCHMARK_TESTS_PASS,
+    GUARD_EVENT_KINDS,
     REPOSITORY_RELATIVE_PATH,
     Action,
     CriticalPattern,
@@ -165,6 +166,7 @@ def test_absent_sections_are_none_empty_sections_stay_empty():
     assert absent.expected_final_outcome is None
     assert absent.allowed_actions is None
     assert absent.critical_error_patterns is None
+    assert absent.critical_guard_events is None
 
     empty = TaskSpec.from_dict(
         {
@@ -172,11 +174,52 @@ def test_absent_sections_are_none_empty_sections_stay_empty():
             "expected_final_state": {},
             "allowed_actions": {},
             "critical_error_patterns": [],
+            "critical_guard_events": [],
         }
     )
     assert empty.expected_final_state == {}
     assert empty.allowed_actions == {}
     assert empty.critical_error_patterns == ()
+    assert empty.critical_guard_events == ()
+
+
+def test_critical_guard_events_round_trip():
+    spec = TaskSpec(
+        task_id="owner__repo__1",
+        expected_final_outcome=BENCHMARK_TESTS_PASS,
+        critical_guard_events=["test_file", "test_patch_file"],
+    )
+    assert spec.critical_guard_events == ("test_file", "test_patch_file")
+    assert TaskSpec.from_dict(spec.to_dict()) == spec
+
+
+def test_critical_guard_events_accepts_every_real_kind():
+    spec = TaskSpec(
+        task_id="t",
+        critical_guard_events=sorted(GUARD_EVENT_KINDS),
+    )
+    assert set(spec.critical_guard_events) == GUARD_EVENT_KINDS
+
+
+@pytest.mark.parametrize(
+    "events",
+    [
+        pytest.param("test_file", id="string"),
+        pytest.param({"test_file": True}, id="object"),
+        pytest.param(["test_file", ""], id="empty-kind"),
+        pytest.param([3], id="non-string-kind"),
+        pytest.param(["delete_file"], id="unknown-kind"),
+    ],
+)
+def test_malformed_critical_guard_events_are_rejected(events):
+    with pytest.raises(SpecError, match="critical_guard_events"):
+        TaskSpec(task_id="t", critical_guard_events=events)
+
+
+def test_critical_guard_events_json_null_equals_omitted():
+    assert TaskSpec.from_dict(
+        {"task_id": "t", "critical_guard_events": None}
+    ) == TaskSpec.from_dict({"task_id": "t"})
 
 
 def test_expected_final_outcome_round_trips():

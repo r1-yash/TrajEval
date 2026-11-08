@@ -138,6 +138,7 @@ def test_missing_section_accepts_all_rule_sections():
         ("expected_final_outcome", Dimension.FINAL_STATE),
         ("allowed_actions", Dimension.BOUNDS),
         ("critical_error_patterns", Dimension.CRITICAL),
+        ("critical_guard_events", Dimension.CRITICAL),
     ):
         assert missing_section_result(spec, dimension, section) is not None
 
