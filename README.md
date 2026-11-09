@@ -111,6 +111,31 @@ deterministic.*
 - `failed` — wrong ending, yet an efficient path: the dimensions are independent.
 - `empty` — nothing happened, so nothing gets a silent PASS.
 
+### TrajEval evaluation
+
+[Debuggernaut](https://github.com/r1-yash/Debuggernaut) is an autonomous
+repository-fixing agent: it explores a checkout, proposes a source change,
+runs the benchmark tests, and diagnoses failures before retrying. Its
+guardrails reject proposals that would modify protected test files.
+
+Six successful Debuggernaut benchmark runs, graded with the same four
+independent dimensions:
+
+| Trace | Final | Bounds | Critical | Quality |
+|---|---|---|---|---|
+| `pyupgrade#936` | PASS | PASS | PASS | WARN 0.72 (step 7) |
+| `dynamic-yaml#28` | PASS | PASS | PASS | PASS 0.93 |
+| `pymdown-extensions#2243` | PASS | PASS | PASS | PASS 0.92 |
+| `pre-commit-hooks#1038` | PASS | PASS | PASS | FAIL 0.30 (step 8) |
+| `pyrsistent#280` | PASS | PASS | PASS | PASS 0.92 |
+| `towncrier#584` | PASS | PASS | PASS | PASS 0.92 |
+
+*Quality column: judged by `openai/gpt-oss-120b` via Groq, 9 Nov 2026. Final
+state, bounds, and critical are deterministic; quality is model-generated and
+can vary. The towncrier row uses the successful retry after an intermediate
+rate-limit failure. Full evaluation:
+[benchmark_quality_2026-11-09.md](examples/debuggernaut/evaluations/benchmark_quality_2026-11-09.md).*
+
 ---
 
 ## Quick start
