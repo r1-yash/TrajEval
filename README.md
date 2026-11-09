@@ -382,19 +382,3 @@ judge. The seven fixtures replay byte-exact through the simulated world.
 
 ---
 
-## Limitations
-
-- One task so far (travel booking), one simulated world.
-- The quality score comes from an LLM: verdicts were stable across repeated runs, but scores moved by a few hundredths.
-- Free-tier API rate limits can interrupt agent runs.
-- Agent and judge models can overlap; the table notes when they do.
-
-## Future directions
-
-- A second task in a different domain, to test the graders beyond travel booking.
-- Retry on provider rate limits.
-- Comparing the judge's verdicts with human labels.
-
-## License
-
-TBD
